@@ -1,10 +1,10 @@
 name: Release
 
-# Builds both editions signed with the Acuranza release key and publishes them as a GitHub release.
-# Runs when a version tag is pushed (`git tag v2.0.1 && git push origin v2.0.1`), or from the Actions tab
+# Builds the release APK signed with the Acuranza release key and publishes it as a GitHub release.
+# Runs when a version tag is pushed (`git tag v1.0.0 && git push origin v1.0.0`), or from the Actions tab
 # (Release > Run workflow), which tags the chosen commit with v<versionName> itself.
-# Needs three repository secrets: KOSH_KEYSTORE_BASE64 (`base64 -w0 keystore/kosh-release.jks`),
-# KOSH_STORE_PASSWORD and KOSH_KEY_PASSWORD.
+# Needs three repository secrets: ACURANZA_KEYSTORE_BASE64 (`base64 -w0 keystore/acuranza-release.jks`),
+# ACURANZA_STORE_PASSWORD and ACURANZA_KEY_PASSWORD.
 
 on:
   push:
@@ -45,41 +45,41 @@ jobs:
       - name: Restore the release keystore
         if: env.SKIP != '1'
         env:
-          KOSH_KEYSTORE_BASE64: ${{ secrets.KOSH_KEYSTORE_BASE64 }}
+          ACURANZA_KEYSTORE_BASE64: ${{ secrets.ACURANZA_KEYSTORE_BASE64 }}
         run: |
-          if [ -z "$KOSH_KEYSTORE_BASE64" ]; then
-            echo "The KOSH_KEYSTORE_BASE64 secret is not set"; exit 1
+          if [ -z "$ACURANZA_KEYSTORE_BASE64" ]; then
+            echo "The ACURANZA_KEYSTORE_BASE64 secret is not set"; exit 1
           fi
           mkdir -p keystore
-          echo "$KOSH_KEYSTORE_BASE64" | base64 -d > keystore/kosh-release.jks
+          echo "$ACURANZA_KEYSTORE_BASE64" | base64 -d > keystore/acuranza-release.jks
       - name: Build both editions (release-signed)
         if: env.SKIP != '1'
         env:
-          KOSH_STORE_PASSWORD: ${{ secrets.KOSH_STORE_PASSWORD }}
-          KOSH_KEY_PASSWORD: ${{ secrets.KOSH_KEY_PASSWORD }}
+          ACURANZA_STORE_PASSWORD: ${{ secrets.ACURANZA_STORE_PASSWORD }}
+          ACURANZA_KEY_PASSWORD: ${{ secrets.ACURANZA_KEY_PASSWORD }}
         run: |
           # No build cache: a cached compile can differ from a clean one, and F-Droid rebuilds from scratch and
           # only publishes the release APK when its own build is identical.
-          ./gradlew :app:assembleStandardRelease :app:assembleOfflineRelease --console=plain --no-build-cache \
-            -PKOSH_STORE_PASSWORD="$KOSH_STORE_PASSWORD" -PKOSH_KEY_PASSWORD="$KOSH_KEY_PASSWORD"
-      - name: Check signatures and that the offline edition has no INTERNET permission
+          ./gradlew :app:assembleRelease --console=plain --no-build-cache \
+            -PACURANZA_STORE_PASSWORD="$ACURANZA_STORE_PASSWORD" -PACURANZA_KEY_PASSWORD="$ACURANZA_KEY_PASSWORD"
+      - name: Check signature and that the APK has no INTERNET permission
         if: env.SKIP != '1'
         env:
           # The key installed copies of Acuranza are signed with; an APK signed with anything else can't update them.
           EXPECTED_SIGNER: 02283b8d09a5a1912906e9b5d3abed25ed4445de005f57a79cea0443f0317934
         run: |
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          cp app/build/outputs/apk/standard/release/app-standard-release.apk Acuranza.apk
-          cp app/build/outputs/apk/offline/release/app-offline-release.apk Acuranza-offline.apk
-          for apk in Acuranza.apk Acuranza-offline.apk; do
+          cp app/build/outputs/apk/release/app-release.apk Acuranza.apk
+          cp app/build/outputs/apk/release/app-release.apk Acuranza-universal.apk
+          for apk in Acuranza.apk; do
             signer=$("$BUILD_TOOLS/apksigner" verify --print-certs "$apk" | grep -m1 "SHA-256 digest" | awk '{print $NF}')
             if [ "$signer" != "$EXPECTED_SIGNER" ]; then
-              echo "$apk is signed with $signer, not the Acuranza release key. Check the KOSH_* secrets."; exit 1
+              echo "$apk is signed with $signer, not the Acuranza release key. Check the ACURANZA_* secrets."; exit 1
             fi
           done
-          sha256sum Acuranza.apk Acuranza-offline.apk > SHA256SUMS
-          if "$BUILD_TOOLS/aapt2" dump permissions Acuranza-offline.apk | grep -q "android.permission.INTERNET"; then
-            echo "Offline edition must not request INTERNET"; exit 1
+          sha256sum Acuranza.apk > SHA256SUMS
+          if "$BUILD_TOOLS/aapt2" dump permissions Acuranza-universal.apk | grep -q "android.permission.INTERNET"; then
+            echo "Acuranza must not request INTERNET"; exit 1
           fi
       - name: Publish the GitHub release
         if: env.SKIP != '1'
@@ -91,15 +91,15 @@ jobs:
             cat "fastlane/metadata/android/en-US/changelogs/$VERSION_CODE.txt" 2>/dev/null
             echo
             echo "Signed with the Acuranza release key: installs over earlier versions and keeps your data."
-            echo "Acuranza.apk is the standard edition; Acuranza-offline.apk has no internet permission. Checksums: SHA256SUMS."
+            echo "Acuranza.apk is the universal release APK; it has no internet permission. Checksums: SHA256SUMS."
           } > notes.txt
           if gh release view "$TAG" > /dev/null 2>&1; then
             # Replaces any files published earlier under this tag and makes it the latest full release.
-            gh release upload "$TAG" Acuranza.apk Acuranza-offline.apk SHA256SUMS --clobber
+            gh release upload "$TAG" Acuranza.apk SHA256SUMS --clobber
             gh release edit "$TAG" --title "Acuranza $VERSION" --notes-file notes.txt --prerelease=false --latest
           else
-            gh release create "$TAG" Acuranza.apk Acuranza-offline.apk SHA256SUMS --target "$GITHUB_SHA" --title "Acuranza $VERSION" --notes-file notes.txt
+            gh release create "$TAG" Acuranza.apk SHA256SUMS --target "$GITHUB_SHA" --title "Acuranza $VERSION" --notes-file notes.txt
           fi
       - name: Remove the keystore
         if: always()
-        run: rm -f keystore/kosh-release.jks
+        run: rm -f keystore/acuranza-release.jks

@@ -361,7 +361,6 @@ private fun EditBudgetSheet(s: BudgetStatus, onDismiss: () -> Unit, onSave: (Lon
             Spacer(Modifier.height(12.dp))
             FormColumn {
                 AmountField("Monthly limit", limit, { limit = it }, allowZero = false)
-                com.acuranza.app.ui.household.HouseholdSwitch(com.acuranza.app.sync.HouseholdKind.BUDGET, s.budget.id, card = false)
                 com.acuranza.app.ui.common.SwitchRow(
                     "Roll over",
                     "Unspent money adds to next month; overspending comes out of it (up to one month's limit)",
@@ -529,7 +528,6 @@ private fun GoalSheet(
                 RequiredSaving(target, saved, deadline, ret.toDoubleOrNull()?.coerceIn(0.0, 30.0) ?: 7.0, loanForPlan, inflationPct)
                 // A past date gives no plan; an existing goal can still be saved with its date unchanged.
                 val dateOk = deadline.isAfter(Time.today()) || (goal != null && deadline.toEpochDay() == goal.deadline)
-                if (goal != null) com.acuranza.app.ui.household.HouseholdSwitch(com.acuranza.app.sync.HouseholdKind.GOAL, goal.id, card = false)
                 PrimaryButton(
                     if (goal == null) "Create goal" else "Save",
                     enabled = name.isNotBlank() && (target ?: 0) > 0 && dateOk,

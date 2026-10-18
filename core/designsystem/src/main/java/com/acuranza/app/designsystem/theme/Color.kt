@@ -7,49 +7,55 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 
 /**
- * The Acuranza palette: warm off-white paper, ink text, a single emerald accent.
- * There are deliberately no gradients; the old gradient names resolve to flat colours.
+ * The Acuranza palette: cool slate-navy surfaces, off-white ink, one trust-blue accent for the brand
+ * and interactions, and green reserved for money coming in. There are deliberately no gradients;
+ * the old gradient names resolve to flat colours.
  */
 object BrandPalette {
     // Neutrals (light)
-    val Paper = Color(0xFFF7F7F5)
+    val Paper = Color(0xFFF4F6FA)
     val Card = Color(0xFFFFFFFF)
-    val Hairline = Color(0xFFEAEAE7)
-    val Divider = Color(0xFFEFEFEC)
-    val Ink = Color(0xFF111111)
-    val InkSecondary = Color(0xFF6B6B6B)
-    val InkTertiary = Color(0xFFA3A3A3)
-    val Fill = Color(0xFFF1F1EE)
+    val Hairline = Color(0xFFE3E8F0)
+    val Divider = Color(0xFFEAEEF5)
+    val Ink = Color(0xFF0F172A)
+    val InkSecondary = Color(0xFF475569)
+    val InkTertiary = Color(0xFF8A94A6)
+    val Fill = Color(0xFFEDF0F7)
 
-    // Neutrals (dark)
-    val Night = Color(0xFF0B0B0C)
-    val NightCard = Color(0xFF161618)
-    val NightHairline = Color(0xFF242427)
-    val NightFill = Color(0xFF1E1E21)
-    val Snow = Color(0xFFF2F2F0)
-    val SnowSecondary = Color(0xFF9B9B9B)
-    val SnowTertiary = Color(0xFF6A6A6A)
+    // Neutrals (dark) — deep navy, not black
+    val Night = Color(0xFF0F172A)
+    val NightCard = Color(0xFF192134)
+    val NightHairline = Color(0xFF2A3A5C)
+    val NightFill = Color(0xFF1E2942)
+    val Snow = Color(0xFFF1F5F9)
+    val SnowSecondary = Color(0xFF94A3B8)
+    val SnowTertiary = Color(0xFF64748B)
 
-    // Accent
+    // Accent — the brand blue
+    val Blue = Color(0xFF2563EB)
+    val BlueDeep = Color(0xFF1D4ED8)
+    val BlueBright = Color(0xFF60A5FA)
+    val BlueTint = Color(0xFFEFF6FF)
+    val BlueTintDark = Color(0xFF17263F)
+
+    // Money in — the only green
     val Emerald = Color(0xFF059669)
     val EmeraldDeep = Color(0xFF047857)
-    val EmeraldBright = Color(0xFF10B981)
+    val EmeraldBright = Color(0xFF34D399)
     val EmeraldTint = Color(0xFFECFDF5)
     val EmeraldTintDark = Color(0xFF0D2A21)
 
     // Status
     val Red = Color(0xFFDC2626)
-    val RedTint = Color(0xFFFEF2F2)
+    val RedTint = Color(0xFFFEE2E2)
     val Amber = Color(0xFFB45309)
     val AmberTint = Color(0xFFFFFBEB)
-    val Blue = Color(0xFF2563EB)
-    val BlueTint = Color(0xFFEFF6FF)
 
-    /** Kept for compatibility; Acuranza no longer uses gradients, so this is flat ink. */
+    /** Kept for compatibility; Acuranza uses no gradients, so this is flat ink. */
     val brandGradient: Brush get() = SolidColor(Ink)
 
-    /** Kept for compatibility; flat emerald. */
-    val goldGradient: Brush get() = SolidColor(Emerald)
+    /** Kept for compatibility; flat brand blue. */
+    val goldGradient: Brush get() = SolidColor(Blue)
 }
 
 /**
@@ -102,22 +108,22 @@ internal val LightAcuranzaColors = AcuranzaColors(
     alert = BrandPalette.Red,
     good = BrandPalette.Emerald,
     tip = BrandPalette.Blue,
-    gold = BrandPalette.Emerald,
+    gold = BrandPalette.Blue,
     cardSurface = BrandPalette.Card,
     cardSurfaceHigh = BrandPalette.Fill,
     glass = BrandPalette.Card,
     glassBorder = BrandPalette.Hairline,
     subtleText = BrandPalette.InkSecondary,
     divider = BrandPalette.Divider,
-    shimmerBase = Color(0xFFEDEDEA),
-    shimmerHighlight = Color(0xFFF7F7F5),
+    shimmerBase = Color(0xFFE9EDF4),
+    shimmerHighlight = BrandPalette.Paper,
     isDark = false,
     ink = BrandPalette.Ink,
     onInk = Color.White,
     tertiaryText = BrandPalette.InkTertiary,
     hairline = BrandPalette.Hairline,
-    accent = BrandPalette.Emerald,
-    accentTint = BrandPalette.EmeraldTint,
+    accent = BrandPalette.Blue,
+    accentTint = BrandPalette.BlueTint,
     alertTint = BrandPalette.RedTint,
     warningTint = BrandPalette.AmberTint,
     tipTint = BrandPalette.BlueTint,
@@ -131,8 +137,8 @@ internal val DarkAcuranzaColors = AcuranzaColors(
     warning = Color(0xFFF59E0B),
     alert = Color(0xFFF87171),
     good = BrandPalette.EmeraldBright,
-    tip = Color(0xFF60A5FA),
-    gold = BrandPalette.EmeraldBright,
+    tip = BrandPalette.BlueBright,
+    gold = BrandPalette.BlueBright,
     cardSurface = BrandPalette.NightCard,
     cardSurfaceHigh = BrandPalette.NightFill,
     glass = BrandPalette.NightCard,
@@ -146,8 +152,8 @@ internal val DarkAcuranzaColors = AcuranzaColors(
     onInk = BrandPalette.Night,
     tertiaryText = BrandPalette.SnowTertiary,
     hairline = BrandPalette.NightHairline,
-    accent = BrandPalette.EmeraldBright,
-    accentTint = BrandPalette.EmeraldTintDark,
+    accent = BrandPalette.BlueBright,
+    accentTint = BrandPalette.BlueTintDark,
     alertTint = Color(0xFF2A1414),
     warningTint = Color(0xFF2A2010),
     tipTint = Color(0xFF14202F),

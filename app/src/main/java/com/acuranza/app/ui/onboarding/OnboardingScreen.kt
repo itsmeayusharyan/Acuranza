@@ -96,12 +96,10 @@ private const val NOTIFICATIONS_STEP = 3
 
 @Composable
 fun OnboardingScreen() {
+    val c = LocalContainer.current
     var step by rememberSaveable { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
-    val finish: () -> Unit = {
-        val c = LocalContainer.current
-        scope.launch { c.settings.setOnboardingDone(true) }
-    }
+    val finish: () -> Unit = { scope.launch { c.settings.setOnboardingDone(true) } }
     BackHandler(enabled = step > 0) { step-- }
 
     Column(

@@ -5,7 +5,7 @@
 Please **don't open a public issue** for security problems. Email **jha.8@alumni.iitj.ac.in** with:
 
 - what you found and how to reproduce it,
-- the Acuranza version and edition (standard or offline) and your Android version.
+- the Acuranza version and your Android version.
 
 You'll get a reply within a few days. Once a fix is released, you'll be credited if you wish.
 
@@ -17,9 +17,8 @@ this data never leaves the phone.
 **Protections**
 
 - **No servers or accounts:** Acuranza has no backend, no analytics and no third-party SDKs.
-- **Network:** the standard edition only fetches public NPS NAVs and, once a day, the latest release number from
-  the GitHub API (no personal data in either request; the update check is off for app-store installs and can be
-  turned off in More › Updates). The offline edition has no INTERNET permission at all.
+- **Network:** none. The APK requests no network permission, so no code path can reach the
+  internet; this is verified against every release artifact.
 - **Encryption at rest:** the database is encrypted with SQLCipher (AES-256). Its key is random, generated on
   the device and stored wrapped by a non-exportable AES-GCM key in the Android Keystore.
 - **Backups:** user-initiated exports are encrypted with AES-256-GCM and a PBKDF2-SHA256 key (600,000

@@ -193,9 +193,6 @@ fun TransactionDetailScreen(nav: NavController, id: Long) {
                     nav.navigate(Routes.PENDING_ACCOUNTS) { launchSingleTop = true }
                 }, onSetBalance = { nav.navigate(Routes.account(acc.id)) { launchSingleTop = true } })
             }
-            if (t.type != com.acuranza.app.model.TxnType.TRANSFER) {
-                com.acuranza.app.ui.household.HouseholdSwitch(com.acuranza.app.sync.HouseholdKind.TXN, t.id)
-            }
             com.acuranza.app.ui.features.TxnExtras(t, state.categories)
             Spacer(Modifier.height(24.dp))
         }

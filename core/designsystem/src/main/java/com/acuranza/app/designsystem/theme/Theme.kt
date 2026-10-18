@@ -20,18 +20,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 private val DarkScheme: ColorScheme = darkColorScheme(
-    primary = BrandPalette.Snow,
+    primary = BrandPalette.BlueBright,
     onPrimary = BrandPalette.Night,
-    primaryContainer = BrandPalette.NightFill,
-    onPrimaryContainer = BrandPalette.Snow,
+    primaryContainer = BrandPalette.BlueTintDark,
+    onPrimaryContainer = Color(0xFFBFDBFE),
     secondary = BrandPalette.EmeraldBright,
     onSecondary = BrandPalette.Night,
     secondaryContainer = BrandPalette.EmeraldTintDark,
     onSecondaryContainer = Color(0xFFA7F3D0),
-    tertiary = BrandPalette.EmeraldBright,
+    tertiary = BrandPalette.BlueBright,
     onTertiary = BrandPalette.Night,
-    tertiaryContainer = BrandPalette.EmeraldTintDark,
-    onTertiaryContainer = Color(0xFFA7F3D0),
+    tertiaryContainer = BrandPalette.BlueTintDark,
+    onTertiaryContainer = Color(0xFFBFDBFE),
     error = Color(0xFFF87171),
     onError = BrandPalette.Night,
     errorContainer = Color(0xFF2A1414),
@@ -52,23 +52,23 @@ private val DarkScheme: ColorScheme = darkColorScheme(
     outlineVariant = BrandPalette.NightHairline,
     inverseSurface = BrandPalette.Snow,
     inverseOnSurface = BrandPalette.Night,
-    inversePrimary = BrandPalette.Ink,
+    inversePrimary = BrandPalette.BlueDeep,
     scrim = Color.Black,
 )
 
 private val LightScheme: ColorScheme = lightColorScheme(
-    primary = BrandPalette.Ink,
+    primary = BrandPalette.Blue,
     onPrimary = Color.White,
-    primaryContainer = BrandPalette.Fill,
-    onPrimaryContainer = BrandPalette.Ink,
+    primaryContainer = BrandPalette.BlueTint,
+    onPrimaryContainer = BrandPalette.BlueDeep,
     secondary = BrandPalette.Emerald,
     onSecondary = Color.White,
     secondaryContainer = BrandPalette.EmeraldTint,
     onSecondaryContainer = BrandPalette.EmeraldDeep,
-    tertiary = BrandPalette.Emerald,
+    tertiary = BrandPalette.Blue,
     onTertiary = Color.White,
-    tertiaryContainer = BrandPalette.EmeraldTint,
-    onTertiaryContainer = BrandPalette.EmeraldDeep,
+    tertiaryContainer = BrandPalette.BlueTint,
+    onTertiaryContainer = BrandPalette.BlueDeep,
     error = BrandPalette.Red,
     onError = Color.White,
     errorContainer = BrandPalette.RedTint,
@@ -89,7 +89,7 @@ private val LightScheme: ColorScheme = lightColorScheme(
     outlineVariant = BrandPalette.Divider,
     inverseSurface = BrandPalette.Ink,
     inverseOnSurface = Color.White,
-    inversePrimary = BrandPalette.EmeraldBright,
+    inversePrimary = BrandPalette.BlueDeep,
     scrim = Color.Black,
 )
 
@@ -132,12 +132,12 @@ val LocalSpacing = staticCompositionLocalOf { Spacing() }
  * Material slots come from [MaterialTheme]; extra semantic colours from [AcuranzaTheme.colors]
  * and spacing from [AcuranzaTheme.spacing].
  *
- * @param darkTheme light by default; pass `true` for the dark theme.
+ * @param darkTheme dark by default (Acuranza's first-launch appearance); pass `false` for light.
  * @param dynamicColor use Material You wallpaper colours on Android 12+ (brand colours otherwise).
  */
 @Composable
 fun AcuranzaTheme(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {

@@ -8,8 +8,7 @@ the main F-Droid repository. F-Droid builds the app from source and signs it wit
 1. **Make the GitHub repository public** (`gh repo edit AIM-IT4/kosh --visibility public`). F-Droid can only
    build from public source.
 2. **Release first**: bumping `versionName`/`versionCode` on main makes the Release workflow tag `v<versionName>`
-   and attach `Acuranza.apk` and `Acuranza-offline.apk`. Update the build entry in `metadata/com.acuranza.app.yml` (and the
-   `.offline.yml` copy) to that version. After inclusion F-Droid picks up new tags on its own.
+   and attach `Acuranza.apk`. Write a fresh F-Droid metadata file for `com.acuranza.app` at that version. After inclusion F-Droid picks up new tags on its own.
 3. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` for that release. F-Droid shows the
    title, descriptions, icon and screenshots from `fastlane/metadata/android/en-US/`.
 
@@ -18,8 +17,7 @@ the main F-Droid repository. F-Droid builds the app from source and signs it wit
 1. Create an account on [GitLab](https://gitlab.com) and fork
    [fdroid/fdroiddata](https://gitlab.com/fdroid/fdroiddata).
 2. In your fork, add `metadata/com.acuranza.app.yml` (copy from this repository's `metadata/` folder).
-   Optionally add `metadata/com.acuranza.app.offline.yml` for the offline edition as a second app.
-3. Optional local check (needs Docker or Linux):
+   3. Optional local check (needs Docker or Linux):
    `fdroid readmeta && fdroid lint com.acuranza.app && fdroid build -v -l com.acuranza.app`.
 4. Commit with the message `New app: Acuranza` and open a merge request against `fdroid/fdroiddata`.
    Fill in the template; mention that the app reads SMS to import bank transactions and that all
@@ -44,6 +42,5 @@ the main F-Droid repository. F-Droid builds the app from source and signs it wit
   the NDK on the build machine doesn't matter. Release builds skip the Gradle build cache (`--no-build-cache`):
   a cached Kotlin compile can differ from a clean one (Compose stability markers), and F-Droid always builds
   clean.
-- **Anti-features:** none expected. The standard edition fetches public NPS prices from npsnav.in, and checks the
-  GitHub API for a newer release once a day only when it wasn't installed by F-Droid or another store (the F-Droid
-  build leaves updates to F-Droid; the user can turn the check on or off). The offline edition never uses the network.
+- **Anti-features:** none expected. Acuranza has no network permission at all — nothing in it can
+  reach the internet, so there is nothing to disclose and nothing to opt out of.

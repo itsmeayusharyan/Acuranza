@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="widget_bg">#FF16171F</color>
-    <color name="widget_ink">#FFF2F2F7</color>
-    <color name="widget_subtle">#FF9A9CAD</color>
-    <color name="widget_track">#FF2A2B36</color>
-    <color name="widget_accent">#FF8F84FF</color>
-    <color name="widget_button">#FF23242E</color>
+    <color name="widget_bg">#FF192134</color>
+    <color name="widget_ink">#FFF1F5F9</color>
+    <color name="widget_subtle">#FF94A3B8</color>
+    <color name="widget_track">#FF2A3A5C</color>
+    <color name="widget_accent">#FF60A5FA</color>
+    <color name="widget_button">#FF1E2942</color>
 </resources>
