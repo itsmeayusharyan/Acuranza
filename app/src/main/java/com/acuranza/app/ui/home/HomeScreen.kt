@@ -294,7 +294,7 @@ fun HomeScreen(nav: NavController) {
         hidden = hidden,
         loadingDemo = loadingDemo,
         onToggleHidden = { vm.toggleHidden(hidden) },
-        onInsights = { nav.navigate(Routes.INSIGHTS) },
+        onInsights = { nav.navigateToTab(Routes.INSIGHTS) },
         onReview = { nav.navigate(Routes.REVIEW) },
         onBills = { nav.navigate(Routes.BILLS) },
         onActivity = { nav.navigateToTab(Routes.TRANSACTIONS) },

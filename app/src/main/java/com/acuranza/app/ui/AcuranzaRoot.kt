@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.ui.draw.clip
@@ -20,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -353,6 +355,16 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
                 BottomBar(nav, current)
             }
         },
+        floatingActionButton = {
+            AnimatedVisibility(
+                current == Routes.HOME || current == Routes.TRANSACTIONS,
+                enter = fadeIn(tween(180)),
+                exit = fadeOut(tween(120)),
+            ) {
+                AddFab { nav.navigate(Routes.addTxn()) }
+            }
+        },
+        floatingActionButtonPosition = androidx.compose.material3.FabPosition.End,
     ) { padding ->
         Box(Modifier.padding(bottom = if (showBar) padding.calculateBottomPadding() else 0.dp)) {
             AcuranzaNavHost(nav)
@@ -362,40 +374,32 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
 
 @Composable
 private fun BottomBar(nav: NavHostController, current: String?) {
-    AcuranzaBottomBar(current, onTab = { route -> nav.navigateToTab(route) }, onAdd = { nav.navigate(Routes.addTxn()) })
+    AcuranzaBottomBar(current, onTab = { route -> nav.navigateToTab(route) })
 }
 
-/** Circular icon destinations flanking a raised ink add-circle, on a hairline-topped surface. */
+/**
+ * Five evenly spaced, icon-only destinations. The active one sits in a solid ink circle with a
+ * contrasting icon; inactive icons are plain outlines. Each slot is a full-height touch target
+ * whose content description carries the label.
+ */
 @Composable
-fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit, onAdd: () -> Unit) {
+fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().background(AcuranzaTheme.colors.cardSurface)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(AcuranzaTheme.colors.hairline))
         Row(
             Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .height(66.dp),
+                .height(64.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Tabs.forEachIndexed { index, tab ->
-                if (index == 2) {
-                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                        Box(
-                            Modifier
-                                .size(52.dp)
-                                .clip(CircleShape)
-                                .background(AcuranzaTheme.colors.ink)
-                                .border(1.dp, AcuranzaTheme.colors.hairline, CircleShape)
-                                .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onAdd)
-                                .semantics { contentDescription = "Add transaction" },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Outlined.Add, contentDescription = null, tint = AcuranzaTheme.colors.onInk, modifier = Modifier.size(24.dp))
-                        }
-                    }
-                }
+            Tabs.forEach { tab ->
                 val selected = current == tab.route
-                val tint = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText
+                val circle by animateColorAsState(
+                    targetValue = if (selected) AcuranzaTheme.colors.ink else Color.Transparent,
+                    animationSpec = tween(180),
+                    label = "tab-circle",
+                )
                 Box(
                     Modifier
                         .weight(1f)
@@ -415,16 +419,38 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit, onAdd: () -> Un
                 ) {
                     Box(
                         Modifier
-                            .size(40.dp)
+                            .size(44.dp)
                             .clip(CircleShape)
-                            .background(if (selected) AcuranzaTheme.colors.accent.copy(alpha = 0.14f) else Color.Transparent),
+                            .background(circle),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+                        Icon(
+                            if (selected) tab.selectedIcon else tab.icon,
+                            contentDescription = null,
+                            tint = if (selected) AcuranzaTheme.colors.onInk else AcuranzaTheme.colors.tertiaryText,
+                            modifier = Modifier.size(22.dp),
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+/** The corner add button, shown above the bar on Home and Transactions. */
+@Composable
+private fun AddFab(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        Modifier
+            .size(56.dp)
+            .clip(shape)
+            .background(AcuranzaTheme.colors.ink)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .semantics { contentDescription = "Add transaction" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Outlined.Add, contentDescription = null, tint = AcuranzaTheme.colors.onInk, modifier = Modifier.size(24.dp))
     }
 }
 

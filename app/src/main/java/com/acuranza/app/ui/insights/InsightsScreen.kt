@@ -130,9 +130,8 @@ fun InsightsScreen(nav: NavController) {
     var refreshing by remember { mutableStateOf(false) }
 
     AcuranzaScreen(
-        title = "Insights",
+        title = "Analytics",
         subtitle = "Worked out on your phone, from your own data",
-        onBack = { nav.popBackSafely() },
         actions = { IconButton(onClick = vm::restoreDismissed) { Icon(Icons.Outlined.Restore, contentDescription = "Show dismissed insights") } },
     ) { padding ->
         PullToRefreshBox(

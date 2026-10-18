@@ -44,6 +44,7 @@ import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
@@ -160,9 +161,8 @@ fun MoreScreen(nav: NavController) {
             item(key = "shortcuts") {
                 Section("Manage") {
                     ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) { nav.navigate(Routes.ACCOUNTS) }
+                    ActionRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges) { nav.navigate(Routes.PLANNING) }
                     ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
-                    ActionRow("Insights", "Offline suggestions for your budget and goals", Icons.Outlined.AutoAwesome) { nav.navigate(Routes.INSIGHTS) }
-                    ActionRow("Categories", null, Icons.Outlined.Category) { nav.navigate(Routes.CATEGORIES) }
                 }
             }
             item(key = "money") {
@@ -427,7 +427,7 @@ private fun PasswordDialog(title: String, message: String, confirm: Boolean, onD
 fun CategoriesScreen(nav: NavController) {
     val c = LocalContainer.current
     val cats by c.categories.observeAll().collectAsStateWithLifecycle(initialValue = emptyList())
-    AcuranzaScreen(title = "Categories", subtitle = "Recategorise a transaction to teach Acuranza your merchants", onBack = { nav.popBackSafely() }) { padding ->
+    AcuranzaScreen(title = "Categories", subtitle = "Recategorise a transaction to teach Acuranza your merchants") { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp, 0.dp, 20.dp, 40.dp)) {
             listOf(TxnType.EXPENSE to "Spending", TxnType.INCOME to "Income").forEach { (type, title) ->
                 item(key = title) {

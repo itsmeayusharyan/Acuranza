@@ -83,7 +83,7 @@ class ScreensScreenshotTest {
                 Box(Modifier.weight(1f)) {
                     content()
                 }
-                if (tab != null) AcuranzaBottomBar(tab, onTab = {}, onAdd = {})
+                if (tab != null) AcuranzaBottomBar(tab, onTab = {})
             }
           }
         }
@@ -182,10 +182,10 @@ class ScreensScreenshotTest {
     )
 
     @Test
-    fun plan_budgets() = paparazzi.snapshot { Frame(tab = Routes.PLANNING) { PlanningContent(planState(), tab = 0) } }
+    fun plan_budgets() = paparazzi.snapshot { Frame { PlanningContent(planState(), tab = 0) } }
 
     @Test
-    fun plan_goals() = paparazzi.snapshot { Frame(tab = Routes.PLANNING) { PlanningContent(planState(), tab = 1) } }
+    fun plan_goals() = paparazzi.snapshot { Frame { PlanningContent(planState(), tab = 1) } }
 
     @Test
     fun card_bills() = paparazzi.snapshot {
@@ -229,6 +229,16 @@ class ScreensScreenshotTest {
                 Spacer(Modifier.height(24.dp))
             }
         }
+    }
+
+    @Test
+    fun bottom_bar_analytics_active() = paparazzi.snapshot {
+        Frame(tab = Routes.INSIGHTS) { Box(Modifier.fillMaxSize()) }
+    }
+
+    @Test
+    fun bottom_bar_categories_active() = paparazzi.snapshot {
+        Frame(tab = Routes.CATEGORIES) { Box(Modifier.fillMaxSize()) }
     }
 
     @Test
