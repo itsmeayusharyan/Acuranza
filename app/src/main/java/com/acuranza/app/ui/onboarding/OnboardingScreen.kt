@@ -166,7 +166,7 @@ private fun StepPage(
                     Modifier
                         .padding(top = 8.dp)
                         .size(56.dp)
-                        .clip(RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(AcuranzaTheme.colors.ink),
                     contentAlignment = Alignment.Center,
                 ) { Icon(icon, contentDescription = null, tint = AcuranzaTheme.colors.onInk) }

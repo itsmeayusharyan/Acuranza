@@ -159,7 +159,7 @@ fun MoreScreen(nav: NavController) {
             item(key = "shortcuts") {
                 Section("Manage") {
                     ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) { nav.navigate(Routes.ACCOUNTS) }
-                    ActionRow("Review imports", "Confirm transactions imported from SMS", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
+                    ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
                     ActionRow("Insights", "Offline suggestions for your budget and goals", Icons.Outlined.AutoAwesome) { nav.navigate(Routes.INSIGHTS) }
                     ActionRow("Categories", null, Icons.Outlined.Category) { nav.navigate(Routes.CATEGORIES) }
                 }

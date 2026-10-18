@@ -87,7 +87,7 @@ fun CreditCardVisual(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1.586f)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(InkFace)
             .semantics {
                 contentDescription = "${bank.displayName} card ${last4?.let { "ending $it" } ?: ""}"

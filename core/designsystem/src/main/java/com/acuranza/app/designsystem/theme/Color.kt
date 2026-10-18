@@ -7,43 +7,46 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 
 /**
- * The Acuranza palette: cool slate-navy surfaces, off-white ink, one trust-blue accent for the brand
- * and interactions, and green reserved for money coming in. There are deliberately no gradients;
- * the old gradient names resolve to flat colours.
+ * The Acuranza palette.
+ *
+ * Dark (the default) is a deep slate-navy with clearly layered surfaces: background, card and
+ * fill step apart in lightness while hue stays constant. Text uses one ink ramp; colour is spent
+ * only where it carries meaning — green for money in, amber/red for attention, the brand blue
+ * for actions. Light mode mirrors the same structure. There are deliberately no gradients.
  */
 object BrandPalette {
     // Neutrals (light)
-    val Paper = Color(0xFFF4F6FA)
+    val Paper = Color(0xFFF5F6F8)
     val Card = Color(0xFFFFFFFF)
-    val Hairline = Color(0xFFE3E8F0)
-    val Divider = Color(0xFFEAEEF5)
-    val Ink = Color(0xFF0F172A)
-    val InkSecondary = Color(0xFF475569)
+    val Hairline = Color(0xFFE6E8ED)
+    val Divider = Color(0xFFEEF0F3)
+    val Ink = Color(0xFF0F1728)
+    val InkSecondary = Color(0xFF4B5565)
     val InkTertiary = Color(0xFF8A94A6)
-    val Fill = Color(0xFFEDF0F7)
+    val Fill = Color(0xFFEFF1F4)
 
-    // Neutrals (dark) — deep navy, not black
-    val Night = Color(0xFF0F172A)
-    val NightCard = Color(0xFF192134)
-    val NightHairline = Color(0xFF2A3A5C)
-    val NightFill = Color(0xFF1E2942)
-    val Snow = Color(0xFFF1F5F9)
-    val SnowSecondary = Color(0xFF94A3B8)
-    val SnowTertiary = Color(0xFF64748B)
+    // Neutrals (dark) — deep slate-navy, not black
+    val Night = Color(0xFF0B1220)
+    val NightCard = Color(0xFF151E2E)
+    val NightHairline = Color(0xFF2A3850)
+    val NightFill = Color(0xFF1D2737)
+    val Snow = Color(0xFFF3F6FB)
+    val SnowSecondary = Color(0xFF9FADC4)
+    val SnowTertiary = Color(0xFF6C7B96)
 
     // Accent — the brand blue
     val Blue = Color(0xFF2563EB)
     val BlueDeep = Color(0xFF1D4ED8)
-    val BlueBright = Color(0xFF60A5FA)
+    val BlueBright = Color(0xFF66A3FF)
     val BlueTint = Color(0xFFEFF6FF)
-    val BlueTintDark = Color(0xFF17263F)
+    val BlueTintDark = Color(0xFF16233C)
 
     // Money in — the only green
-    val Emerald = Color(0xFF059669)
+    val Emerald = Color(0xFF047857)
     val EmeraldDeep = Color(0xFF047857)
     val EmeraldBright = Color(0xFF34D399)
     val EmeraldTint = Color(0xFFECFDF5)
-    val EmeraldTintDark = Color(0xFF0D2A21)
+    val EmeraldTintDark = Color(0xFF0E2E24)
 
     // Status
     val Red = Color(0xFFDC2626)
@@ -51,7 +54,7 @@ object BrandPalette {
     val Amber = Color(0xFFB45309)
     val AmberTint = Color(0xFFFFFBEB)
 
-    /** Kept for compatibility; Acuranza uses no gradients, so this is flat ink. */
+    /** Kept for compatibility; Acuranza uses no gradients, so this is flat colour. */
     val brandGradient: Brush get() = SolidColor(Ink)
 
     /** Kept for compatibility; flat brand blue. */
@@ -115,7 +118,7 @@ internal val LightAcuranzaColors = AcuranzaColors(
     glassBorder = BrandPalette.Hairline,
     subtleText = BrandPalette.InkSecondary,
     divider = BrandPalette.Divider,
-    shimmerBase = Color(0xFFE9EDF4),
+    shimmerBase = Color(0xFFE9EBEF),
     shimmerHighlight = BrandPalette.Paper,
     isDark = false,
     ink = BrandPalette.Ink,
@@ -134,7 +137,7 @@ internal val DarkAcuranzaColors = AcuranzaColors(
     income = BrandPalette.EmeraldBright,
     expense = BrandPalette.Snow,
     transfer = BrandPalette.SnowSecondary,
-    warning = Color(0xFFF59E0B),
+    warning = Color(0xFFFBBF24),
     alert = Color(0xFFF87171),
     good = BrandPalette.EmeraldBright,
     tip = BrandPalette.BlueBright,
@@ -154,9 +157,9 @@ internal val DarkAcuranzaColors = AcuranzaColors(
     hairline = BrandPalette.NightHairline,
     accent = BrandPalette.BlueBright,
     accentTint = BrandPalette.BlueTintDark,
-    alertTint = Color(0xFF2A1414),
-    warningTint = Color(0xFF2A2010),
-    tipTint = Color(0xFF14202F),
+    alertTint = Color(0xFF2C1518),
+    warningTint = Color(0xFF2B2312),
+    tipTint = BrandPalette.BlueTintDark,
     fill = BrandPalette.NightFill,
 )
 

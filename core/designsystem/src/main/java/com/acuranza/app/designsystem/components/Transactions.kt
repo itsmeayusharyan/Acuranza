@@ -77,11 +77,11 @@ fun TransactionRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 2.dp, vertical = 12.dp),
+            .padding(horizontal = 2.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box {
-            CategoryIcon(iconName = iconName, color = categoryColor, size = 36.dp)
+            CategoryIcon(iconName = iconName, color = categoryColor, size = 40.dp)
             if (unreviewed) {
                 Box(
                     Modifier
@@ -96,7 +96,7 @@ fun TransactionRow(
                 )
             }
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 title,
@@ -118,7 +118,7 @@ fun TransactionRow(
                 )
             }
         }
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(12.dp))
         Column(horizontalAlignment = Alignment.End) {
             AmountText(paise = amount, type = type, hidden = hidden, style = AmountStyles.medium)
             if (trailingNote != null) {
@@ -159,7 +159,7 @@ fun DateHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 18.dp, bottom = 6.dp, start = 4.dp, end = 4.dp),
+            .padding(top = 20.dp, bottom = 8.dp, start = 4.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -218,8 +218,8 @@ fun SwipeActionsRow(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(color.copy(alpha = 0.9f))
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(color.copy(alpha = 0.92f))
                     .padding(horizontal = 22.dp),
                 contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd,
             ) {

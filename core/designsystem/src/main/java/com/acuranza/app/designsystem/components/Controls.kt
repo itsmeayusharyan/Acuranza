@@ -217,14 +217,14 @@ fun EmptyState(
     ) {
         Box(
             Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(64.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
                 .background(AcuranzaTheme.colors.fill),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = AcuranzaTheme.colors.subtleText, modifier = Modifier.size(26.dp))
+            Icon(icon, contentDescription = null, tint = AcuranzaTheme.colors.subtleText, modifier = Modifier.size(28.dp))
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(

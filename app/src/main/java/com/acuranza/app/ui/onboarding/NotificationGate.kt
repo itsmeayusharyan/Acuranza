@@ -130,7 +130,7 @@ fun NotificationReasons() {
 private fun ReasonRow(icon: ImageVector, title: String, text: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
         Spacer(Modifier.width(14.dp))

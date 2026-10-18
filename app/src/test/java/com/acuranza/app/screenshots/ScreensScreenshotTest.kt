@@ -21,8 +21,7 @@ import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Inbox
-import androidx.compose.material.icons.outlined.Sms
-import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -213,16 +212,15 @@ class ScreensScreenshotTest {
                 Section("Manage") {
                     ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) {}
                     ActionRow("Card bills", "Due dates and payments", Icons.Outlined.CreditCard) {}
-                    ActionRow("Review imports", "Confirm transactions imported from SMS", Icons.Outlined.Inbox) {}
+                    ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) {}
                 }
                 Section("Appearance & privacy") {
-                    SegmentedTabs(listOf("System", "Light", "Dark"), 1, onSelect = {}, modifier = Modifier.padding(vertical = 8.dp))
+                    SegmentedTabs(listOf("System", "Light", "Dark"), 2, onSelect = {}, modifier = Modifier.padding(vertical = 8.dp))
                     SwitchRow("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff)
                     SwitchRow("App lock", "Fingerprint, face or screen lock when opening Acuranza", true, {}, Icons.Outlined.Fingerprint)
                 }
-                Section("Bank SMS") {
-                    SwitchRow("Import bank SMS automatically", "New bank messages are added as they arrive. SMS never leave your phone.", true, {}, Icons.Outlined.Sms)
-                    ActionRow("Scan inbox now", "Last scan 2 hours ago", Icons.Outlined.Sync) {}
+                Section("Notifications") {
+                    SwitchRow("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.NotificationsActive)
                 }
                 Section("Your data") {
                     ActionRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup) {}

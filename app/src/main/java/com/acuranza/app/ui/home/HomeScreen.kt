@@ -631,7 +631,7 @@ fun HomeContent(
                     SectionHeader("Recent", actionLabel = "See all", onAction = onActivity)
                     AcuranzaCard(contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp)) {
                         state.recent.forEachIndexed { i, t ->
-                            if (i > 0) ListHairline(start = 48.dp)
+                            if (i > 0) ListHairline(start = 56.dp)
                             TxnRow(t, hidden) { onTransaction(t.txn.id) }
                         }
                     }
