@@ -424,6 +424,74 @@ fun PrimaryButton(
 }
 
 
+/** A square quick-action tile: icon in a filled rounded square with a label below. */
+@Composable
+fun QuickAction(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier
+                .size(46.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(AcuranzaTheme.colors.fill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = AcuranzaTheme.colors.ink, modifier = Modifier.size(21.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText, maxLines = 1)
+    }
+}
+
+/**
+ * A compact action button for use on an ink card: [filled] renders a white face with ink text,
+ * otherwise a white-outlined ghost with white text.
+ */
+@Composable
+fun HeroActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    filled: Boolean = true,
+    icon: ImageVector? = null,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier = modifier
+            .heightIn(min = 40.dp)
+            .clip(shape)
+            .then(
+                if (filled) Modifier.background(Color.White)
+                else Modifier.border(1.dp, Color.White.copy(alpha = 0.55f), shape),
+            )
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = if (filled) Color(0xFF111111) else Color.White, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (filled) Color(0xFF111111) else Color.White,
+            maxLines = 1,
+        )
+    }
+}
+
 /** A secondary button: white with a hairline border and ink text. */
 @Composable
 fun SecondaryButton(

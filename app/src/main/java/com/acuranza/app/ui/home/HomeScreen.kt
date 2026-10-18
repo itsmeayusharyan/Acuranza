@@ -54,7 +54,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.acuranza.app.designsystem.components.AmountText
-import com.acuranza.app.designsystem.components.BalanceHeroCard
 import com.acuranza.app.designsystem.components.BankBadge
 import com.acuranza.app.designsystem.components.ChartLegend
 import com.acuranza.app.designsystem.components.ChartSlice
@@ -107,6 +106,16 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.acuranza.app.ui.nav.navigateToTab
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.CompositionLocalProvider
+import com.acuranza.app.designsystem.components.GradientCard
+import com.acuranza.app.designsystem.components.HeroActionButton
+import com.acuranza.app.designsystem.components.QuickAction
+import com.acuranza.app.designsystem.components.Sparkline
 
 data class HomeState(
     val loading: Boolean = true,
@@ -311,6 +320,10 @@ fun HomeScreen(nav: NavController) {
         onDismissIgnoredSms = { vm.dismissIgnoredNotice() },
         onUncategorised = { nav.navigate(Routes.UNCATEGORISED) },
         onSafeToSpend = { planSheet = true },
+        onAddExpense = { nav.navigate(Routes.addTxn(TxnType.EXPENSE)) },
+        onAddIncome = { nav.navigate(Routes.addTxn(TxnType.INCOME)) },
+        onTransfer = { nav.navigate(Routes.addTxn(TxnType.TRANSFER)) },
+        onReports = { nav.navigate(Routes.REPORTS) },
         onLoadDemo = {
             loadingDemo = true
             scope.launch {
@@ -349,6 +362,10 @@ fun HomeContent(
     onDismissIgnoredSms: () -> Unit = {},
     onUncategorised: () -> Unit = {},
     onSafeToSpend: () -> Unit = {},
+    onAddExpense: () -> Unit = {},
+    onAddIncome: () -> Unit = {},
+    onTransfer: () -> Unit = {},
+    onReports: () -> Unit = {},
     listState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
     val pad = Modifier.padding(horizontal = 20.dp)
@@ -381,23 +398,50 @@ fun HomeContent(
 
         item(key = "hero") {
             val nw = state.netWorth
-            Column(
-                pad.padding(top = 20.dp)
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
-            ) {
-                BalanceHeroCard(
-                    label = "Net worth",
-                    amount = nw?.total ?: 0,
-                    trend = state.trend,
-                    hidden = hidden,
-                )
-                if (nw != null) {
-                    Spacer(Modifier.height(14.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        MiniFigure("Cash & bank", nw.liquid, hidden)
-                        MiniFigure(if (nw.loans > 0) "Dues & loans" else "Card dues", nw.cardDebt + nw.loans, hidden)
+            GradientCard(pad.padding(top = 20.dp), contentPadding = PaddingValues(20.dp)) {
+                CompositionLocalProvider(LocalContentColor provides Color.White) {
+                    Text("Net worth", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.72f))
+                    Spacer(Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
+                        AmountText(
+                            paise = nw?.total ?: 0,
+                            style = AmountStyles.hero,
+                            color = Color.White,
+                            hidden = hidden,
+                            animate = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (state.trend.size >= 2) {
+                            Sparkline(
+                                values = state.trend,
+                                modifier = Modifier.padding(bottom = 8.dp).size(width = 72.dp, height = 28.dp),
+                                color = Color.White,
+                                fill = false,
+                            )
+                        }
+                    }
+                    if (nw != null) {
+                        Spacer(Modifier.height(14.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                            MiniFigure("Cash & bank", nw.liquid, hidden, onDark = true)
+                            MiniFigure(if (nw.loans > 0) "Dues & loans" else "Card dues", nw.cardDebt + nw.loans, hidden, onDark = true)
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        HeroActionButton("Add expense", onAddExpense, Modifier.weight(1f), filled = true, icon = Icons.Outlined.Add)
+                        HeroActionButton("Add income", onAddIncome, Modifier.weight(1f), filled = false, icon = Icons.Outlined.Add)
                     }
                 }
+            }
+        }
+
+        item(key = "quick") {
+            Row(pad.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickAction("Transfer", Icons.Outlined.SwapHoriz, onTransfer, Modifier.weight(1f))
+                QuickAction("Bills", Icons.AutoMirrored.Outlined.ReceiptLong, onBills, Modifier.weight(1f))
+                QuickAction("Reports", Icons.Outlined.Assessment, onReports, Modifier.weight(1f))
+                QuickAction("Accounts", Icons.Outlined.AccountBalance, onAccounts, Modifier.weight(1f))
             }
         }
 
@@ -546,21 +590,39 @@ fun HomeContent(
                         Spacer(Modifier.height(16.dp))
                         spend.take(6).forEachIndexed { i, c ->
                             if (i > 0) ListHairline(start = 18.dp)
-                            Row(
+                            Column(
                                 Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { onCategory(c.categoryKey) }
                                     .padding(vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Box(Modifier.size(8.dp).clip(CircleShape).background(c.category.color()))
-                                Spacer(Modifier.width(10.dp))
-                                Text(c.category?.name ?: c.categoryKey, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 1)
-                                Text(Fmt.pct(c.share * 100, 0), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.tertiaryText)
-                                Spacer(Modifier.width(12.dp))
-                                AmountText(c.total, style = AmountStyles.small, hidden = hidden, compact = true)
-                                Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = AcuranzaTheme.colors.tertiaryText, modifier = Modifier.size(16.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(Modifier.size(8.dp).clip(CircleShape).background(c.category.color()))
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(c.category?.name ?: c.categoryKey, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 1)
+                                    Text(Fmt.pct(c.share * 100, 0), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.tertiaryText)
+                                    Spacer(Modifier.width(12.dp))
+                                    AmountText(c.total, style = AmountStyles.small, hidden = hidden, compact = true)
+                                    Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = AcuranzaTheme.colors.tertiaryText, modifier = Modifier.size(16.dp))
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                // Share of the month's spend, as in the reference breakdown.
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(4.dp)
+                                        .clip(CircleShape)
+                                        .background(AcuranzaTheme.colors.fill),
+                                ) {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth(c.share.coerceIn(0.0, 1.0).toFloat())
+                                            .height(4.dp)
+                                            .clip(CircleShape)
+                                            .background(AcuranzaTheme.colors.accent),
+                                    )
+                                }
                             }
                         }
                     }
@@ -656,10 +718,12 @@ fun HomeContent(
 }
 
 @Composable
-private fun MiniFigure(label: String, value: Long, hidden: Boolean) {
+private fun MiniFigure(label: String, value: Long, hidden: Boolean, onDark: Boolean = false) {
+    val labelColor = if (onDark) Color.White.copy(alpha = 0.72f) else AcuranzaTheme.colors.subtleText
+    val valueColor = if (onDark) Color.White else AcuranzaTheme.colors.ink
     Column {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
-        AmountText(value, style = AmountStyles.small, compact = true, hidden = hidden, color = AcuranzaTheme.colors.ink)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = labelColor)
+        AmountText(value, style = AmountStyles.small, compact = true, hidden = hidden, color = valueColor)
     }
 }
 
