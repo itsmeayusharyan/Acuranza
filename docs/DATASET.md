@@ -1,7 +1,7 @@
 # Merchant dataset
 
-Kosh categorises imported transactions using an open, community-maintained dataset:
-[`core/sms/src/main/resources/kosh/merchants.json`](../core/sms/src/main/resources/kosh/merchants.json).
+Acuranza categorises imported transactions using an open, community-maintained dataset:
+[`core/sms/src/main/resources/acuranza/merchants.json`](../core/sms/src/main/resources/acuranza/merchants.json).
 
 ## Format
 

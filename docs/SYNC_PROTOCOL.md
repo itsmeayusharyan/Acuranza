@@ -6,7 +6,7 @@ end to end over a short-lived TCP connection between the two phones. The feature
 offline edition: `BuildConfig.NETWORK_ENABLED` is false there, and the manifest strips the
 INTERNET, ACCESS_NETWORK_STATE and CAMERA permissions.
 
-Code: `app/src/main/java/com/amitjha/kosh/sync/` (tests are in `app/src/test/.../sync/HouseholdSyncTest.kt`).
+Code: `app/src/main/java/com/acuranza/app/sync/` (tests are in `app/src/test/.../sync/HouseholdSyncTest.kt`).
 
 ## Building blocks
 
@@ -24,12 +24,12 @@ All primitives come from the platform JCA, with no third-party crypto.
 
 1. Phone A taps **Show my code**. A opens a pairing window of 5 minutes and generates a fresh random
    32-byte `secret`. It shows a QR code:
-   `kosh-sync:` + base64url(JSON `{v, id, name, host, port, secret}`).
+   `acuranza-sync:` + base64url(JSON `{v, id, name, host, port, secret}`).
    `id` is a random per-install UUID. `host:port` is A's Wi-Fi address and its listening socket (an
    ephemeral port).
 2. Phone B scans the code, connects to `host:port` and runs the handshake in `PAIR` mode, using
    `authKey = secret`.
-3. Both sides derive `pairKey = HKDF(ecdh, salt = secret, info = "kosh pair" ‖ th)`. They store it
+3. Both sides derive `pairKey = HKDF(ecdh, salt = secret, info = "acuranza pair" ‖ th)`. They store it
    wrapped by the Keystore, together with the peer's id and name.
 4. A closes the pairing window right after one successful pairing, after 5 failed attempts, or
    after 5 minutes. The secret is never stored.
@@ -40,9 +40,9 @@ records.
 
 ## Discovery and transport
 
-- A listening `ServerSocket` and an NSD registration (`_kosh-sync._tcp`, service name `kosh-<id>`)
+- A listening `ServerSocket` and an NSD registration (`_kosh-sync._tcp`, service name `acuranza-<id>`)
   exist only while the Household sync screen is open. Nothing runs in the background.
-- **Sync now** discovers `kosh-<peerId>` through NSD (6 s). If that fails, it uses the last address
+- **Sync now** discovers `acuranza-<peerId>` through NSD (6 s). If that fails, it uses the last address
   that worked. The address is only a hint, because the handshake authenticates the peer.
 - Connect timeout is 8 s and read timeout is 20 s. Only one exchange runs at a time. An extra
   incoming connection while one is busy is dropped.
@@ -56,10 +56,10 @@ C → S  hello1  {v, mode, id, name, pub_c, nonce_c}            (32-byte random 
 S → C  hello2  {v, id, name, pub_s, nonce_s, mac_s}
 C → S  finish  {mac_c}
 
-th    = SHA-256( lp("kosh-sync") ‖ lp(v) ‖ lp(mode) ‖ lp(id_c) ‖ lp(name_c) ‖ lp(pub_c) ‖ lp(nonce_c)
+th    = SHA-256( lp("acuranza-sync") ‖ lp(v) ‖ lp(mode) ‖ lp(id_c) ‖ lp(name_c) ‖ lp(pub_c) ‖ lp(nonce_c)
                  ‖ lp(id_s) ‖ lp(name_s) ‖ lp(pub_s) ‖ lp(nonce_s) )        lp = 4-byte length prefix
-mac_s = HMAC(authKey, "kosh-sync server" ‖ th)
-mac_c = HMAC(authKey, "kosh-sync client" ‖ th)
+mac_s = HMAC(authKey, "acuranza-sync server" ‖ th)
+mac_c = HMAC(authKey, "acuranza-sync client" ‖ th)
 ```
 
 `authKey` is the QR `secret` in `PAIR` mode and the stored `pairKey` in `SYNC` mode. The server picks
@@ -71,8 +71,8 @@ in constant time.
 Session keys, one per direction:
 
 ```
-k_c2s = HKDF(ecdh, salt = authKey, info = "kosh c2s" ‖ th)
-k_s2c = HKDF(ecdh, salt = authKey, info = "kosh s2c" ‖ th)
+k_c2s = HKDF(ecdh, salt = authKey, info = "acuranza c2s" ‖ th)
+k_s2c = HKDF(ecdh, salt = authKey, info = "acuranza s2c" ‖ th)
 ```
 
 ## Secure channel

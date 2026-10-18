@@ -1,6 +1,6 @@
 ---
 name: Bank SMS format
-about: A bank message that Kosh doesn't read correctly
+about: A bank message that Acuranza doesn't read correctly
 labels: sms-format
 ---
 
@@ -12,7 +12,7 @@ labels: sms-format
 paste here
 ```
 
-**What Kosh did** (wrong amount, wrong category, not imported, …):
+**What Acuranza did** (wrong amount, wrong category, not imported, …):
 
 **What it should be** (amount, debit or credit, merchant):
 

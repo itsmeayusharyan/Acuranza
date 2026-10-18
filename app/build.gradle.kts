@@ -7,53 +7,42 @@ plugins {
 }
 
 android {
-    namespace = "com.amitjha.kosh"
+    namespace = "com.acuranza.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.amitjha.kosh"
+        applicationId = "com.acuranza.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 25
-        versionName = "2.3.1"
+        versionCode = 1
+        versionName = "1.0.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
     signingConfigs {
         create("release") {
-            val ks = rootProject.file("keystore/kosh-release.jks")
+            // The release key is generated outside source control; see docs/BUILDING.md. Only the path is fixed here.
+            val ks = rootProject.file("keystore/acuranza-release.jks")
             if (ks.exists()) {
                 storeFile = ks
-                storePassword = providers.gradleProperty("KOSH_STORE_PASSWORD").orNull
-                keyAlias = "kosh"
-                keyPassword = providers.gradleProperty("KOSH_KEY_PASSWORD").orNull
+                storePassword = providers.gradleProperty("ACURANZA_STORE_PASSWORD").orNull
+                keyAlias = "acuranza"
+                keyPassword = providers.gradleProperty("ACURANZA_KEY_PASSWORD").orNull
             }
         }
     }
 
-    // Two editions from one codebase: "standard" (may fetch public NPS prices) and "offline", which has no
-    // INTERNET permission at all, so Android itself guarantees nothing can leave the phone.
-    flavorDimensions += "edition"
-    productFlavors {
-        create("standard") {
-            dimension = "edition"
-            buildConfigField("boolean", "NETWORK_ENABLED", "true")
-        }
-        create("offline") {
-            dimension = "edition"
-            applicationId = "com.amitjha.kosh.offline"
-            buildConfigField("boolean", "NETWORK_ENABLED", "false")
-        }
-    }
+    // Acuranza is offline-only by design: the app has no INTERNET permission, so Android itself
+    // guarantees that nothing can leave the phone. There is a single edition.
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the Kosh key when it is present locally. F-Droid builds without it and, because the build
-            // is reproducible, publishes the APK from the GitHub release with its Kosh signature.
-            if (rootProject.file("keystore/kosh-release.jks").exists()) signingConfig = signingConfigs.getByName("release")
+            // Signed with the Acuranza key when it is present locally. F-Droid builds without it and, because the build
+            // is reproducible, publishes the APK from the GitHub release with its Acuranza signature.
+            if (rootProject.file("keystore/acuranza-release.jks").exists()) signingConfig = signingConfigs.getByName("release")
         }
         // Debug builds use the standard debug key, so a debuggable APK can never install over the real app.
     }
@@ -112,8 +101,6 @@ dependencies {
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.fragment)
     implementation(libs.kotlinx.coroutines.android)
-    // QR codes for household pairing (Apache-2.0)
-    implementation(libs.zxing.android.embedded)
     implementation(libs.sqlcipher.android)
     implementation(libs.androidx.sqlite)
 

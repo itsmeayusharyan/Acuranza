@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.amitjha.kosh.designsystem"
+    namespace = "com.acuranza.app.designsystem"
     compileSdk = 35
     defaultConfig { minSdk = 26 }
     compileOptions {

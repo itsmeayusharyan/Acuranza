@@ -3,17 +3,15 @@
 
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Household sync: find the local Wi-Fi address and the paired phone (mDNS) -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Acuranza is fully offline: it holds no permission that can open a network socket. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- SMS import is optional: Kosh still works for manual tracking on devices without telephony. -->
+    <!-- SMS import is optional: Acuranza still works for manual tracking on devices without telephony. -->
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
-        android:name=".KoshApp"
+        android:name=".AcuranzaApp"
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -21,7 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Kosh">
+        android:theme="@style/Theme.Acuranza">
 
         <activity
             android:name=".MainActivity"

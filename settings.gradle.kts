@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Kosh"
+rootProject.name = "Acuranza"
 
 include(":app")
 include(":core:model")

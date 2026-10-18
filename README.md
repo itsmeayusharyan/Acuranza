@@ -1,5 +1,5 @@
 
-<h1 align="center">Kosh</h1>
+<h1 align="center">Acuranza</h1>
 <p align="center"><b>A private, offline-first personal finance tracker for Android, built for Indian banking.</b></p>
 
 <p align="center">
@@ -9,24 +9,24 @@
   <img src="https://img.shields.io/badge/Android-8.0%2B-111111" alt="Android 8.0+">
 </p>
 
-**Free and open source.** No ads, no account, no servers, no analytics. Kosh never sells data or loans,
+**Free and open source.** No ads, no account, no servers, no analytics. Acuranza never sells data or loans,
 and anyone can read the code to check that your SMS and finances never leave the phone.
 
-Kosh (Sanskrit: *treasury*) tracks income, expenses, credit cards, bills and investments. It reads bank
+Acuranza (Sanskrit: *treasury*) tracks income, expenses, credit cards, bills and investments. It reads bank
 SMS automatically, and turns your data into insights, all on the phone.
 
 ## Download
 
-**[Download Kosh for Android](https://github.com/AIM-IT4/kosh-site/releases/latest/download/Kosh.apk)**:
+**[Download Acuranza for Android](https://github.com/AIM-IT4/kosh-site/releases/latest/download/Acuranza.apk)**:
 the standard edition, Android 8.0+.
-[Kosh-offline.apk](https://github.com/AIM-IT4/kosh-site/releases/latest/download/Kosh-offline.apk) has no
+[Acuranza-offline.apk](https://github.com/AIM-IT4/kosh-site/releases/latest/download/Acuranza-offline.apk) has no
 internet permission at all. Website: [aim-it4.github.io/kosh-site](https://aim-it4.github.io/kosh-site/).
 
-Kosh isn't on the Play Store, so Android may ask you to allow the install. If Play Protect blocks it
+Acuranza isn't on the Play Store, so Android may ask you to allow the install. If Play Protect blocks it
 (it flags every app that reads SMS), pause scanning in **Play Store → Play Protect → ⚙**, install,
 then turn scanning back on.
 
-<p align="center"><img src="docs/screenshots/hero.png" alt="Kosh app screens" width="100%"></p>
+<p align="center"><img src="docs/screenshots/hero.png" alt="Acuranza app screens" width="100%"></p>
 
 ## Screens
 
@@ -114,7 +114,7 @@ The engine modules are plain Kotlin with unit tests.
 ./gradlew :app:assembleOfflineRelease   # offline edition (no INTERNET permission)
 ```
 
-The two editions have different application IDs (`com.amitjha.kosh` and `com.amitjha.kosh.offline`), so both
+The two editions have different application IDs (`com.acuranza.app` and `com.acuranza.app.offline`), so both
 can be installed side by side. CI builds both on every push (see `.github/workflows/ci.yml`).
 
 Release signing reads `keystore/kosh-release.jks` and the `KOSH_STORE_PASSWORD` / `KOSH_KEY_PASSWORD`
@@ -122,16 +122,16 @@ Gradle properties from `~/.gradle/gradle.properties`. Neither is committed.
 
 Pushing a version tag (`git tag v2.0.1 && git push origin v2.0.1`), or running **Release** from the Actions tab
 (which tags the commit with `v<versionName>`), runs `.github/workflows/release.yml`, which
-builds both editions with the release key and publishes them as a GitHub release (`Kosh.apk`, `Kosh-offline.apk`).
+builds both editions with the release key and publishes them as a GitHub release (`Acuranza.apk`, `Acuranza-offline.apk`).
 It reads the key from the `KOSH_KEYSTORE_BASE64`, `KOSH_STORE_PASSWORD` and `KOSH_KEY_PASSWORD` repository secrets.
 
 ## Contributing
 
 Contributions are welcome, especially **bank SMS formats** and **merchant categories**. The merchant rules
-live in an open dataset, [`core/sms/src/main/resources/kosh/merchants.json`](core/sms/src/main/resources/kosh/merchants.json)
+live in an open dataset, [`core/sms/src/main/resources/acuranza/merchants.json`](core/sms/src/main/resources/acuranza/merchants.json)
 (format in [docs/DATASET.md](docs/DATASET.md)). See [CONTRIBUTING.md](CONTRIBUTING.md), and always mask
 account numbers before sharing an SMS. Security issues: see [SECURITY.md](SECURITY.md).
 
 ## License
 
-Kosh is free software under the [GNU General Public License v3.0 or later](LICENSE).
+Acuranza is free software under the [GNU General Public License v3.0 or later](LICENSE).

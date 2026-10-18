@@ -12,6 +12,6 @@ labels: bug
 1.
 2.
 
-**Version**: Kosh x.y.z, standard / offline edition, Android version, phone model
+**Version**: Acuranza x.y.z, standard / offline edition, Android version, phone model
 
 > Please don't include account numbers, balances or other personal financial details.

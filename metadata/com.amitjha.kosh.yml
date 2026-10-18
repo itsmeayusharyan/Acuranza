@@ -7,11 +7,11 @@ SourceCode: https://github.com/AIM-IT4/kosh
 IssueTracker: https://github.com/AIM-IT4/kosh/issues
 Changelog: https://github.com/AIM-IT4/kosh/releases
 
-AutoName: Kosh
+AutoName: Acuranza
 
 RepoType: git
 Repo: https://github.com/AIM-IT4/kosh.git
-Binaries: https://github.com/AIM-IT4/kosh/releases/download/v%v/Kosh.apk
+Binaries: https://github.com/AIM-IT4/kosh/releases/download/v%v/Acuranza.apk
 
 Builds:
   - versionName: 2.3.1

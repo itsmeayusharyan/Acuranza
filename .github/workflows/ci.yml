@@ -27,5 +27,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: kosh-debug-apks
+          name: acuranza-debug-apks
           path: app/build/outputs/apk/**/*.apk

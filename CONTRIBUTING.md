@@ -1,6 +1,6 @@
-# Contributing to Kosh
+# Contributing to Acuranza
 
-Thanks for helping make Kosh better. Kosh is a privacy-first app, so a few rules matter more than usual.
+Thanks for helping make Acuranza better. Acuranza is a privacy-first app, so a few rules matter more than usual.
 
 ## Never share real financial data
 
@@ -40,7 +40,7 @@ No code? Open a **"Bank SMS format"** issue with masked samples instead.
 
 ## Adding or fixing merchant categories
 
-Edit [`core/sms/src/main/resources/kosh/merchants.json`](core/sms/src/main/resources/kosh/merchants.json)
+Edit [`core/sms/src/main/resources/acuranza/merchants.json`](core/sms/src/main/resources/acuranza/merchants.json)
 (format in [docs/DATASET.md](docs/DATASET.md)) and run `./gradlew :core:sms:test`. The tests check that every
 category is valid, every pattern compiles and no brand appears twice.
 
@@ -48,6 +48,6 @@ category is valid, every pattern compiles and no brand appears twice.
 
 - Keep each pull request focused on one change and describe what it fixes.
 - Add or update tests for behaviour changes; money logic always needs a test.
-- No new trackers, analytics, ads or network calls. Kosh adds no dependency on Google Play Services, so
+- No new trackers, analytics, ads or network calls. Acuranza adds no dependency on Google Play Services, so
   it can be built and distributed on F-Droid.
 - By contributing you agree your work is licensed under the GPL-3.0-or-later.

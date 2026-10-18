@@ -5,18 +5,18 @@
 Please **don't open a public issue** for security problems. Email **jha.8@alumni.iitj.ac.in** with:
 
 - what you found and how to reproduce it,
-- the Kosh version and edition (standard or offline) and your Android version.
+- the Acuranza version and edition (standard or offline) and your Android version.
 
 You'll get a reply within a few days. Once a fix is released, you'll be credited if you wish.
 
 ## Threat model (summary)
 
-Kosh holds sensitive financial data, read from bank SMS and entered by the user. It is designed so that
+Acuranza holds sensitive financial data, read from bank SMS and entered by the user. It is designed so that
 this data never leaves the phone.
 
 **Protections**
 
-- **No servers or accounts:** Kosh has no backend, no analytics and no third-party SDKs.
+- **No servers or accounts:** Acuranza has no backend, no analytics and no third-party SDKs.
 - **Network:** the standard edition only fetches public NPS NAVs and, once a day, the latest release number from
   the GitHub API (no personal data in either request; the update check is off for app-store installs and can be
   turned off in More › Updates). The offline edition has no INTERNET permission at all.
@@ -33,6 +33,6 @@ this data never leaves the phone.
 **Out of scope**
 
 - A device that is already compromised (rooted with malware, or unlocked and in an attacker's hands while
-  Kosh is unlocked).
+  Acuranza is unlocked).
 - Loss of the Android Keystore key (e.g. a factory reset): the encrypted database then can't be recovered.
   Keep an encrypted backup.
