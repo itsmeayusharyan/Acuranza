@@ -131,6 +131,45 @@ fun SegmentedTabs(
     }
 }
 
+/**
+ * Compact text chips for time ranges (1D / 1W / 1M / 1Y / ALL). The active chip is a solid ink
+ * pill with contrasting text; inactive ones are quiet text, like the reference chart's range row.
+ */
+@Composable
+fun RangeChips(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.forEachIndexed { i, label ->
+            val active = i == selectedIndex
+            val shape = RoundedCornerShape(50)
+            Box(
+                Modifier
+                    .heightIn(min = 32.dp)
+                    .clip(shape)
+                    .then(if (active) Modifier.background(AcuranzaTheme.colors.ink) else Modifier)
+                    .clickable { onSelect(i) }
+                    .padding(horizontal = 12.dp, vertical = 7.dp)
+                    .semantics {
+                        role = Role.Tab
+                        this.selected = active
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (active) AcuranzaTheme.colors.onInk else AcuranzaTheme.colors.subtleText,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
 /** ‹ Oct 2026 › — steps through periods. Disable "next" at the current period. */
 @Composable
 fun MonthSwitcher(

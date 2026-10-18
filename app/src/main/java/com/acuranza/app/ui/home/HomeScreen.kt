@@ -98,9 +98,10 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.Dispatchers
 import com.acuranza.app.designsystem.components.BarChart
-import com.acuranza.app.designsystem.components.LineAreaChart
-import com.acuranza.app.designsystem.components.SegmentedTabs
 import com.acuranza.app.designsystem.components.SpendHeatmap
+import com.acuranza.app.designsystem.components.RangeChips
+import com.acuranza.app.designsystem.components.TrendChart
+import com.acuranza.app.ui.home.TrendRange
 import com.acuranza.app.designsystem.components.SpendPaceChart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -667,21 +668,31 @@ fun HomeContent(
             }
         }
 
-        if (state.charts.netWorth.size >= 2) {
+        if (state.charts.netWorth.size >= 2 || state.charts.todayHourly.size >= 2) {
             item(key = "networth") {
-                var range by remember { mutableStateOf(1) }
-                val ranges = listOf(30, 90, 180, 365)
-                val points = remember(state.charts.netWorth, range) { state.charts.netWorthPoints(ranges[range]) }
+                var range by remember { mutableStateOf(TrendRange.M1) }
+                var selectedIdx by remember(range) { mutableStateOf<Int?>(null) }
+                val points = remember(state.charts.netWorth, state.charts.todayHourly, range) {
+                    state.charts.trendPoints(range)
+                }
                 Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Net worth trend")
                     AcuranzaCard {
-                        SegmentedTabs(listOf("1M", "3M", "6M", "1Y"), range, { range = it })
-                        Spacer(Modifier.height(14.dp))
+                        AmountText(
+                            paise = points.getOrNull(selectedIdx ?: points.lastIndex)?.value
+                                ?: state.netWorth?.total ?: 0,
+                            style = AmountStyles.medium,
+                            compact = true,
+                            hidden = hidden,
+                        )
+                        Spacer(Modifier.height(10.dp))
                         if (points.size >= 2) {
-                            LineAreaChart(points = points, height = 150.dp, hidden = hidden)
+                            TrendChart(points = points, height = 150.dp, hidden = hidden, onSelectionChanged = { selectedIdx = it })
                         } else {
                             Text("Not enough history for this range yet.", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                         }
+                        Spacer(Modifier.height(14.dp))
+                        RangeChips(listOf("1D", "1W", "1M", "1Y", "ALL"), range.ordinal, onSelect = { range = TrendRange.values()[it] })
                     }
                 }
             }

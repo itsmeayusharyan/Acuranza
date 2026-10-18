@@ -2,17 +2,24 @@ package com.acuranza.app.screenshots
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.acuranza.app.data.NetWorthSnapshotEntity
 import com.acuranza.app.data.TransactionEntity
+import com.acuranza.app.designsystem.components.RangeChips
+import com.acuranza.app.designsystem.components.TrendChart
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.finance.AccountInput
 import com.acuranza.app.finance.BillInput
@@ -143,5 +150,31 @@ class ChartsScreenshotTest {
         )
         val cards = insights.filterNot { it.isSummary }
         Screen { InsightsContent(insights, hidden = false, expandedByDefault = cards.drop(2).take(3).map { it.id }.toSet(), listState = rememberLazyListState(4)) }
+    }
+
+    /** The range chips and the reference-style trend line, with the crosshair inspecting a past point. */
+    @Composable
+    private fun TrendBlock() {
+        val charts = HomeCharts.build(history, Period.containing(today), today, netWorth, nowHour = 14)
+        val points = charts.trendPoints(com.acuranza.app.ui.home.TrendRange.M1, today)
+        Column(Modifier.padding(16.dp)) {
+            RangeChips(listOf("1D", "1W", "1M", "1Y", "ALL"), 2, {})
+            Spacer(Modifier.height(12.dp))
+            TrendChart(points, height = 170.dp, initialSelection = points.size - 9)
+        }
+    }
+
+    @Test
+    fun trend_chart_selected() = paparazzi.snapshot {
+        Screen { TrendBlock() }
+    }
+
+    @Test
+    fun trend_chart_selected_dark() = paparazzi.snapshot {
+        AcuranzaTheme(darkTheme = true) {
+            CompositionLocalProvider(LocalInspectionMode provides true) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) { TrendBlock() }
+            }
+        }
     }
 }

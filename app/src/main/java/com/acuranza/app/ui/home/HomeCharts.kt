@@ -17,6 +17,9 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.roundToInt
 
+/** Selectable windows for the net worth trend chart. */
+enum class TrendRange(val days: Int?) { D1(1), W1(7), M1(30), Y1(365), ALL(null) }
+
 /** Everything the Home charts draw, computed off the main thread from transactions and history. */
 data class HomeCharts(
     /** Cumulative spend per elapsed day of the current period. */
@@ -32,16 +35,41 @@ data class HomeCharts(
     val heatLabels: List<List<String>> = emptyList(),
     /** Net worth by day, oldest first. */
     val netWorth: List<Pair<LocalDate, Paise>> = emptyList(),
+    /** Today's net worth by hour (0-based, oldest first): last snapshot plus today's confirmed flow. */
+    val todayHourly: List<Pair<Int, Paise>> = emptyList(),
 ) {
     val hasPace: Boolean get() = paceCurrent.any { it > 0 } || pacePrevious.any { it > 0 }
     val hasSixMonths: Boolean get() = sixMonths.count { it.income > 0 || it.expense > 0 } >= 2
     val hasHeat: Boolean get() = heatWeeks.flatten().any { (it ?: 0L) > 0 }
 
-    /** Net worth points within the last [days] days, as chart points. */
-    fun netWorthPoints(days: Int, today: LocalDate = Time.today()): List<ChartPoint> {
-        val from = today.minusDays(days.toLong())
-        return netWorth.filter { !it.first.isBefore(from) }.map { (d, v) ->
-            ChartPoint("${d.dayOfMonth} ${d.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}", v)
+    /**
+     * Net worth points for a [TrendRange]: the daily history inside the window, plus a live point
+     * for today from [todayHourly] when the daily snapshot hasn't been recorded yet.
+     */
+    fun trendPoints(range: TrendRange, today: LocalDate = Time.today()): List<ChartPoint> {
+        if (range == TrendRange.D1) return todayHourly.map { (h, v) -> ChartPoint(hourLabel(h), v) }
+        val from = range.days?.let { today.minusDays(it - 1L) } ?: LocalDate.MIN
+        val window = netWorth.filter { !it.first.isBefore(from) && !it.first.isAfter(today) }
+        val points = window.map { (d, v) -> ChartPoint(dayLabel(d, range), v) }.toMutableList()
+        val lastDay = window.lastOrNull()?.first
+        if (todayHourly.isNotEmpty() && (lastDay == null || lastDay.isBefore(today))) {
+            points += ChartPoint(dayLabel(today, range), todayHourly.last().second)
+        }
+        return points
+    }
+
+    /** Hours as "12 AM", "9 AM", "2 PM", like the reference chart's time label. */
+    private fun hourLabel(hour: Int): String {
+        val h = hour % 12
+        return "${if (h == 0) 12 else h} ${if (hour < 12) "AM" else "PM"}"
+    }
+
+    /** Days as "26 MAY" for 1W/1M, months as "MAY '25" for 1Y/ALL. */
+    private fun dayLabel(day: LocalDate, range: TrendRange): String {
+        val month = day.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase(Locale.ENGLISH)
+        return when (range) {
+            TrendRange.Y1, TrendRange.ALL -> "$month '${day.year % 100}"
+            else -> "${day.dayOfMonth} $month"
         }
     }
 
@@ -53,6 +81,7 @@ data class HomeCharts(
             period: Period,
             today: LocalDate,
             history: List<NetWorthSnapshotEntity> = emptyList(),
+            nowHour: Int = java.time.LocalTime.now().hour,
         ): HomeCharts {
             val counted = transactions.filter { SmsMapping.countsInStats(it) }
             val expenseByDay = counted.filter { it.type == TxnType.EXPENSE }
@@ -96,6 +125,24 @@ data class HomeCharts(
                 }
             }
 
+            // Today's net worth per hour: the last recorded snapshot plus the balance effect of
+            // today's confirmed transactions (expenses out, income and refunds in, transfers nothing).
+            val dayStart = Time.startOfDay(today)
+            val base = history.filter { it.epochDay < today.toEpochDay() }.maxByOrNull { it.epochDay }
+            val hourlyToday = if (base == null) {
+                emptyList()
+            } else {
+                val deltas = transactions.asSequence()
+                    .filter { !it.suspicious && !it.excludeFromStats && it.type != TxnType.TRANSFER && Time.toDate(it.timestamp) == today }
+                    .groupBy { ((it.timestamp - dayStart) / 3_600_000L).toInt().coerceIn(0, 23) }
+                    .mapValues { (_, txns) -> txns.sumOf { t -> if (t.type == TxnType.EXPENSE) -t.amount else t.amount } }
+                var acc = base.total
+                val hourly = mutableListOf(0 to acc)
+                deltas.toSortedMap().forEach { (h, d) -> acc += d; hourly += h to acc }
+                if (nowHour > hourly.last().first) hourly += nowHour.coerceIn(0, 23) to acc
+                hourly
+            }
+
             return HomeCharts(
                 paceCurrent = current,
                 pacePrevious = previous,
@@ -106,6 +153,7 @@ data class HomeCharts(
                 heatWeeks = heat,
                 heatLabels = labels,
                 netWorth = history.sortedBy { it.epochDay }.map { LocalDate.ofEpochDay(it.epochDay) to it.total },
+                todayHourly = hourlyToday,
             )
         }
     }
