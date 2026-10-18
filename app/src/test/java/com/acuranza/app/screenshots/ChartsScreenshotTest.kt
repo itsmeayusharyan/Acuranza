@@ -70,7 +70,7 @@ class ChartsScreenshotTest {
 
     private val netWorth = (0..200).map { d ->
         val day = today.minusDays((200 - d).toLong())
-        NetWorthSnapshotEntity(day.toEpochDay(), 0, 0, 0, rs(1_320_000L + d * 1_200L + (sin(d / 9.0) * 25_000).toLong()))
+        NetWorthSnapshotEntity(day.toEpochDay(), 0, 0, rs(1_320_000L + d * 1_200L + (sin(d / 9.0) * 25_000).toLong()))
     }
 
     private fun homeState(): HomeState {

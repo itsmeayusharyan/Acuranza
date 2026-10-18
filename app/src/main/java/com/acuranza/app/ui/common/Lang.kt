@@ -25,7 +25,6 @@ object Hindi {
         "Home" to "होम",
         "Activity" to "लेन-देन",
         "Plan" to "योजना",
-        "Wealth" to "संपत्ति",
         "More" to "और",
 
         // Common actions
@@ -112,7 +111,6 @@ object Hindi {
         "Categories" to "श्रेणियाँ",
         "Category" to "श्रेणी",
         "Tax" to "टैक्स",
-        "Tax planner" to "टैक्स प्लानर",
         "Deductions (old regime)" to "कटौतियाँ (पुरानी व्यवस्था)",
         "Household" to "परिवार",
         "Household sync" to "परिवार के साथ सिंक",
@@ -248,7 +246,7 @@ object Hindi {
         "Unspent money adds to next month; overspending comes out of it (up to one month's limit)" to "बचा पैसा अगले महीने जुड़ता है; ज़्यादा खर्च उसमें से कटता है (एक महीने की सीमा तक)",
         "Monthly limit" to "मासिक सीमा",
         "No budgets yet" to "अभी कोई बजट नहीं",
-        "Set a monthly limit overall or per category. Acuranza tracks your pace and warns you before you overspend." to "कुल या हर श्रेणी के लिए मासिक सीमा तय करें। कोश आपकी रफ़्तार देखता है और ज़्यादा खर्च से पहले चेताता है।",
+        "Set a monthly limit overall or per category. Acuranza tracks your pace and warns you before you overspend." to "कुल या हर श्रेणी के लिए मासिक सीमा तय करें। Acuranza आपकी रफ़्तार देखता है और ज़्यादा खर्च से पहले चेताता है।",
         "Delete budget?" to "बजट हटाएँ?",
         "The limit is removed; your transactions are not affected." to "सीमा हट जाएगी; आपके लेन-देन पर असर नहीं होगा।",
         "No goals yet" to "अभी कोई लक्ष्य नहीं",
@@ -306,7 +304,7 @@ object Hindi {
         "New bank messages are added as they arrive. SMS never leave your phone." to "नए बैंक संदेश आते ही जुड़ जाते हैं। SMS आपके फ़ोन से बाहर नहीं जाते।",
         "Bill reminders" to "बिल रिमाइंडर",
         "3 days and 1 day before the due date" to "देय तिथि से 3 दिन और 1 दिन पहले",
-        "Overspending and maturing FDs" to "ज़्यादा खर्च और मैच्योर होती FD",
+        "Overspending and unusual spends" to "ज़्यादा खर्च और असामान्य खर्च",
         "Daily digest" to "रोज़ का सार",
         "Confirm transactions imported from SMS" to "SMS से आयात लेन-देन की पुष्टि करें",
         "Offline suggestions for your budget and goals" to "बजट और लक्ष्यों के लिए ऑफ़लाइन सुझाव",

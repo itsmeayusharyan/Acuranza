@@ -47,14 +47,43 @@ grep -q "CN=Acuranza" <("$BUILD_TOOLS/apksigner" verify --print-certs "$APK") \
   || fail "signer is NOT the Acuranza release key"
 
 echo
-echo "== 3. manifest hygiene =="
-TREE=$($AAPT2 dump xmltree --file AndroidManifest.xml "$APK")
-echo "$TREE" | grep -i "debuggable" | grep -qv "debuggable=false" && fail "manifest is debuggable" || pass "not debuggable"
-echo "$TREE" | grep -q "allowBackup=\"false\"" || echo "WARN: check allowBackup (merged value)"
-echo "$TREE" | grep "android:exported=\"true\"" || true
-EXPORTED=$(echo "$TREE" | grep -c "android:exported=\"true\"")
-echo "exported components: $EXPORTED (expected: launcher activity, SMS receiver (BROADCAST_SMS-guarded), 2 widgets, QS tile)"
-[ "$EXPORTED" -le 5 ] || fail "more exported components than expected: $EXPORTED"
+echo "== 3. manifest hygiene (merged manifest via apkanalyzer) =="
+APKANALYZER="${SDK}/cmdline-tools/latest/bin/apkanalyzer"
+MANIFEST=$("$APKANALYZER" manifest print "$APK")
+echo "$MANIFEST" | grep -E "package=|android:label=" | head -2
+echo "$MANIFEST" | grep -q 'android:debuggable="true"' && fail "manifest is debuggable" || pass "not debuggable"
+echo "$MANIFEST" | grep -q 'android:allowBackup="false"' && pass "allowBackup=false" || fail "allowBackup is not false"
+echo "$MANIFEST" | grep -q 'android:dataExtractionRules' && pass "data extraction rules present" || echo "WARN: no dataExtractionRules"
+EXPORTED=$(echo "$MANIFEST" | grep -c 'android:exported="true"' || true)
+# Expected exported components, all intentional or permission-guarded:
+#   - MainActivity (launcher)
+#   - SmsReceiver (android.permission.BROADCAST_SMS: only the system can deliver)
+#   - MonthWidgetProvider, QuickAddWidgetProvider (APPWIDGET_UPDATE: launcher-only)
+#   - QuickAddTileService (BIND_QUICK_SETTINGS_TILE: system-only)
+#   - WorkManager SystemJobService (BIND_JOB_SERVICE), DiagnosticsReceiver (DUMP)
+#   - ProfileInstaller ProfileInstallReceiver (DUMP)
+# The three androidx components can only be invoked by the system or shell.
+UNGUARDED=$(echo "$MANIFEST" | python3 - <<'PY'
+import re, sys
+t = sys.stdin.read()
+bad = []
+for m in re.finditer(r'<(activity|receiver|service|provider)\b', t):
+    start = m.start(); end = t.index('>', start)
+    block = t[start:end+1]
+    exp = re.search(r'android:exported="true"', block)
+    perm = re.search(r'android:permission="([^"]+)"', block)
+    name = re.search(r'android:name="([^"]+)"', block)
+    if exp and not perm:
+        n = name.group(1) if name else '?'
+        # the launcher activity is the one allowed unguarded exported component
+        if 'MainActivity' not in n and 'WidgetProvider' not in n:
+            bad.append(n)
+print("\n".join(bad))
+PY
+)
+[ -z "$UNGUARDED" ] || fail "exported components without a system permission (beyond launcher/widgets): $UNGUARDED"
+echo "exported components: $EXPORTED (launcher + widgets unguarded by design; SMS/tile/JobService/DUMP-guarded for the rest)"
+pass "no unexpected exported components"
 
 echo
 echo "== 4. native libraries and ABIs =="
@@ -69,23 +98,26 @@ pass "all supported ABIs packaged (universal APK)"
 echo
 echo "== 5/6. DEX contents: network code, trackers =="
 WORK=$(mktemp -d)
-"$JADX" --no-res --no-imports -d "$WORK/src" "$APK" >/dev/null 2>&1
+# R8 output decompiles with some method-level errors (normal for obfuscated code);
+# class listing is complete, which is what these checks read.
+JAVA_OPTS="-Xmx3g" "$JADX" --no-res -j 2 -d "$WORK/src" "$APK" >/dev/null 2>&1 || true
 CLASSES=$(find "$WORK/src" -name "*.java" | wc -l)
 echo "decompiled classes: $CLASSES"
-NET=$(grep -rlE "okhttp3|retrofit2|com\.android\.volley|java\.net\.HttpURLConnection|org\.apache\.http\.impl" "$WORK/src" | head -5)
+NET=$( { grep -rlE "okhttp3\.|retrofit2\.|com\.android\.volley|java\.net\.HttpURLConnection|org\.apache\.http\.impl" "$WORK/src" | head -5 || true; } )
 [ -z "$NET" ] || fail "network client classes present: $NET"
-URLS=$(grep -rlE '"https?://[^"]+"' "$WORK/src/com/acuranza" | head -5)
+URLS=$( { grep -rlE '"https?://[^"]+"' "$WORK/src/sources/com/acuranza" 2>/dev/null | head -5 || true; } )
 [ -z "$URLS" ] || fail "hardcoded URL in app code: $URLS"
 pass "no HTTP client or hardcoded URL in the DEX"
 TRACKERS=$(find "$WORK/src" -path "*com/google/firebase*" -o -path "*com/facebook*" -o -path "*com/appsflyer*" \
-  -o -path "*io/branch*" -o -path "*com/crashlytics*" -o -path "*com/amplitude*" -o -path "*com/mixpanel*" -o -path "*flurry*" | head -5)
+  -o -path "*io/branch*" -o -path "*com/crashlytics*" -o -path "*com/amplitude*" -o -path "*com/mixpanel*" -o -path "*flurry*" | head -5 || true)
+[ -n "$TRACKERS" ] || TRACKERS=$( { find "$WORK/src/sources" -type d \( -path "*firebase*" -o -path "*facebook*" -o -path "*crashlytics*" -o -path "*appsflyer*" \) | head -5 || true; } )
 [ -z "$TRACKERS" ] || fail "tracking SDK classes present: $TRACKERS"
 pass "no analytics/ads/tracking SDK classes"
 
 echo
 echo "== 7. embedded secrets scan =="
-SECRETS=$(unzip -p "$APK" classes.dex classes2.dex classes3.dex 2>/dev/null | strings | \
-  grep -E "AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|-----BEGIN (RSA )?PRIVATE KEY-----|sk_live_[0-9a-zA-Z]{10,}" | head -5)
+SECRETS=$( { unzip -p "$APK" "classes*.dex" 2>/dev/null | strings | \
+  grep -E "AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|-----BEGIN (RSA )?PRIVATE KEY-----|sk_live_[0-9a-zA-Z]{10,}" | head -5 || true; } )
 [ -z "$SECRETS" ] || fail "possible embedded secret: $SECRETS"
 pass "no obvious embedded credentials in the DEX"
 rm -rf "$WORK"

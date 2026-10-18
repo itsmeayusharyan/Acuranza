@@ -299,7 +299,7 @@ fun MoreScreen(nav: NavController) {
                         if (v) ensurePermission()
                         scope.launch { c.settings.setNotifyBills(v) }
                     })
-                    SwitchRow("Important insights", "Overspending and maturing FDs", s.notifyInsights, { v ->
+                    SwitchRow("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
                         if (v) ensurePermission()
                         scope.launch { c.settings.setNotifyInsights(v) }
                     })
