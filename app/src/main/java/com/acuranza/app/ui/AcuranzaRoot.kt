@@ -1,6 +1,5 @@
 package com.acuranza.app.ui
 
-import com.acuranza.app.designsystem.components.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.WindowInsets
@@ -9,7 +8,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.ui.draw.clip
@@ -62,7 +61,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import kotlinx.coroutines.flow.map
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -151,12 +149,8 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
         onDispose {}
     }
 
-    val language by remember(container) {
-        container.featurePrefs.settings.map { com.acuranza.app.ui.common.AppLanguage.of(it.language) }
-    }.collectAsState(initial = com.acuranza.app.ui.common.AppLanguage.ENGLISH)
     AcuranzaTheme(darkTheme = dark) {
         CompositionLocalProvider(
-            com.acuranza.app.designsystem.components.LocalTranslator provides remember(language) { language.translator() },
             LocalContainer provides container,
             LocalSettings provides (settings ?: Settings()),
             LocalHideAmounts provides (settings?.hideAmounts ?: false),
@@ -359,16 +353,6 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
                 BottomBar(nav, current)
             }
         },
-        floatingActionButton = {
-            AnimatedVisibility(
-                current == Routes.HOME || current == Routes.TRANSACTIONS,
-                enter = fadeIn(tween(180)),
-                exit = fadeOut(tween(120)),
-            ) {
-                AddFab { nav.navigate(Routes.addTxn()) }
-            }
-        },
-        floatingActionButtonPosition = androidx.compose.material3.FabPosition.End,
     ) { padding ->
         Box(Modifier.padding(bottom = if (showBar) padding.calculateBottomPadding() else 0.dp)) {
             AcuranzaNavHost(nav)
@@ -377,42 +361,42 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
 }
 
 @Composable
-private fun AddFab(onClick: () -> Unit) {
-    val shape = RoundedCornerShape(16.dp)
-    Box(
-        Modifier
-            .size(56.dp)
-            .clip(shape)
-            .background(AcuranzaTheme.colors.ink)
-            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
-            .semantics { contentDescription = "Add transaction" },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Outlined.Add, contentDescription = null, tint = AcuranzaTheme.colors.onInk, modifier = Modifier.size(24.dp))
-    }
-}
-
-@Composable
 private fun BottomBar(nav: NavHostController, current: String?) {
-    AcuranzaBottomBar(current) { route -> nav.navigateToTab(route) }
+    AcuranzaBottomBar(current, onTab = { route -> nav.navigateToTab(route) }, onAdd = { nav.navigate(Routes.addTxn()) })
 }
 
-/** Five evenly spaced tabs on a white bar with a top hairline; the selected tab is ink with an emerald dot. */
+/** Circular icon destinations flanking a raised ink add-circle, on a hairline-topped surface. */
 @Composable
-fun AcuranzaBottomBar(current: String?, onSelect: (String) -> Unit) {
+fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit, onAdd: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(AcuranzaTheme.colors.cardSurface)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(AcuranzaTheme.colors.hairline))
         Row(
             Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .height(60.dp),
+                .height(66.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Tabs.forEach { tab ->
+            Tabs.forEachIndexed { index, tab ->
+                if (index == 2) {
+                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier
+                                .size(52.dp)
+                                .clip(CircleShape)
+                                .background(AcuranzaTheme.colors.ink)
+                                .border(1.dp, AcuranzaTheme.colors.hairline, CircleShape)
+                                .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onAdd)
+                                .semantics { contentDescription = "Add transaction" },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Outlined.Add, contentDescription = null, tint = AcuranzaTheme.colors.onInk, modifier = Modifier.size(24.dp))
+                        }
+                    }
+                }
                 val selected = current == tab.route
                 val tint = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText
-                Column(
+                Box(
                     Modifier
                         .weight(1f)
                         .fillMaxHeight()
@@ -421,22 +405,23 @@ fun AcuranzaBottomBar(current: String?, onSelect: (String) -> Unit) {
                             indication = null,
                             role = androidx.compose.ui.semantics.Role.Tab,
                         ) {
-                            if (!selected) onSelect(tab.route)
+                            if (!selected) onTab(tab.route)
                         }
-                        .semantics { this.selected = selected },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                        .semantics {
+                            this.selected = selected
+                            contentDescription = tab.label
+                        },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-                    Spacer(Modifier.height(3.dp))
-                    Text(tr(tab.label), fontSize = 11.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, color = tint)
-                    Spacer(Modifier.height(3.dp))
                     Box(
                         Modifier
-                            .size(4.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(if (selected) AcuranzaTheme.colors.accent else Color.Transparent),
-                    )
+                            .background(if (selected) AcuranzaTheme.colors.accent.copy(alpha = 0.14f) else Color.Transparent),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+                    }
                 }
             }
         }
@@ -463,7 +448,7 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.HOME) { HomeScreen(nav) }
         composable(Routes.TRANSACTIONS) { TransactionsScreen(nav) }
         composable(Routes.PLANNING) { PlanningScreen(nav) }
-        composable(Routes.MORE) { MoreScreen(nav) }
+        composable(Routes.SETTINGS) { MoreScreen(nav) }
 
         composable(Routes.REVIEW) { ReviewScreen(nav) }
         composable(

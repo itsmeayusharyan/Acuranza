@@ -76,25 +76,14 @@ class ScreensScreenshotTest {
 
     /** A phone frame: screen content above the real bottom bar, like the running app. */
     @Composable
-    private fun Frame(dark: Boolean = false, tab: String? = null, fab: Boolean = false, content: @Composable () -> Unit) {
+    private fun Frame(dark: Boolean = false, tab: String? = null, content: @Composable () -> Unit) {
         AcuranzaTheme(darkTheme = dark) {
           androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalInspectionMode provides true) {
             Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                 Box(Modifier.weight(1f)) {
                     content()
-                    if (fab) {
-                        Box(
-                            Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(16.dp)
-                                .size(56.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(AcuranzaTheme.colors.ink),
-                            contentAlignment = Alignment.Center,
-                        ) { Icon(Icons.Outlined.Add, null, tint = AcuranzaTheme.colors.onInk) }
-                    }
                 }
-                if (tab != null) AcuranzaBottomBar(tab) {}
+                if (tab != null) AcuranzaBottomBar(tab, onTab = {}, onAdd = {})
             }
           }
         }
@@ -113,7 +102,7 @@ class ScreensScreenshotTest {
     )
 
     @Test
-    fun home_light() = paparazzi.snapshot { Frame(tab = Routes.HOME, fab = true) { HomeContent(homeState(), hidden = false) } }
+    fun home_light() = paparazzi.snapshot { Frame(tab = Routes.HOME) { HomeContent(homeState(), hidden = false) } }
 
     @Test
     fun home_left_to_spend() = paparazzi.snapshot {
@@ -123,19 +112,19 @@ class ScreensScreenshotTest {
             overallBudget = null, incomeThisPeriod = 10_000_000L, usualMonthlySpend = null, spentThisPeriod = 3_000_000L,
             salary = 10_000_000L, savingsTarget = 2_000_000L,
         )
-        Frame(tab = Routes.HOME, fab = true) { HomeContent(homeState().copy(safeToSpend = safe), hidden = false) }
+        Frame(tab = Routes.HOME) { HomeContent(homeState().copy(safeToSpend = safe), hidden = false) }
     }
 
     @Test
-    fun home_dark() = paparazzi.snapshot { Frame(dark = true, tab = Routes.HOME, fab = true) { HomeContent(homeState(), hidden = false) } }
+    fun home_dark() = paparazzi.snapshot { Frame(dark = true, tab = Routes.HOME) { HomeContent(homeState(), hidden = false) } }
 
     @Test
-    fun home_privacy() = paparazzi.snapshot { Frame(tab = Routes.HOME, fab = true) { HomeContent(homeState(), hidden = true) } }
+    fun home_privacy() = paparazzi.snapshot { Frame(tab = Routes.HOME) { HomeContent(homeState(), hidden = true) } }
 
     @Test
     fun activity() = paparazzi.snapshot {
         val groups = FakeData.recent.groupBy { it.date }.map { (d, items) -> DayGroup(d, items, items.sumOf { it.signedAmount }) }
-        Frame(tab = Routes.TRANSACTIONS, fab = true) {
+        Frame(tab = Routes.TRANSACTIONS) {
             TransactionsContent(
                 TxnListState(
                     period = Period(today.withDayOfMonth(1), today.withDayOfMonth(1).plusMonths(1)),
@@ -211,7 +200,7 @@ class ScreensScreenshotTest {
     /** Settings is assembled from the same row widgets the More screen uses. */
     @Test
     fun settings() = paparazzi.snapshot {
-        Frame(tab = Routes.MORE) {
+        Frame(tab = Routes.SETTINGS) {
             Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                 Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     AcuranzaLogo(size = 44.dp)

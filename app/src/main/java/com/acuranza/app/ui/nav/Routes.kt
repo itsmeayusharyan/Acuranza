@@ -2,11 +2,11 @@ package com.acuranza.app.ui.nav
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -17,7 +17,7 @@ object Routes {
     const val HOME = "home"
     const val TRANSACTIONS = "transactions"
     const val PLANNING = "planning"
-    const val MORE = "more"
+    const val SETTINGS = "settings"
 
     const val REVIEW = "review"
     const val ADD_TXN = "txn/add?type={type}&account={account}"
@@ -62,7 +62,7 @@ val Tabs = listOf(
     Tab(Routes.HOME, "Home", Icons.Outlined.Home, Icons.Filled.Home),
     Tab(Routes.TRANSACTIONS, "Activity", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong),
     Tab(Routes.PLANNING, "Plan", Icons.Outlined.TrackChanges, Icons.Filled.TrackChanges),
-    Tab(Routes.MORE, "More", Icons.Outlined.MoreHoriz, Icons.Filled.MoreHoriz),
+    Tab(Routes.SETTINGS, "Settings", Icons.Outlined.Settings, Icons.Filled.Settings),
 )
 
 val TabRoutes = Tabs.map { it.route }.toSet()

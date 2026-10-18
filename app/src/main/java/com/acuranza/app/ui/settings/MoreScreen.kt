@@ -2,7 +2,6 @@ package com.acuranza.app.ui.settings
 
 import com.acuranza.app.ui.common.NO_FILE_PICKER
 import com.acuranza.app.ui.common.launchOrFalse
-import com.acuranza.app.designsystem.components.tr
 import com.acuranza.app.designsystem.theme.AcuranzaText
 import android.Manifest
 import android.content.Context
@@ -183,13 +182,6 @@ fun MoreScreen(nav: NavController) {
                         ThemeMode.entries.indexOf(s.themeMode),
                         onSelect = { scope.launch { c.settings.setThemeMode(ThemeMode.entries[it]) } },
                         modifier = Modifier.padding(vertical = 8.dp),
-                    )
-                    val lang = c.featurePrefs.settings.collectAsState(initial = null).value?.language
-                    SegmentedTabs(
-                        com.acuranza.app.ui.common.AppLanguage.entries.map { it.title },
-                        com.acuranza.app.ui.common.AppLanguage.entries.indexOf(com.acuranza.app.ui.common.AppLanguage.of(lang)),
-                        onSelect = { i -> scope.launch { c.featurePrefs.setLanguage(com.acuranza.app.ui.common.AppLanguage.entries[i].code) } },
-                        modifier = Modifier.padding(bottom = 8.dp),
                     )
                     SwitchRow("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
                         Icons.Outlined.VisibilityOff)
@@ -383,7 +375,7 @@ private const val NEW_BACKUP_MIN_PASSWORD = 8
 @Composable
 fun Section(title: String, content: @Composable () -> Unit) {
     Column(Modifier.padding(top = 24.dp)) {
-        Text(tr(title).uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
+        Text(title.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
         Spacer(Modifier.height(8.dp))
         AcuranzaCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) { content() }
     }

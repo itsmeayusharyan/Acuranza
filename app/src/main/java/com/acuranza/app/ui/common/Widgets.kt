@@ -1,6 +1,5 @@
 package com.acuranza.app.ui.common
 
-import com.acuranza.app.designsystem.components.tr
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -130,7 +129,7 @@ fun AmountSheet(
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(tr(title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             val value = remember(text) { expr.valuePaise() }
             AmountInputDisplay(expression = text, valuePaise = value, type = type, showResult = expr.hasOperator)
             NumberKeypad(onKey = { text = expr.press(it) })
@@ -161,7 +160,7 @@ fun AmountField(
     var open by remember { mutableStateOf(false) }
     FieldBox(label = label, modifier = modifier, onClick = { open = true }) {
         Text(
-            if (value != null) com.acuranza.app.model.Money.format(value) else tr(placeholder),
+            if (value != null) com.acuranza.app.model.Money.format(value) else placeholder,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = if (value != null) FontWeight.SemiBold else FontWeight.Normal,
             color = if (value != null) MaterialTheme.colorScheme.onSurface else AcuranzaTheme.colors.subtleText,
@@ -195,7 +194,7 @@ fun FieldBox(
     ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(tr(label), style = MaterialTheme.typography.labelMedium, color = AcuranzaTheme.colors.subtleText)
+                Text(label, style = MaterialTheme.typography.labelMedium, color = AcuranzaTheme.colors.subtleText)
                 Spacer(Modifier.height(2.dp))
                 content()
             }
@@ -248,7 +247,7 @@ fun <T> ChoiceField(
     var open by remember { mutableStateOf(false) }
     FieldBox(label = label, modifier = modifier, onClick = { open = true }) {
         Text(
-            selected?.let(optionLabel) ?: tr(placeholder),
+            selected?.let(optionLabel) ?: placeholder,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = if (selected != null) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
@@ -257,7 +256,7 @@ fun <T> ChoiceField(
     }
     if (open) {
         ModalBottomSheet(onDismissRequest = { open = false }) {
-            Text(tr(label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            Text(label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
             LazyColumn(Modifier.navigationBarsPadding()) {
                 items(options.size) { i ->
                     val o = options[i]
@@ -301,11 +300,11 @@ fun AcuranzaTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValue,
-        label = { Text(tr(label)) },
+        label = { Text(label) },
         modifier = modifier.fillMaxWidth(),
         singleLine = singleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        supportingText = supporting?.let { { Text(tr(it)) } },
+        supportingText = supporting?.let { { Text(it) } },
         prefix = prefix?.let { { Text(it) } },
         suffix = suffix?.let { { Text(it) } },
         shape = RoundedCornerShape(16.dp),
@@ -339,8 +338,8 @@ fun SwitchRow(
             Spacer(Modifier.width(14.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(tr(title), style = MaterialTheme.typography.bodyLarge)
-            if (subtitle != null) Text(tr(subtitle), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
         }
         Spacer(Modifier.width(12.dp))
         Switch(
@@ -381,9 +380,9 @@ fun ActionRow(
             Spacer(Modifier.width(14.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(tr(title), style = MaterialTheme.typography.bodyLarge,
+            Text(title, style = MaterialTheme.typography.bodyLarge,
                 color = if (enabled) MaterialTheme.colorScheme.onSurface else AcuranzaTheme.colors.subtleText)
-            if (subtitle != null) Text(tr(subtitle), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
         }
         trailing?.invoke()
     }
@@ -401,14 +400,14 @@ fun ConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(tr(title)) },
-        text = { Text(tr(message)) },
+        title = { Text(title) },
+        text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(tr(confirmLabel), color = if (destructive) AcuranzaTheme.colors.alert else MaterialTheme.colorScheme.primary)
+                Text(confirmLabel, color = if (destructive) AcuranzaTheme.colors.alert else MaterialTheme.colorScheme.primary)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
 

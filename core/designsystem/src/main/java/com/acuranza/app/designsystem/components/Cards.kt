@@ -128,7 +128,7 @@ fun BalanceHeroCard(
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = tr(label),
+                text = label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = AcuranzaTheme.colors.subtleText,
             )

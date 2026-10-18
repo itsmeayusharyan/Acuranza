@@ -1,6 +1,5 @@
 package com.acuranza.app.ui.home
 
-import com.acuranza.app.designsystem.components.tr
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.outlined.AccountBalance
@@ -659,7 +658,7 @@ fun HomeContent(
 @Composable
 private fun MiniFigure(label: String, value: Long, hidden: Boolean) {
     Column {
-        Text(tr(label), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
         AmountText(value, style = AmountStyles.small, compact = true, hidden = hidden, color = AcuranzaTheme.colors.ink)
     }
 }
@@ -811,7 +810,7 @@ private fun SafeToSpendCard(safe: com.acuranza.app.repo.SafeToSpend.Result, hidd
     AcuranzaCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Text(tr(if (over) "Over plan" else "Left to spend"), style = MaterialTheme.typography.bodyMedium, color = AcuranzaTheme.colors.subtleText)
+                Text(if (over) "Over plan" else "Left to spend", style = MaterialTheme.typography.bodyMedium, color = AcuranzaTheme.colors.subtleText)
                 AmountText(
                     if (over) -safe.available else safe.available,
                     style = AmountStyles.large,
@@ -879,7 +878,7 @@ private fun SalaryPlanSheet(
             Modifier.padding(horizontal = 20.dp).navigationBarsPadding().verticalScroll(androidx.compose.foundation.rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(tr("Your monthly plan"), style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text("Your monthly plan", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             Text(
                 "Acuranza takes what you want to save off your salary first, then shows what's left to spend until your next payday.",
                 style = MaterialTheme.typography.bodySmall,

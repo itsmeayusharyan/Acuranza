@@ -120,7 +120,7 @@ fun SegmentedTabs(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        tr(label),
+                        label,
                         style = MaterialTheme.typography.labelMedium,
                         color = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.subtleText,
                         maxLines = 1,
@@ -225,10 +225,10 @@ fun EmptyState(
             Icon(icon, contentDescription = null, tint = AcuranzaTheme.colors.subtleText, modifier = Modifier.size(26.dp))
         }
         Spacer(Modifier.height(20.dp))
-        Text(tr(title), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(
-            tr(message),
+            message,
             style = MaterialTheme.typography.bodyMedium,
             color = AcuranzaTheme.colors.subtleText,
             textAlign = TextAlign.Center,
@@ -306,9 +306,9 @@ fun AcuranzaTopBar(
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
-            Text(tr(title), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (subtitle != null) {
-                Text(tr(subtitle), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText, maxLines = 1)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText, maxLines = 1)
             }
         }
         actions()
@@ -333,7 +333,7 @@ fun StatChip(
         modifier = modifier,
     ) {
         Text(
-            tr(label),
+            label,
             style = MaterialTheme.typography.bodySmall,
             color = if (onDark) Color.White.copy(alpha = 0.7f) else AcuranzaTheme.colors.subtleText,
             maxLines = 1,
@@ -370,14 +370,14 @@ fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            tr(title).uppercase(),
+            title.uppercase(),
             style = AcuranzaText.sectionLabel,
             color = AcuranzaTheme.colors.subtleText,
             modifier = Modifier.weight(1f),
         )
         if (actionLabel != null && onAction != null) {
             Text(
-                tr(actionLabel),
+                actionLabel,
                 style = MaterialTheme.typography.labelMedium,
                 color = AcuranzaTheme.colors.accent,
                 modifier = Modifier
@@ -416,7 +416,7 @@ fun PrimaryButton(
             Spacer(Modifier.width(8.dp))
         }
         Text(
-            tr(text),
+            text,
             style = MaterialTheme.typography.labelLarge,
             color = if (enabled) AcuranzaTheme.colors.onInk else AcuranzaTheme.colors.tertiaryText,
         )
@@ -450,7 +450,7 @@ fun SecondaryButton(
             Spacer(Modifier.width(8.dp))
         }
         Text(
-            tr(text),
+            text,
             style = MaterialTheme.typography.labelLarge,
             color = if (enabled) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText,
         )

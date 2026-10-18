@@ -1,6 +1,5 @@
 package com.acuranza.app.ui.transactions
 
-import com.acuranza.app.designsystem.components.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -248,7 +247,7 @@ fun DetailRow(label: String, value: String, onClick: (() -> Unit)? = null, accen
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(tr(label), color = AcuranzaTheme.colors.subtleText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(0.4f))
+        Text(label, color = AcuranzaTheme.colors.subtleText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(0.4f))
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
