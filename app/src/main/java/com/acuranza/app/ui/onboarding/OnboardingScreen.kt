@@ -32,14 +32,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsActive
-import androidx.compose.material.icons.outlined.Sms
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -73,7 +75,6 @@ import com.acuranza.app.designsystem.theme.AmountStyles
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.model.AccountType
 import com.acuranza.app.model.Bank
-import com.acuranza.app.sms.ImportResult
 import com.acuranza.app.ui.accounts.BankPicker
 import com.acuranza.app.ui.common.AmountField
 import com.acuranza.app.ui.common.FormColumn
@@ -82,11 +83,7 @@ import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.bankEnum
 import com.acuranza.app.ui.common.label
 import com.acuranza.app.ui.common.rememberHaptic
-import com.acuranza.app.ui.common.rememberSmsPermissionRequest
 import com.acuranza.app.designsystem.theme.AcuranzaText
-import com.acuranza.app.ui.settings.describe
-import com.acuranza.app.ui.settings.hasSmsPermission
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private const val STEPS = 6
@@ -201,7 +198,7 @@ private fun Welcome(onNext: () -> Unit) {
         Text("Your expenses, income and cards in one private place.",
             style = MaterialTheme.typography.bodyLarge, color = AcuranzaTheme.colors.subtleText, textAlign = TextAlign.Center)
         Spacer(Modifier.height(28.dp))
-        ValueProp(Icons.Outlined.Sms, "Automatic tracking", "Bank SMS become transactions and card bills by themselves.")
+        ValueProp(Icons.Outlined.Edit, "Fast entry", "Add an expense in seconds: calculator keypad, splits, tags and receipts.")
         ValueProp(Icons.Outlined.AccountBalanceWallet, "Plan with confidence", "Budgets, goals and safe-to-spend pace, computed on your phone.")
         ValueProp(Icons.Outlined.Lock, "Private by design", "Everything stays on your phone. No account, no cloud, no tracking.")
         Spacer(Modifier.weight(1f))
@@ -344,93 +341,19 @@ private fun NotificationsStep(onNext: () -> Unit) {
     }
 }
 
-@Composable
-private fun PermissionRow(icon: ImageVector, title: String, granted: Boolean, onAllow: () -> Unit) {
-    AcuranzaCard(Modifier.padding(vertical = 5.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(12.dp))
-            Text(title, Modifier.weight(1f), fontWeight = FontWeight.Medium)
-            if (granted) {
-                Icon(Icons.Outlined.CheckCircle, contentDescription = "Allowed", tint = AcuranzaTheme.colors.good)
-            } else {
-                TextButton(onClick = onAllow) { Text("Allow") }
-            }
-        }
-    }
-}
 
 @Composable
 private fun ImportStep(onNext: () -> Unit) {
-    val c = LocalContainer.current
-    val context = LocalContext.current
-    var smsGranted by remember { mutableStateOf(context.hasSmsPermission()) }
-    val requestSms = rememberSmsPermissionRequest { smsGranted = true }
-    var result by remember { mutableStateOf<ImportResult?>(null) }
-    var running by remember { mutableStateOf(false) }
-    var scanned by remember { mutableStateOf(false) }
-    var note by remember { mutableStateOf<String?>(null) }
-
-    // Runs once when the step is entered with SMS already allowed, and again if the user allows it here.
-    LaunchedEffect(smsGranted) {
-        if (!smsGranted || scanned) return@LaunchedEffect
-        running = true
-        scanned = true
-        try {
-            result = c.smsImporter.importInbox()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            note = e.message ?: "Import failed. Try again from More."
-        } finally {
-            running = false
-        }
-    }
-
     StepPage(
-        title = if (running) "Reading your bank SMS…" else "Your history",
-        subtitle = if (smsGranted) "Acuranza looks back 180 days and skips anything it has already seen."
-        else "Optional: with SMS access, Acuranza turns bank messages into transactions by itself. " +
-            "You can also track everything by hand — this can be allowed later from More.",
+        title = "Your history",
+        subtitle = "Acuranza never reads your messages. Bring your past along by importing a bank statement CSV, or start fresh and add transactions as they happen.",
         primary = "Continue",
         onPrimary = onNext,
-        primaryEnabled = !running,
         icon = Icons.Outlined.AutoAwesome,
     ) {
-        if (!smsGranted) {
-            AcuranzaCard(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(10.dp))
-                    Text("SMS never leave your phone", fontWeight = FontWeight.SemiBold)
-                }
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "Only messages from banks are read: OTPs and personal messages are ignored, and nothing is uploaded anywhere.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AcuranzaTheme.colors.subtleText,
-                )
-            }
-            Spacer(Modifier.height(10.dp))
-            PermissionRow(Icons.Outlined.Sms, "Read bank SMS", smsGranted) { requestSms() }
-            Spacer(Modifier.height(10.dp))
-        }
-        if (running) {
-            LinearProgressIndicator(Modifier.fillMaxWidth())
-            Spacer(Modifier.height(12.dp))
-            CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
-        }
-        note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText) }
-        result?.let { r ->
-            AcuranzaCard {
-                Text(r.describe(), fontWeight = FontWeight.SemiBold)
-                if (r.inserted > 0) {
-                    Spacer(Modifier.height(6.dp))
-                    Text("They're waiting in Review so you can confirm categories.", style = MaterialTheme.typography.bodySmall,
-                        color = AcuranzaTheme.colors.subtleText)
-                }
-            }
-        }
+        ValueProp(Icons.Outlined.Edit, "Quick manual entry", "A calculator keypad with tags, splits and receipts attached.")
+        ValueProp(Icons.Outlined.Assessment, "Bank statement import", "CSV files from HDFC, ICICI, SBI, Axis, Kotak and more — from More › Import statement.")
+        ValueProp(Icons.Outlined.Autorenew, "Recurring on autopilot", "Rent, SIPs and subscriptions you schedule add themselves on their dates.")
     }
 }
 
@@ -445,7 +368,7 @@ private fun DoneStep(onFinish: () -> Unit) {
         Text("You're all set", style = AcuranzaText.screenTitle)
         Spacer(Modifier.height(8.dp))
         Text(
-            "${accounts.size} account${if (accounts.size == 1) "" else "s"} ready. New bank SMS will be picked up automatically.",
+            "${accounts.size} account${if (accounts.size == 1) "" else "s"} ready. Add transactions as you go, or import a bank statement CSV from More.",
             style = MaterialTheme.typography.bodyLarge,
             color = AcuranzaTheme.colors.subtleText,
             textAlign = TextAlign.Center,

@@ -87,7 +87,6 @@ import com.acuranza.app.model.TxnType
 import com.acuranza.app.security.BackupCrypto
 import com.acuranza.app.security.BiometricGate
 import com.acuranza.app.security.UnlockResult
-import com.acuranza.app.sms.ImportResult
 import com.acuranza.app.ui.common.ActionRow
 import com.acuranza.app.ui.common.ChoiceField
 import com.acuranza.app.ui.common.ConfirmDialog
@@ -100,27 +99,9 @@ import com.acuranza.app.ui.common.color
 import com.acuranza.app.ui.nav.Routes
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
-import com.acuranza.app.ui.common.rememberSmsPermissionRequest
 import java.time.LocalDate
 import com.acuranza.app.ui.nav.popBackSafely
 
-fun ImportResult.describe(): String = when {
-    permissionMissing -> "SMS permission is needed to scan your inbox"
-    readError != null -> readError
-    scanned == 0 -> "No SMS could be read from this phone"
-    inserted == 0 && bills == 0 && failed > 0 -> "Scanned $scanned messages · $failed couldn't be saved"
-    inserted == 0 && bills == 0 -> "Scanned $scanned messages · nothing new"
-    else -> buildString {
-        append("Added $inserted transaction${if (inserted == 1) "" else "s"}")
-        if (bills > 0) append(", $bills bill${if (bills == 1) "" else "s"}")
-        if (accountsCreated > 0) append(", $accountsCreated new account${if (accountsCreated == 1) "" else "s"}")
-        append(" from $scanned messages")
-        if (failed > 0) append(" · $failed couldn't be saved")
-    }
-}
-
-fun Context.hasSmsPermission(): Boolean =
-    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
 
 private fun Context.versionName(): String = runCatching {
     @Suppress("DEPRECATION")
@@ -138,7 +119,6 @@ fun MoreScreen(nav: NavController) {
     var confirmErase by remember { mutableStateOf(false) }
     var backupUri by remember { mutableStateOf<Uri?>(null) }
     var restoreUri by remember { mutableStateOf<Uri?>(null) }
-    var lastScan by remember { mutableStateOf<ImportResult?>(null) }
     val unpaidBills by c.bills.observeUnpaid().collectAsState(initial = emptyList())
 
     fun show(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
@@ -146,17 +126,6 @@ fun MoreScreen(nav: NavController) {
     androidx.compose.runtime.LaunchedEffect(Unit) { sampleLoaded = runCatching { c.demoData.isLoaded() }.getOrDefault(false) }
     val backupFlow = remember { com.acuranza.app.security.BackupFlow(context.applicationContext as com.acuranza.app.AcuranzaApp) }
 
-    fun scanSms() {
-        busy = "Scanning SMS inbox…"
-        scope.launch {
-            val r = runCatching { c.smsImporter.rescanAll() }
-            busy = null
-            lastScan = r.getOrNull()
-            show(r.map { it.describe() }.getOrElse { "Scan failed: ${it.message}" })
-        }
-    }
-
-    val requestSms = rememberSmsPermissionRequest { scanSms() }
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
@@ -267,21 +236,6 @@ fun MoreScreen(nav: NavController) {
                     ) {}
                 }
             }
-            item(key = "sms") {
-                Section("Bank SMS") {
-                    SwitchRow("Import bank SMS automatically", "New bank messages are added as they arrive. SMS never leave your phone.",
-                        s.smsAutoImport, { v -> scope.launch { c.settings.setSmsAutoImport(v) } }, Icons.Outlined.Sms)
-                    ActionRow("Scan inbox now", "Last scan ${Fmt.ago(s.smsLastScanMillis)}", Icons.Outlined.Sync, enabled = busy == null) {
-                        requestSms()
-                    }
-                    lastScan?.let { ScanDetails(it) }
-                    ActionRow(
-                        "SMS check-up",
-                        s.smsProblem?.let { "$it · see what was missed" } ?: "See which bank SMS from this week were counted",
-                        Icons.Outlined.FactCheck,
-                    ) { nav.navigate(Routes.SMS_CHECKUP) }
-                }
-            }
             item(key = "notif") {
                 Section("Notifications") {
                     val ensurePermission: () -> Unit = {
@@ -291,10 +245,6 @@ fun MoreScreen(nav: NavController) {
                             notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
                     }
-                    SwitchRow("New transactions", "When a bank SMS is imported", s.notifyTransactions, { v ->
-                        if (v) ensurePermission()
-                        scope.launch { c.settings.setNotifyTransactions(v) }
-                    }, Icons.Outlined.Notifications)
                     SwitchRow("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
                         if (v) ensurePermission()
                         scope.launch { c.settings.setNotifyBills(v) }
@@ -497,53 +447,4 @@ fun CategoriesScreen(nav: NavController) {
 }
 
 
-/** What the last "Scan inbox now" found, so unparsed bank messages can be reported and fixed. */
-@Composable
-private fun ScanDetails(r: ImportResult) {
-    var open by remember { mutableStateOf(false) }
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .background(AcuranzaTheme.colors.cardSurfaceHigh, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-            .clickable { open = !open }
-            .padding(14.dp),
-    ) {
-        Text(
-            "Scan details  ${if (open) "▲" else "▼"}",
-            style = MaterialTheme.typography.labelLarge,
-        )
-        Text(
-            "${r.messagesRead} SMS read · ${r.financialCandidates} from banks · ${r.parsedTransactions} transactions · " +
-                "${r.parsedBills} bills · ${r.inserted} new",
-            style = MaterialTheme.typography.bodySmall,
-            color = AcuranzaTheme.colors.subtleText,
-        )
-        if (open) {
-            r.readError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.alert) }
-            if (r.failures.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Text("Couldn't be saved", style = MaterialTheme.typography.labelMedium, color = AcuranzaTheme.colors.alert)
-                r.failures.forEach {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText, modifier = Modifier.padding(top = 4.dp))
-                }
-            }
-            if (r.ignoredByReason.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Text("Skipped", style = MaterialTheme.typography.labelMedium)
-                r.ignoredByReason.entries.sortedByDescending { it.value }.forEach { (reason, n) ->
-                    Text("$n · $reason", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
-                }
-            }
-            if (r.unparsedSamples.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Text("Not understood (numbers masked) — share these to improve parsing", style = MaterialTheme.typography.labelMedium)
-                r.unparsedSamples.forEach {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText,
-                        modifier = Modifier.padding(top = 4.dp))
-                }
-            }
-        }
-    }
-}
 

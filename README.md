@@ -12,8 +12,8 @@
 **Free and open source.** No ads, no account, no servers, no analytics — and no INTERNET permission at
 all, so Android itself guarantees that your money data never leaves the phone.
 
-Acuranza tracks income, expenses, credit cards, bills, budgets and goals. It can read bank SMS
-automatically, and turns your data into insights, all on the phone.
+Acuranza tracks income, expenses, credit cards, bills, budgets and goals. You add transactions by
+hand or import bank-statement CSVs, and every insight is computed on the phone.
 
 > Acuranza is a derivative of **[Kosh](https://github.com/AIM-IT4/kosh)** by Amit Kumar Jha and
 > contributors, used under the terms of the GNU General Public License v3.0 or later. The complete
@@ -42,16 +42,13 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
 
 ## What it does
 
-- **Automatic import from bank SMS** (optional, opt-in): ICICI, HDFC, Kotak, DBS, SBI and Axis
-  messages in detail; PNB, Bank of Baroda, Canara, Union Bank, IDFC FIRST, IndusInd, Yes Bank, AU
-  Small Finance Bank and Federal Bank by sender; a generic parser for other banks. UPI AutoPay,
-  e-mandate/NACH and standing-instruction debits are marked as auto-debits. New messages are picked
-  up live, de-duplicated and sorted into categories.
+- **Bank statement import (CSV)**: statements from net banking (HDFC, ICICI, SBI, Axis, Kotak and
+  others), de-duplicated and sorted into categories — no message reading of any kind.
 - **Review inbox**: confirm or fix imported transactions; recategorising a merchant remembers that
   category for future imports.
-- **Accounts and cards**: balances that reconcile with what bank SMS report, card outstanding and
+- **Accounts and cards**: balances that reconcile with what you know, card outstanding and
   utilisation, and "mark paid" recording the transfer from your bank account.
-- **Card bills**: read from card SMS, with due-date reminders.
+- **Card bills**: due dates, amounts and payment status, with due-date reminders.
 - **Budgets**: monthly budgets that follow your salary cycle, pace projection, optional rollover of
   unspent money, and an envelope (zero-based) mode.
 - **Goals**: with the monthly saving they need, an optional purchase loan (EMI and total interest),
@@ -70,7 +67,7 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
 - **Reports**: monthly and yearly PDF reports, a year-in-review, and a calendar of daily spending
   and upcoming payments.
 - **Bank statement import**: CSV statements from net banking (HDFC, ICICI, SBI, Axis, Kotak and
-  others), skipping rows already imported from SMS.
+  others), de-duplicated so re-imports add nothing new.
 - **Insights**: offline rules including budget pace, spending spikes, savings rate, subscriptions,
   card utilisation, emergency-fund cover and unusual spends.
 - **Export**: CSV (opens in Excel), Beancount and Ledger, so your data is never locked in.
@@ -82,6 +79,8 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
 
 - **No network, by construction.** The APK does not request the INTERNET permission (or any other
   network permission), so no code in it — ours or a dependency's — can open a socket.
+- **No message access.** Acuranza holds no SMS permission — it reads no SMS, ever. History comes
+  from bank-statement CSV files you pick yourself, or from manual entry.
 - **Encrypted database:** SQLCipher (AES-256), with the key kept in the Android Keystore.
 - **Biometric lock, app PIN with a decoy PIN** (opens an empty profile), privacy mode and
   screenshot blocking.
@@ -94,17 +93,17 @@ Acuranza asks for exactly one permission before the app opens on first launch:
 **notifications**. They are how reminders reach you — card-bill due dates, unusual spending,
 warranties ending and payments you scheduled — and the app is gated until they are allowed
 (with a clear path through system settings; it never crashes or loops when denied).
-SMS access is optional and requested separately, with its own explanation, only for automatic import.
+It asks for nothing else — no SMS, no contacts, no location, no network.
 
 ## Architecture
 
 | Module | Contents |
 | :-- | :-- |
 | `core:model` | Money (paise, Indian formatting), shared types |
-| `core:sms` | Bank SMS parsers, merchant normalisation, category guessing |
+| `core:sms` | Statement/CSV parsers, merchant normalisation, category guessing |
 | `core:finance` | Budgets, goals and Monte-Carlo outlook, insight engine, loans, recurring payments |
 | `core:designsystem` | Compose theme, charts, components, logo |
-| `app` | Room database, repositories, SMS import, WorkManager jobs, UI screens |
+| `app` | Room database, repositories, statement import, WorkManager jobs, UI screens |
 
 Kotlin, Jetpack Compose with Material 3, Room with SQLCipher, WorkManager and DataStore.
 No Google Play Services, no analytics, no crash-reporting SDKs.
@@ -123,10 +122,10 @@ security checks that run against every release APK.
 
 ## Contributing
 
-Contributions are welcome, especially **bank SMS formats** and **merchant categories**. The merchant rules
+Contributions are welcome, especially **bank statement formats** and **merchant categories**. The merchant rules
 live in an open dataset, [`core/sms/src/main/resources/acuranza/merchants.json`](core/sms/src/main/resources/acuranza/merchants.json)
 (format in [docs/DATASET.md](docs/DATASET.md)). See [CONTRIBUTING.md](CONTRIBUTING.md), and always mask
-account numbers before sharing an SMS. Security issues: see [SECURITY.md](SECURITY.md).
+account numbers before sharing a statement. Security issues: see [SECURITY.md](SECURITY.md).
 
 ## License
 

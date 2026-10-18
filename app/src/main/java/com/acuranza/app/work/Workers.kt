@@ -27,7 +27,6 @@ class DailyRefreshWorker(appContext: Context, params: WorkerParameters) : Corout
         val settings = c.settings.current()
         val today = Time.today()
 
-        if (settings.smsAutoImport && c.smsImporter.hasPermission()) runCatching { c.smsImporter.importInbox() }
         runCatching { c.recurring.recordDue(today) }
         runCatching { c.netWorth.snapshot(today) }
         runCatching {
@@ -129,18 +128,8 @@ class BillReminderWorker(appContext: Context, params: WorkerParameters) : Corout
     }
 }
 
-/** Hourly: imports bank SMS the live receiver missed, with the usual "spent at" alerts. */
-class SmsCatchUpWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
-    override suspend fun doWork(): Result {
-        val c = (applicationContext as AcuranzaApp).container
-        com.acuranza.app.sms.SmsCatchUp.run(c, alert = true)
-        return Result.success()
-    }
-}
-
 object WorkScheduler {
     private const val DAILY = "acuranza-daily-refresh"
-    private const val SMS_CATCH_UP = "acuranza-sms-catch-up"
     private const val BILLS = "acuranza-bill-reminders"
     private const val SYNC_NOW = "acuranza-sync-now"
 
@@ -152,11 +141,6 @@ object WorkScheduler {
             PeriodicWorkRequestBuilder<DailyRefreshWorker>(Duration.ofHours(12))
                 .setInitialDelay(Duration.ofMinutes(15))
                 .build(),
-        )
-        wm.enqueueUniquePeriodicWork(
-            SMS_CATCH_UP,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<SmsCatchUpWorker>(Duration.ofHours(1)).build(),
         )
         wm.enqueueUniquePeriodicWork(
             BILLS,

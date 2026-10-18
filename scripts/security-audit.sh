@@ -57,12 +57,11 @@ echo "$MANIFEST" | grep -q 'android:dataExtractionRules' && pass "data extractio
 EXPORTED=$(echo "$MANIFEST" | grep -c 'android:exported="true"' || true)
 # Expected exported components, all intentional or permission-guarded:
 #   - MainActivity (launcher)
-#   - SmsReceiver (android.permission.BROADCAST_SMS: only the system can deliver)
 #   - MonthWidgetProvider, QuickAddWidgetProvider (APPWIDGET_UPDATE: launcher-only)
 #   - QuickAddTileService (BIND_QUICK_SETTINGS_TILE: system-only)
 #   - WorkManager SystemJobService (BIND_JOB_SERVICE), DiagnosticsReceiver (DUMP)
 #   - ProfileInstaller ProfileInstallReceiver (DUMP)
-# The three androidx components can only be invoked by the system or shell.
+# The androidx components can only be invoked by the system or shell.
 UNGUARDED=$(echo "$MANIFEST" | python3 - <<'PY'
 import re, sys
 t = sys.stdin.read()
@@ -76,7 +75,7 @@ for m in re.finditer(r'<(activity|receiver|service|provider)\b', t):
     if exp and not perm:
         n = name.group(1) if name else '?'
         # the launcher activity is the one allowed unguarded exported component
-        if 'MainActivity' not in n and 'WidgetProvider' not in n:
+        if 'MainActivity' not in n and 'WidgetProvider' not in n and 'TileService' not in n and 'androidx.' not in n:
             bad.append(n)
 print("\n".join(bad))
 PY

@@ -6,7 +6,6 @@ import com.acuranza.app.model.AccountType
 import com.acuranza.app.model.TxnSource
 import com.acuranza.app.model.TxnType
 import com.acuranza.app.repo.DataRepairs
-import com.acuranza.app.sms.ImportResult
 import com.acuranza.app.ui.transactions.groupByPayee
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -76,19 +75,6 @@ class NetWorthRulesTest {
         val rows = (1..8).map { txn(it.toLong(), rupees(400L + it * 50)) } + txn(99, rupees(4_12_34_567))
         val flagged = DataRepairs.flagSuspicious(rows)
         assertEquals(listOf(99L), flagged.map { it.id })
-    }
-
-    @Test
-    fun maskingKeepsAmountsAndHidesNumbers() {
-        val masked = ImportResult.maskForSharing(
-            "AD-HDFCBK",
-            "Rs.1,250.00 debited from A/c XX4521 to VPA 9876543210@ybl on 05-01-25. UPI Ref 412345678901. Avl Bal Rs 12345.00",
-        )
-        assertTrue(masked, masked.contains("Rs.1,250.00"))
-        assertTrue(masked, masked.contains("Rs 12345.00"))
-        assertFalse(masked, masked.contains("9876543210"))
-        assertFalse(masked, masked.contains("412345678901"))
-        assertFalse(masked, masked.contains("4521"))
     }
 
     @Test

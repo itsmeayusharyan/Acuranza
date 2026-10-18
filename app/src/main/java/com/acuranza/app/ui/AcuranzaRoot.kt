@@ -529,7 +529,6 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         }
         composable(Routes.CALENDAR) { com.acuranza.app.ui.features.CalendarScreen(nav) }
         composable(Routes.WARRANTIES) { com.acuranza.app.ui.features.WarrantiesScreen(nav) }
-        composable(Routes.SMS_CHECKUP) { com.acuranza.app.ui.settings.SmsCheckupScreen(nav) }
     }
 }
 

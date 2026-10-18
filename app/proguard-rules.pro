@@ -8,7 +8,6 @@
 -keep class * extends androidx.work.ListenableWorker { <init>(android.content.Context, androidx.work.WorkerParameters); }
 
 # Manifest-registered components.
--keep class com.acuranza.app.sms.SmsReceiver { *; }
 -keep class com.acuranza.app.AcuranzaApp { *; }
 
 # Investment specs are serialised with org.json by field names in code (no reflection), but keep the

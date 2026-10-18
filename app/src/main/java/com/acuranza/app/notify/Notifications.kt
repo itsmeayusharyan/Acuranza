@@ -22,8 +22,6 @@ class Notifications(private val context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannels(
             listOf(
-                NotificationChannel(CH_TRANSACTIONS, "Transactions", NotificationManager.IMPORTANCE_DEFAULT)
-                    .apply { description = "New transactions detected from bank SMS" },
                 NotificationChannel(CH_BILLS, "Card bills", NotificationManager.IMPORTANCE_HIGH)
                     .apply { description = "Credit card bills and due-date reminders" },
                 NotificationChannel(CH_INSIGHTS, "Insights", NotificationManager.IMPORTANCE_LOW)
@@ -37,9 +35,6 @@ class Notifications(private val context: Context) {
     fun canNotify(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-
-    fun transaction(id: Long, title: String, text: String) =
-        post(CH_TRANSACTIONS, (NOTIF_TXN_BASE + id % 100_000).toInt(), title, text, ROUTE_REVIEW)
 
     fun bill(key: Int, title: String, text: String) = post(CH_BILLS, NOTIF_BILL_BASE + key, title, text, ROUTE_BILLS)
 
@@ -84,7 +79,6 @@ class Notifications(private val context: Context) {
     }
 
     companion object {
-        const val CH_TRANSACTIONS = "transactions"
         const val CH_BILLS = "bills"
         const val CH_INSIGHTS = "insights"
         const val CH_MATURITY = "maturity"
@@ -99,13 +93,11 @@ class Notifications(private val context: Context) {
 
         /** Lock-screen text per channel, with no amounts or merchants. */
         private val PUBLIC_TEXT = mapOf(
-            CH_TRANSACTIONS to "New transaction to review",
             CH_BILLS to "Card bill reminder",
             CH_INSIGHTS to "New insight",
-            CH_MATURITY to "Investment update",
+            CH_MATURITY to "Reminder",
         )
 
-        private const val NOTIF_TXN_BASE = 100_000L
         private const val NOTIF_BILL_BASE = 300_000
         private const val NOTIF_INSIGHT_BASE = 400_000
         private const val NOTIF_MATURITY_BASE = 500_000

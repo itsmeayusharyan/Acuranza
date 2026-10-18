@@ -1,7 +1,5 @@
 package com.acuranza.app.ui.transactions
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -116,15 +113,6 @@ class UncategorisedViewModel(private val c: AppContainer) : ViewModel() {
             dao.update(t.copy(categoryKey = categoryKey, reviewed = true, excludeFromStats = categoryKey == SmsMapping.TRANSFER_CATEGORY))
         }
     }
-
-    /** Masked original SMS of up to 15 "Other" imports, for the user to share so parsing can be tuned. */
-    suspend fun samples(): List<String> {
-        val fingerprints = state.value.groups.flatMap { g -> g.transactions }
-            .filter { it.source == TxnSource.SMS }
-            .mapNotNull { it.fingerprint }
-            .toSet()
-        return c.smsImporter.samplesFor(fingerprints)
-    }
 }
 
 /** "N transactions are uncategorised · Fix": shown on Home and Activity. */
@@ -187,28 +175,6 @@ fun UncategorisedScreen(nav: NavController) {
                         "Acuranza couldn't tell what these were for. Choose a category for a payee and every transaction to them " +
                             "moves; future messages from them will be categorised automatically.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = AcuranzaTheme.colors.subtleText,
-                    )
-                    SecondaryButton(
-                        text = "Copy masked SMS samples",
-                        icon = Icons.Outlined.ContentCopy,
-                        onClick = {
-                            scope.launch {
-                                val samples = vm.samples()
-                                if (samples.isEmpty()) {
-                                    snackbar.showSnackbar("No matching SMS found to share")
-                                } else {
-                                    val clip = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clip.setPrimaryClip(ClipData.newPlainText("Acuranza SMS samples", samples.joinToString("\n\n")))
-                                    snackbar.showSnackbar("Copied ${samples.size} masked messages")
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Text(
-                        "Account, card and phone numbers are replaced with X before copying. Nothing is sent anywhere.",
-                        style = MaterialTheme.typography.bodySmall,
                         color = AcuranzaTheme.colors.subtleText,
                     )
                 }

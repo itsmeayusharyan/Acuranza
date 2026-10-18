@@ -1,11 +1,11 @@
 Acuranza is a private, fully offline personal finance tracker for Android, built for Indian banking.
 
-It reads bank SMS (if you allow it), turning them into transactions, balances and card bills automatically —
-all on your phone. No account, no servers, no analytics: the app does not even request the INTERNET
+You add transactions by hand, or import the CSV statements your net banking exports — everything stays
+on your phone. No account, no servers, no analytics: the app does not even request the INTERNET
 permission, so Android itself guarantees your data cannot leave the device.
 
-• Bank SMS import with a review inbox: confirm or fix anything it reads
-• Accounts, credit cards, balances that reconcile with what your bank says
+• Bank statement (CSV) import with a review inbox: confirm or fix anything it reads
+• Accounts, credit cards, balances that reconcile with what you know
 • Budgets that follow your salary cycle, with rollover and an envelope mode
 • Goals with Monte-Carlo success probability, and safe-to-spend until payday
 • Recurring payments, subscriptions, loans and EMIs, card-bill reminders
@@ -18,4 +18,4 @@ contributors (github.com/AIM-IT4/kosh), with a redesigned interface, a strict of
 notification gate on first launch.
 
 Notifications are required at first launch — that is how bill due dates, spend alerts and warranty
-reminders reach you. Nothing else is asked for up front; SMS access is optional.
+reminders reach you. Nothing else is asked for: no SMS, no contacts, no location.

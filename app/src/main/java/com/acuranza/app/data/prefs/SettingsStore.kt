@@ -34,11 +34,6 @@ data class Settings(
     val onboardingDone: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
-    val smsAutoImport: Boolean = true,
-    val smsLastScanMillis: Long = 0L,
-    /** What went wrong in the last inbox scan (see `ImportResult.problem`), and when; null after a clean scan. */
-    val smsProblem: String? = null,
-    val smsProblemAt: Long = 0L,
     /** When the user dismissed the Home notice about SMS going to ignored accounts; only newer ones show. */
     val ignoredNoticeAt: Long = 0L,
     val monthStartDay: Int = 1,
@@ -51,7 +46,6 @@ data class Settings(
     val customHolidays: Set<LocalDate> = emptySet(),
     /** Days salary actually arrived, learned from salary credits (see `repo.PaydayLearner`). */
     val salaryDays: Set<LocalDate> = emptySet(),
-    val notifyTransactions: Boolean = true,
     val notifyBills: Boolean = true,
     val notifyInsights: Boolean = true,
     val hideAmounts: Boolean = false,
@@ -91,10 +85,6 @@ class SettingsStore(
         val onboardingDone = booleanPreferencesKey("onboarding_done")
         val biometricLock = booleanPreferencesKey("biometric_lock")
         val themeMode = stringPreferencesKey("theme_mode")
-        val smsAutoImport = booleanPreferencesKey("sms_auto_import")
-        val smsLastScan = longPreferencesKey("sms_last_scan")
-        val smsProblem = stringPreferencesKey("sms_problem")
-        val smsProblemAt = longPreferencesKey("sms_problem_at")
         val ignoredNoticeAt = longPreferencesKey("ignored_notice_at")
         // Left by the removed Gmail import; cleared on start.
         val legacyGmail = listOf(
@@ -107,7 +97,6 @@ class SettingsStore(
         val nationalHolidays = booleanPreferencesKey("national_holidays")
         val customHolidays = stringSetPreferencesKey("custom_holidays")
         val salaryDays = stringSetPreferencesKey("salary_days")
-        val notifyTransactions = booleanPreferencesKey("notify_transactions")
         val notifyBills = booleanPreferencesKey("notify_bills")
         val notifyInsights = booleanPreferencesKey("notify_insights")
         val hideAmounts = booleanPreferencesKey("hide_amounts")
@@ -126,10 +115,6 @@ class SettingsStore(
             onboardingDone = p[Keys.onboardingDone] ?: false,
             biometricLockEnabled = p[Keys.biometricLock] ?: false,
             themeMode = p[Keys.themeMode]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.DARK,
-            smsAutoImport = p[Keys.smsAutoImport] ?: true,
-            smsLastScanMillis = p[Keys.smsLastScan] ?: 0L,
-            smsProblem = p[Keys.smsProblem],
-            smsProblemAt = p[Keys.smsProblemAt] ?: 0L,
             ignoredNoticeAt = p[Keys.ignoredNoticeAt] ?: 0L,
             monthStartDay = p[Keys.monthStartDay] ?: 1,
             paydayToWorkingDay = p[Keys.paydayToWorkingDay] ?: true,
@@ -137,7 +122,6 @@ class SettingsStore(
             nationalHolidays = p[Keys.nationalHolidays] ?: true,
             customHolidays = dates(p[Keys.customHolidays]),
             salaryDays = dates(p[Keys.salaryDays]),
-            notifyTransactions = p[Keys.notifyTransactions] ?: true,
             notifyBills = p[Keys.notifyBills] ?: true,
             notifyInsights = p[Keys.notifyInsights] ?: true,
             hideAmounts = p[Keys.hideAmounts] ?: false,
@@ -153,18 +137,7 @@ class SettingsStore(
     suspend fun setOnboardingDone(done: Boolean = true) = edit { it[Keys.onboardingDone] = done }
     suspend fun setBiometricLock(enabled: Boolean) = edit { it[Keys.biometricLock] = enabled }
     suspend fun setThemeMode(mode: ThemeMode) = edit { it[Keys.themeMode] = mode.name }
-    suspend fun setSmsAutoImport(enabled: Boolean) = edit { it[Keys.smsAutoImport] = enabled }
-    suspend fun setSmsLastScan(millis: Long) = edit { it[Keys.smsLastScan] = millis }
     suspend fun dismissIgnoredNotice(at: Long = System.currentTimeMillis()) = edit { it[Keys.ignoredNoticeAt] = at }
-    suspend fun setSmsProblem(problem: String?, at: Long = System.currentTimeMillis()) = edit {
-        if (problem == null) {
-            it.remove(Keys.smsProblem)
-            it.remove(Keys.smsProblemAt)
-        } else {
-            it[Keys.smsProblem] = problem.take(200)
-            it[Keys.smsProblemAt] = at
-        }
-    }
     suspend fun setMonthStartDay(day: Int) = edit { it[Keys.monthStartDay] = day.coerceIn(1, 28) }
     suspend fun setPaydayToWorkingDay(on: Boolean) = edit { it[Keys.paydayToWorkingDay] = on }
     suspend fun setPayWeekend(weekend: PayWeekend) = edit { it[Keys.payWeekend] = weekend.name }
@@ -174,7 +147,6 @@ class SettingsStore(
 
     private fun dates(raw: Set<String>?): Set<LocalDate> =
         raw.orEmpty().mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet()
-    suspend fun setNotifyTransactions(enabled: Boolean) = edit { it[Keys.notifyTransactions] = enabled }
     suspend fun setNotifyBills(enabled: Boolean) = edit { it[Keys.notifyBills] = enabled }
     suspend fun setNotifyInsights(enabled: Boolean) = edit { it[Keys.notifyInsights] = enabled }
     suspend fun setHideAmounts(hidden: Boolean) = edit { it[Keys.hideAmounts] = hidden }

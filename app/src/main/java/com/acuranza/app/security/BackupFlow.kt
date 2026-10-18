@@ -26,10 +26,6 @@ class BackupFlow(private val app: AcuranzaApp) {
 
     private suspend fun afterRestore(meta: BackupMeta) {
         val settings = container.settings
-        // SMS that arrived after the backup was made are not in it: scan again from (a little before) its date.
-        // Fingerprints and tombstones keep the re-scan from duplicating or reviving anything.
-        val since = meta.exportedAt?.let { (it - SCAN_OVERLAP_MILLIS).coerceAtLeast(0) } ?: 0L
-        runCatching { settings.setSmsLastScan(since) }
         // A backup made before a one-time data repair needs that repair applied to the restored data.
         val backupRepairs = meta.repairVersion ?: 0
         if (backupRepairs < settings.repairVersion()) {
@@ -51,6 +47,5 @@ class BackupFlow(private val app: AcuranzaApp) {
     }
 
     companion object {
-        private const val SCAN_OVERLAP_MILLIS = 2L * 24 * 60 * 60 * 1000
     }
 }

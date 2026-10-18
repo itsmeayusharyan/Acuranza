@@ -1,9 +1,6 @@
 package com.acuranza.app.security
 
-import android.Manifest
 import android.content.Context
-import android.content.ContextWrapper
-import android.content.pm.PackageManager
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -18,19 +15,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-private val Context.decoySettingsStore: DataStore<Preferences> by preferencesDataStore(name = "kosh_profile_b")
+private val Context.decoySettingsStore: DataStore<Preferences> by preferencesDataStore(name = "acuranza_profile_b")
 
-/** What a sandboxed (decoy) [AppContainer] uses instead of the real database, settings and SMS inbox. */
+/** What a sandboxed (decoy) [AppContainer] uses instead of the real database and settings. */
 class DecoySandbox(
     val db: AcuranzaDatabase,
     val settings: SettingsStore,
-    val smsContext: Context,
 )
 
 /**
  * The decoy profile opened by the decoy PIN. It lives only in memory: a throwaway in-memory database filled with
- * sample data, its own settings file and an SMS importer that never gets SMS access. The real database is never
- * opened through it, and background SMS imports keep writing to the real container regardless.
+ * sample data and its own settings file. The real database is never opened through it.
  */
 object DecoySession {
     private val _active = MutableStateFlow(false)
@@ -60,7 +55,7 @@ object DecoySession {
 
     private suspend fun build(app: Context): AppContainer {
         val db = Room.inMemoryDatabaseBuilder(app, AcuranzaDatabase::class.java).build()
-        val sandbox = DecoySandbox(db, SettingsStore(app, app.decoySettingsStore), NoSmsContext(app))
+        val sandbox = DecoySandbox(db, SettingsStore(app, app.decoySettingsStore))
         val c = AppContainer(app, sandbox)
         db.categories().insertAll(DefaultCategories.all)
         runCatching {
@@ -72,20 +67,3 @@ object DecoySession {
     }
 }
 
-/** A context that reports SMS permissions as denied, so the decoy profile can never read the real inbox. */
-class NoSmsContext(base: Context) : ContextWrapper(base) {
-    override fun checkPermission(permission: String, pid: Int, uid: Int): Int =
-        if (permission in SMS_PERMISSIONS) PackageManager.PERMISSION_DENIED else super.checkPermission(permission, pid, uid)
-
-    override fun checkSelfPermission(permission: String): Int =
-        if (permission in SMS_PERMISSIONS) PackageManager.PERMISSION_DENIED else super.checkSelfPermission(permission)
-
-    override fun checkCallingOrSelfPermission(permission: String): Int =
-        if (permission in SMS_PERMISSIONS) PackageManager.PERMISSION_DENIED else super.checkCallingOrSelfPermission(permission)
-
-    override fun getApplicationContext(): Context = this
-
-    private companion object {
-        val SMS_PERMISSIONS = setOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS)
-    }
-}

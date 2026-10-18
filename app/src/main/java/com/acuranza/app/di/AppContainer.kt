@@ -14,7 +14,6 @@ import com.acuranza.app.repo.InsightRepository
 import com.acuranza.app.repo.NetWorthRepository
 import com.acuranza.app.repo.TransactionRepository
 import com.acuranza.app.security.BackupManager
-import com.acuranza.app.sms.SmsImporter
 import com.acuranza.app.work.WorkScheduler
 
 /** Manual dependency container; get it with `(context.applicationContext as AcuranzaApp).container`. */
@@ -43,7 +42,6 @@ class AppContainer(context: Context, sandbox: com.acuranza.app.security.DecoySan
     val netWorth = NetWorthRepository(db, accounts, loans)
     val goalOutlooks = com.acuranza.app.repo.GoalSimulations(goals, planningPrefs)
 
-    val smsImporter = SmsImporter(sandbox?.smsContext ?: app, db, settings)
     /** Receipt files, encrypted in app storage. */
     val attachmentStore = com.acuranza.app.data.AttachmentStore(app)
     val backup = BackupManager(app, db, attachmentStore)

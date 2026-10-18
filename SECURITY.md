@@ -11,7 +11,7 @@ You'll get a reply within a few days. Once a fix is released, you'll be credited
 
 ## Threat model (summary)
 
-Acuranza holds sensitive financial data, read from bank SMS and entered by the user. It is designed so that
+Acuranza holds sensitive financial data, entered by the user and imported from bank-statement CSVs. It is designed so that
 this data never leaves the phone.
 
 **Protections**
@@ -27,7 +27,7 @@ this data never leaves the phone.
 - **On the device:** optional biometric/device-credential app lock that re-locks after 60 seconds in the
   background, screenshot and recents-preview blocking, privacy mode, and lock-screen notifications that hide
   amounts and merchants.
-- **SMS:** the SMS receiver only accepts broadcasts from the system (`BROADCAST_SMS` permission).
+- **Messages:** Acuranza holds no SMS permission at all — it cannot read SMS or MMS, on any screen.
 
 **Out of scope**
 
