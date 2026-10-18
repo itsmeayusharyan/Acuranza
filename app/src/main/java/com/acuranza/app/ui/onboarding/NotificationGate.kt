@@ -162,14 +162,11 @@ fun NotificationDeniedHelp(modifier: Modifier = Modifier) {
 }
 
 /**
- * The full-screen gate shown whenever the main app would open but the notification permission is
- * missing (first launch after onboarding, or a later revocation). The user stays here until the
- * permission is granted — no crash, no force-close, no other permissions requested.
+ * The gate's visual content, with the permission state passed in. Kept separate from
+ * [NotificationGateScreen] so it renders without an activity (screenshot tests, previews).
  */
 @Composable
-fun NotificationGateScreen() {
-    val granted by rememberNotificationPermission()
-    val request = rememberNotificationRequest()
+fun NotificationGateBody(granted: Boolean, onRequest: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
@@ -197,11 +194,23 @@ fun NotificationGateScreen() {
         Spacer(Modifier.height(24.dp))
         // When the permission arrives — from the dialog or from settings — the stage recomposes into
         // the app, so this button only ever asks; it never claims to be anything else.
-        PrimaryButton("Allow notifications", onClick = request, modifier = Modifier.fillMaxWidth())
+        PrimaryButton("Allow notifications", onClick = onRequest, modifier = Modifier.fillMaxWidth())
         if (!granted) {
             Spacer(Modifier.height(12.dp))
             NotificationDeniedHelp(Modifier.fillMaxWidth())
         }
         Spacer(Modifier.height(32.dp))
     }
+}
+
+/**
+ * The full-screen gate shown whenever the main app would open but the notification permission is
+ * missing (first launch after onboarding, or a later revocation). The user stays here until the
+ * permission is granted — no crash, no force-close, no other permissions requested.
+ */
+@Composable
+fun NotificationGateScreen() {
+    val granted by rememberNotificationPermission()
+    val request = rememberNotificationRequest()
+    NotificationGateBody(granted = granted, onRequest = request)
 }

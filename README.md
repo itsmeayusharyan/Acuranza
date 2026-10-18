@@ -21,6 +21,25 @@ automatically, and turns your data into insights, all on the phone.
 > its own interface, a stricter offline build, a notification gate on first launch, and a narrower,
 > spending-focused feature set (the Tax planner and the FD/EPF/NPS wealth sections were removed).
 
+## Screens
+
+Dark mode is the default on first launch. These are rendered from the app's own Compose UI with
+sample data (the Paparazzi tests in `app/src/test` regenerate them on every run).
+
+<p align="center">
+  <img src="docs/screenshots/home-dark.png" width="230">&nbsp;
+  <img src="docs/screenshots/activity.png" width="230">&nbsp;
+  <img src="docs/screenshots/budgets.png" width="230">&nbsp;
+  <img src="docs/screenshots/goals.png" width="230">
+</p>
+<p align="center">
+  <img src="docs/screenshots/add.png" width="230">&nbsp;
+  <img src="docs/screenshots/card-bills.png" width="230">&nbsp;
+  <img src="docs/screenshots/insights.png" width="230">&nbsp;
+  <img src="docs/screenshots/settings.png" width="230">
+</p>
+
+
 ## What it does
 
 - **Automatic import from bank SMS** (optional, opt-in): ICICI, HDFC, Kotak, DBS, SBI and Axis
