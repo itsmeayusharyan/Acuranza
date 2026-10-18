@@ -44,6 +44,7 @@ import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Restore
@@ -300,11 +301,18 @@ fun MoreScreen(nav: NavController) {
                     ActionRow("Erase all data", "Deletes accounts, transactions and bills", Icons.Outlined.DeleteForever) { confirmErase = true }
                 }
             }
+            item(key = "about-link") {
+                Section("About") {
+                    ActionRow("About Acuranza", "Version, privacy policy and licence", Icons.Outlined.Info) {
+                        nav.navigate(Routes.ABOUT)
+                    }
+                }
+            }
             item(key = "about") {
                 Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Acuranza ${context.versionName()}", style = MaterialTheme.typography.labelLarge, color = AcuranzaTheme.colors.subtleText)
                     Text("Everything stays on this device · no internet access", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
-                    Text("Free & open source · GPL-3.0 · based on Acuranza", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
+                    Text("Free & open source · GPL-3.0 · based on Kosh", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
         }

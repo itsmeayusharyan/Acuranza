@@ -56,6 +56,7 @@ import com.acuranza.app.ui.home.HomeState
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.planning.PlanningContent
 import com.acuranza.app.ui.planning.PlanningState
+import com.acuranza.app.ui.about.AboutContent
 import com.acuranza.app.ui.settings.Section
 import com.acuranza.app.ui.transactions.AddTransactionContent
 import com.acuranza.app.ui.transactions.DayGroup
@@ -227,6 +228,19 @@ class ScreensScreenshotTest {
                 }
                 Spacer(Modifier.height(24.dp))
             }
+        }
+    }
+
+    @Test
+    fun about() = paparazzi.snapshot {
+        AcuranzaTheme(darkTheme = true) {
+            AboutContent(
+                versionLabel = "Version 1.3.0 (4)",
+                onBack = {},
+                onPrivacy = {},
+                onLicence = {},
+                onVisitSource = {},
+            )
         }
     }
 
