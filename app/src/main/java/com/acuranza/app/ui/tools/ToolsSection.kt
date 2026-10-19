@@ -17,19 +17,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileDownload
-import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.TheaterComedy
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,8 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,10 +46,10 @@ import com.acuranza.app.di.AppContainer
 import com.acuranza.app.export.ExportData
 import com.acuranza.app.export.ExportFormat
 import com.acuranza.app.export.Exporters
-import com.acuranza.app.security.DecoySession
-import com.acuranza.app.security.PinHasher
 import com.acuranza.app.tools.DigestSchedule
+import com.acuranza.app.security.DecoySession
 import com.acuranza.app.tools.ToolsPrefs
+import com.acuranza.app.ui.settings.DECOY_PLACEHOLDER
 import com.acuranza.app.tools.ToolsSettings
 import com.acuranza.app.ui.common.ActionRow
 import com.acuranza.app.ui.common.LocalContainer
@@ -76,7 +69,7 @@ import java.time.format.FormatStyle
 /** Date ranges offered by the export dialog. */
 enum class ExportRange(val label: String) { THIS_PERIOD("This month"), LAST_PERIOD("Last month"), LAST_12("Last 12 months"), ALL("All time") }
 
-/** Settings for export, widgets, the daily digest and the app PIN / decoy PIN. */
+/** Tools settings: export, the daily digest and the home-screen widget privacy switch. */
 @Composable
 fun ToolsSection(onMessage: (String) -> Unit) {
     val c = LocalContainer.current
@@ -93,7 +86,6 @@ fun ToolsSection(onMessage: (String) -> Unit) {
 
     var exportOpen by remember { mutableStateOf(false) }
     var pendingExport by remember { mutableStateOf<Pair<ExportFormat, ExportRange>?>(null) }
-    var pinDialog by remember { mutableStateOf<PinAction?>(null) }
 
     fun writeExport(uri: Uri) {
         val (format, range) = pendingExport ?: return
@@ -153,8 +145,8 @@ fun ToolsSection(onMessage: (String) -> Unit) {
             }
         }
         SwitchRow(
-            "Amounts on widget",
-            if (s.biometricLockEnabled) "Show amounts on the home-screen widget even with app lock on" else "Turn on app lock to choose",
+            "Home screen widgets",
+            if (s.biometricLockEnabled) "Show real amounts on the home-screen widget even with app lock on" else "Turn on app lock to choose",
             prefs.widgetAmountsWhenLocked,
             { on ->
                 if (decoy) decoyPrefs = decoyPrefs.copy(widgetAmountsWhenLocked = on)
@@ -165,27 +157,6 @@ fun ToolsSection(onMessage: (String) -> Unit) {
         )
     }
 
-    Section("PIN") {
-        ActionRow(
-            "App PIN",
-            when {
-                !prefs.pinSet -> "Off · unlock with a PIN instead of fingerprint"
-                s.biometricLockEnabled -> "On"
-                else -> "On · used when app lock is on"
-            },
-            Icons.Outlined.Password,
-        ) { pinDialog = if (prefs.pinSet) PinAction.MANAGE else PinAction.SET }
-        ActionRow(
-            "Decoy PIN",
-            when {
-                prefs.decoySet -> "On · opens a separate sample profile"
-                !prefs.pinSet || !s.biometricLockEnabled -> "Needs app lock and an app PIN"
-                else -> "Off · a second PIN that opens a sample profile"
-            },
-            Icons.Outlined.TheaterComedy,
-            enabled = prefs.pinSet && s.biometricLockEnabled,
-        ) { pinDialog = if (prefs.decoySet) PinAction.REMOVE_DECOY else PinAction.SET_DECOY }
-    }
 
     if (exportOpen) {
         ExportDialog(
@@ -206,41 +177,7 @@ fun ToolsSection(onMessage: (String) -> Unit) {
         )
     }
 
-    pinDialog?.let { action ->
-        PinDialog(
-            action = action,
-            // In the decoy profile the decoy PIN plays the part of the app PIN.
-            currentHash = if (decoy) realPrefs.decoyPinHash else realPrefs.pinHash,
-            otherHash = if (decoy) null else realPrefs.decoyPinHash,
-            onDismiss = { pinDialog = null },
-            onAction = { next -> pinDialog = next },
-            onSave = { result ->
-                pinDialog = null
-                if (decoy) {
-                    decoyPrefs = when (result) {
-                        is PinResult.Real -> decoyPrefs.copy(pinHash = result.hash?.let { DECOY_PLACEHOLDER }, decoyPinHash = null)
-                        is PinResult.Decoy -> decoyPrefs.copy(decoyPinHash = result.hash?.let { DECOY_PLACEHOLDER })
-                    }
-                } else {
-                    scope.launch {
-                        when (result) {
-                            is PinResult.Real -> store.setPinHash(result.hash)
-                            is PinResult.Decoy -> store.setDecoyPinHash(result.hash)
-                        }
-                    }
-                }
-                onMessage(
-                    when (result) {
-                        is PinResult.Real -> if (result.hash == null) "App PIN removed" else "App PIN saved"
-                        is PinResult.Decoy -> if (result.hash == null) "Decoy PIN removed" else "Decoy PIN saved"
-                    },
-                )
-            },
-        )
-    }
 }
-
-private const val DECOY_PLACEHOLDER = "decoy"
 
 private fun formatMinutes(minutes: Int): String =
     LocalTime.of(minutes / 60, minutes % 60).format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
@@ -302,125 +239,4 @@ private fun Choice(label: String, selected: Boolean, onClick: () -> Unit) {
         RadioButton(selected = selected, onClick = onClick)
         Text(label)
     }
-}
-
-private enum class PinAction { SET, MANAGE, CHANGE, REMOVE, SET_DECOY, REMOVE_DECOY }
-
-private sealed interface PinResult {
-    /** A new app PIN hash, or null to remove it (and the decoy PIN with it). */
-    data class Real(val hash: String?) : PinResult
-    data class Decoy(val hash: String?) : PinResult
-}
-
-@Composable
-private fun PinDialog(
-    action: PinAction,
-    currentHash: String?,
-    otherHash: String?,
-    onDismiss: () -> Unit,
-    onAction: (PinAction) -> Unit,
-    onSave: (PinResult) -> Unit,
-) {
-    if (action == PinAction.MANAGE) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("App PIN") },
-            text = { Text("Change your PIN, or remove it to unlock with fingerprint or screen lock only. Removing it also removes the decoy PIN.") },
-            confirmButton = { TextButton(onClick = { onAction(PinAction.CHANGE) }) { Text("Change") } },
-            dismissButton = { TextButton(onClick = { onAction(PinAction.REMOVE) }) { Text("Remove", color = AcuranzaTheme.colors.expense) } },
-        )
-        return
-    }
-    val scope = rememberCoroutineScope()
-    val needsCurrent = action != PinAction.SET
-    val needsNew = action == PinAction.SET || action == PinAction.CHANGE || action == PinAction.SET_DECOY
-    var current by remember { mutableStateOf("") }
-    var new by remember { mutableStateOf("") }
-    var confirm by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    var working by remember { mutableStateOf(false) }
-
-    val title = when (action) {
-        PinAction.SET -> "Set app PIN"
-        PinAction.CHANGE -> "Change app PIN"
-        PinAction.REMOVE -> "Remove app PIN"
-        PinAction.SET_DECOY -> "Set decoy PIN"
-        PinAction.REMOVE_DECOY -> "Remove decoy PIN"
-        PinAction.MANAGE -> ""
-    }
-
-    fun submit() {
-        if (needsNew) {
-            if (!PinHasher.isValidPin(new)) { error = "Use ${PinHasher.MIN_LENGTH}–${PinHasher.MAX_LENGTH} digits"; return }
-            if (new != confirm) { error = "The PINs don't match"; return }
-        }
-        working = true
-        scope.launch {
-            val outcome = withContext(Dispatchers.Default) {
-                // Changes need the current app PIN, so a borrowed unlocked phone can't change or reveal the setup.
-                if (needsCurrent && !PinHasher.verify(current, currentHash)) return@withContext "Wrong current PIN"
-                when (action) {
-                    PinAction.SET, PinAction.CHANGE -> {
-                        if (otherHash != null && PinHasher.verify(new, otherHash)) "Use a PIN different from the decoy PIN"
-                        else PinResult.Real(PinHasher.hash(new))
-                    }
-                    PinAction.SET_DECOY -> {
-                        if (action == PinAction.SET_DECOY && PinHasher.verify(new, currentHash)) "The decoy PIN must differ from the app PIN"
-                        else PinResult.Decoy(PinHasher.hash(new))
-                    }
-                    PinAction.REMOVE -> PinResult.Real(null)
-                    PinAction.REMOVE_DECOY -> PinResult.Decoy(null)
-                    PinAction.MANAGE -> null
-                }
-            }
-            working = false
-            when (outcome) {
-                is PinResult -> onSave(outcome)
-                is String -> error = outcome
-                else -> onDismiss()
-            }
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = { if (!working) onDismiss() },
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (action == PinAction.SET_DECOY) {
-                    Text(
-                        "Entering this PIN on the lock screen opens a separate profile with sample data. Your real data stays hidden, and bank SMS keep being recorded in the background.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AcuranzaTheme.colors.subtleText,
-                    )
-                }
-                if (needsCurrent) PinField(current, "Current app PIN") { current = it; error = null }
-                if (needsNew) {
-                    PinField(new, if (action == PinAction.SET_DECOY) "Decoy PIN" else "New PIN") { new = it; error = null }
-                    PinField(confirm, "Repeat PIN") { confirm = it; error = null }
-                }
-                error?.let { Text(it, color = AcuranzaTheme.colors.expense, style = MaterialTheme.typography.bodySmall) }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { submit() }, enabled = !working) {
-                Text(if (working) "…" else if (needsNew) "Save" else "Remove", fontWeight = FontWeight.SemiBold)
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !working) { Text("Cancel") } },
-    )
-}
-
-@Composable
-private fun PinField(value: String, label: String, onValue: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = { v -> onValue(v.filter { it.isDigit() }.take(PinHasher.MAX_LENGTH)) },
-        label = { Text(label) },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth(),
-    )
 }

@@ -38,7 +38,6 @@ import com.acuranza.app.data.BudgetEntity
 import com.acuranza.app.data.GoalEntity
 import com.acuranza.app.designsystem.components.AcuranzaLogo
 import com.acuranza.app.designsystem.components.LogoShape
-import com.acuranza.app.designsystem.components.SegmentedTabs
 import com.acuranza.app.designsystem.theme.AcuranzaText
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.finance.Budgets
@@ -67,6 +66,19 @@ import com.acuranza.app.util.Period
 import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.outlined.QueryStats
+import androidx.compose.material.icons.outlined.RealEstateAgent
+import androidx.compose.material.icons.outlined.ScreenLockPortrait
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.TheaterComedy
 
 class ScreensScreenshotTest {
     @get:Rule
@@ -206,25 +218,40 @@ class ScreensScreenshotTest {
                     AcuranzaLogo(size = 44.dp)
                     Spacer(Modifier.width(14.dp))
                     Column {
-                        Text("Acuranza", style = AcuranzaText.screenTitle)
+                        Text("Settings", style = AcuranzaText.screenTitle)
                         Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                     }
                 }
-                Section("Manage") {
+                Section("Account & management") {
                     ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) {}
-                    ActionRow("Card bills", "Due dates and payments", Icons.Outlined.CreditCard) {}
                     ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) {}
+                    ActionRow("Insights", "Spending analysis and unusual activity", Icons.Outlined.QueryStats) {}
+                    ActionRow("Categories", "Your spending and income categories", Icons.Outlined.Category) {}
+                }
+                Section("Financial tools") {
+                    ActionRow("Card bills", "Due dates and payments from your cards", Icons.Outlined.CreditCard) {}
+                    ActionRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {}
+                    ActionRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) {}
+                    ActionRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) {}
                 }
                 Section("Appearance & privacy") {
-                    SegmentedTabs(listOf("System", "Light", "Dark"), 2, onSelect = {}, modifier = Modifier.padding(vertical = 8.dp))
                     SwitchRow("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff)
                     SwitchRow("App lock", "Fingerprint, face or screen lock when opening Acuranza", true, {}, Icons.Outlined.Fingerprint)
+                    SwitchRow("Block screenshots", "Hide Acuranza in the recents preview and block screenshots", true, {}, Icons.Outlined.ScreenLockPortrait)
                 }
                 Section("Notifications") {
-                    SwitchRow("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.NotificationsActive)
+                    SwitchRow("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.Alarm)
+                    SwitchRow("Important insights", "Overspending and unusual spends", false, {}, Icons.Outlined.Bolt)
                 }
-                Section("Your data") {
+                Section("Security") {
+                    ActionRow("App PIN", "On", Icons.Outlined.Password) {}
+                    ActionRow("Decoy PIN", "Off · a second PIN that opens a sample profile", Icons.Outlined.TheaterComedy) {}
+                    ActionRow("Recovery options", "What still works if a PIN is forgotten or the phone is lost", Icons.Outlined.Shield) {}
+                }
+                Section("Data management") {
                     ActionRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup) {}
+                    ActionRow("Automatic backups", "Daily or weekly, to a folder you choose", Icons.Outlined.Sync) {}
+                    ActionRow("Erase all data", "Deletes accounts, transactions and bills", Icons.Outlined.DeleteForever) {}
                 }
                 Spacer(Modifier.height(24.dp))
             }

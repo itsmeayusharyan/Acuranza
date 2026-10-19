@@ -1,8 +1,5 @@
 package com.acuranza.app.ui.settings
 
-import com.acuranza.app.ui.common.NO_FILE_PICKER
-import com.acuranza.app.ui.common.launchOrFalse
-import com.acuranza.app.designsystem.theme.AcuranzaText
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -12,10 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,40 +22,42 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.AccountBalance
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Autorenew
-import androidx.compose.material.icons.outlined.Handshake
-import androidx.compose.material.icons.outlined.RealEstateAgent
-import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.Inbox
-import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.QueryStats
+import androidx.compose.material.icons.outlined.RealEstateAgent
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Science
-import androidx.compose.material.icons.outlined.FactCheck
-import androidx.compose.material.icons.outlined.Sms
+import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.TrackChanges
+import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,7 +66,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -78,11 +73,15 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.data.prefs.ThemeMode
-import com.acuranza.app.designsystem.components.CategoryIcon
 import com.acuranza.app.designsystem.components.AcuranzaCard
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
 import com.acuranza.app.designsystem.components.AcuranzaLogo
+import com.acuranza.app.designsystem.components.CategoryIcon
 import com.acuranza.app.designsystem.components.SegmentedTabs
+import com.acuranza.app.designsystem.theme.AcuranzaText
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.model.TxnType
 import com.acuranza.app.security.BackupCrypto
@@ -91,24 +90,22 @@ import com.acuranza.app.security.UnlockResult
 import com.acuranza.app.ui.common.ActionRow
 import com.acuranza.app.ui.common.ChoiceField
 import com.acuranza.app.ui.common.ConfirmDialog
-import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalSettings
-import com.acuranza.app.ui.common.SwitchRow
 import com.acuranza.app.ui.common.color
-import com.acuranza.app.ui.nav.Routes
+import com.acuranza.app.ui.common.NO_FILE_PICKER
+import com.acuranza.app.ui.common.SwitchRow
+import com.acuranza.app.ui.common.launchOrFalse
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CancellationException
 import java.time.LocalDate
-import com.acuranza.app.ui.nav.popBackSafely
-
 
 private fun Context.versionName(): String = runCatching {
     @Suppress("DEPRECATION")
     packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0"
 }.getOrDefault("1.0")
 
+/** The Settings tab: every Acuranza control, grouped into clear categories. */
 @Composable
 fun MoreScreen(nav: NavController) {
     val c = LocalContainer.current
@@ -118,13 +115,14 @@ fun MoreScreen(nav: NavController) {
     val snackbar = remember { SnackbarHostState() }
     var busy by remember { mutableStateOf<String?>(null) }
     var confirmErase by remember { mutableStateOf(false) }
+    var confirmRemoveSample by remember { mutableStateOf(false) }
     var backupUri by remember { mutableStateOf<Uri?>(null) }
     var restoreUri by remember { mutableStateOf<Uri?>(null) }
     val unpaidBills by c.bills.observeUnpaid().collectAsState(initial = emptyList())
 
     fun show(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
     var sampleLoaded by remember { mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(Unit) { sampleLoaded = runCatching { c.demoData.isLoaded() }.getOrDefault(false) }
+    LaunchedEffect(Unit) { sampleLoaded = runCatching { c.demoData.isLoaded() }.getOrDefault(false) }
     val backupFlow = remember { com.acuranza.app.security.BackupFlow(context.applicationContext as com.acuranza.app.AcuranzaApp) }
 
     val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -143,47 +141,55 @@ fun MoreScreen(nav: NavController) {
                     AcuranzaLogo(size = 44.dp)
                     Spacer(Modifier.width(14.dp))
                     Column {
-                        Text("Acuranza", style = AcuranzaText.screenTitle)
+                        Text("Settings", style = AcuranzaText.screenTitle)
                         Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                     }
                 }
             }
-            item(key = "bills") {
-                val due = unpaidBills.size
-                Section("Credit cards") {
+            item(key = "account") {
+                Section("Account & management") {
+                    ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) { nav.navigate(Routes.ACCOUNTS) }
+                    ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
+                    ActionRow("Insights", "Spending analysis and unusual activity", Icons.Outlined.QueryStats) { nav.navigate(Routes.INSIGHTS) }
+                    ActionRow("Categories", "Your spending and income categories", Icons.Outlined.Category) { nav.navigate(Routes.CATEGORIES) }
+                }
+            }
+            item(key = "tools-money") {
+                Section("Financial tools") {
+                    val due = unpaidBills.size
                     ActionRow(
                         if (due > 0) "Card bills · $due due" else "Card bills",
-                        if (due > 0) "From your card SMS — tap to see amounts and due dates" else "Bills from your card SMS appear here",
+                        if (due > 0) "Tap to see amounts and due dates" else "Due dates and payments from your cards",
                         Icons.Outlined.CreditCard,
                     ) { nav.navigate(Routes.BILLS) }
-                }
-            }
-            item(key = "shortcuts") {
-                Section("Manage") {
-                    ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) { nav.navigate(Routes.ACCOUNTS) }
-                    ActionRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges) { nav.navigate(Routes.PLANNING) }
-                    ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
-                }
-            }
-            item(key = "money") {
-                Section("Money tools") {
-                    ActionRow("Recurring & subscriptions", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {
+                    ActionRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {
                         nav.navigate(Routes.RECURRING)
                     }
                     ActionRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
-                    ActionRow("Lent & borrowed", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }
+                    ActionRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }
                     ActionRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) { nav.navigate(Routes.REPORTS) }
                     ActionRow("Warranties", "Receipts with a warranty end date", Icons.Outlined.VerifiedUser) { nav.navigate(Routes.WARRANTIES) }
+                    ActionRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges) { nav.navigate(Routes.PLANNING) }
                 }
             }
             item(key = "appearance") {
                 Section("Appearance & privacy") {
-                    SegmentedTabs(
-                        listOf("System", "Light", "Dark"),
-                        ThemeMode.entries.indexOf(s.themeMode),
-                        onSelect = { scope.launch { c.settings.setThemeMode(ThemeMode.entries[it]) } },
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    )
+                    Column(Modifier.padding(vertical = 8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Palette, contentDescription = null, tint = AcuranzaTheme.colors.subtleText, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(14.dp))
+                            Column {
+                                Text("Theme", style = MaterialTheme.typography.bodyLarge)
+                                Text("Follow the system, or pick light or dark", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        SegmentedTabs(
+                            listOf("System", "Light", "Dark"),
+                            ThemeMode.entries.indexOf(s.themeMode),
+                            onSelect = { scope.launch { c.settings.setThemeMode(ThemeMode.entries[it]) } },
+                        )
+                    }
                     SwitchRow("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
                         Icons.Outlined.VisibilityOff)
                     val canLock = remember { BiometricGate.isAvailable(context) }
@@ -210,10 +216,10 @@ fun MoreScreen(nav: NavController) {
                     )
                     SwitchRow(
                         "Block screenshots",
-                        "Hide Acuranza in the recent-apps preview and block screenshots. On by default with app lock or hidden amounts",
+                        "Hide Acuranza in the recents preview and block screenshots",
                         s.blockScreenshots,
                         { v -> scope.launch { c.settings.setBlockScreenshots(v) } },
-                        Icons.Outlined.VisibilityOff,
+                        Icons.Outlined.ScreenLockPortrait,
                     )
                     val encrypted = com.acuranza.app.data.DatabaseEncryption.status ==
                         com.acuranza.app.data.DatabaseEncryption.Status.ENCRYPTED
@@ -241,11 +247,11 @@ fun MoreScreen(nav: NavController) {
                     SwitchRow("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
                         if (v) ensurePermission()
                         scope.launch { c.settings.setNotifyBills(v) }
-                    })
+                    }, Icons.Outlined.Alarm)
                     SwitchRow("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
                         if (v) ensurePermission()
                         scope.launch { c.settings.setNotifyInsights(v) }
-                    })
+                    }, Icons.Outlined.Bolt)
                 }
             }
             item(key = "period") {
@@ -262,8 +268,9 @@ fun MoreScreen(nav: NavController) {
                 }
             }
             item(key = "tools") { com.acuranza.app.ui.tools.ToolsSection(onMessage = { show(it) }) }
+            item(key = "security") { SecuritySection(onMessage = { show(it) }) }
             item(key = "data") {
-                Section("Your data") {
+                Section("Data management") {
                     ActionRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup, enabled = busy == null) {
                         if (!createBackup.launchOrFalse("acuranza-backup-${LocalDate.now()}.acuranza")) show(NO_FILE_PICKER)
                     }
@@ -271,18 +278,12 @@ fun MoreScreen(nav: NavController) {
                     ActionRow("Restore from backup", "Replaces everything on this phone", Icons.Outlined.Restore, enabled = busy == null) {
                         if (!openBackup.launchOrFalse(arrayOf("*/*"))) show(NO_FILE_PICKER)
                     }
-                    ActionRow("Import bank statement", "CSV from net banking, for history SMS missed", Icons.Outlined.Inbox) {
+                    ActionRow("Import statements", "CSV from net banking to bring in past transactions", Icons.Outlined.UploadFile) {
                         nav.navigate(Routes.STATEMENT_IMPORT)
                     }
                     if (sampleLoaded) {
                         ActionRow("Remove sample data", "Deletes only the demo accounts, transactions and investments", Icons.Outlined.Science, enabled = busy == null) {
-                            busy = "Removing sample data…"
-                            scope.launch {
-                                runCatching { c.demoData.removeSample() }
-                                sampleLoaded = c.demoData.isLoaded()
-                                busy = null
-                                show("Sample data removed")
-                            }
+                            confirmRemoveSample = true
                         }
                     } else {
                         ActionRow("Load sample data", "Explore Acuranza with demo accounts and transactions", Icons.Outlined.Science, enabled = busy == null) {
@@ -346,6 +347,24 @@ fun MoreScreen(nav: NavController) {
             onDismiss = { confirmErase = false },
         )
     }
+    if (confirmRemoveSample) {
+        ConfirmDialog(
+            "Remove sample data?",
+            "This deletes the demo accounts, transactions and investments. Your own data is untouched.",
+            "Remove",
+            onConfirm = {
+                confirmRemoveSample = false
+                busy = "Removing sample data…"
+                scope.launch {
+                    runCatching { c.demoData.removeSample() }
+                    sampleLoaded = c.demoData.isLoaded()
+                    busy = null
+                    show("Sample data removed")
+                }
+            },
+            onDismiss = { confirmRemoveSample = false },
+        )
+    }
     backupUri?.let { uri ->
         PasswordDialog("Protect your backup", "Choose a password. You'll need it to restore — it can't be recovered.", confirm = true,
             onDismiss = { backupUri = null }) { pw ->
@@ -401,16 +420,16 @@ private fun PasswordDialog(title: String, message: String, confirm: Boolean, onD
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(message, style = MaterialTheme.typography.bodySmall)
-                androidx.compose.material3.OutlinedTextField(
+                OutlinedTextField(
                     pw, { pw = it }, label = { Text(if (confirm) "Password ($NEW_BACKUP_MIN_PASSWORD+ characters)" else "Password") }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 )
                 if (confirm) {
-                    androidx.compose.material3.OutlinedTextField(
+                    OutlinedTextField(
                         pw2, { pw2 = it }, label = { Text("Repeat password") }, singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         isError = pw2.isNotEmpty() && pw != pw2,
                     )
                 }
@@ -445,6 +464,3 @@ fun CategoriesScreen(nav: NavController) {
         }
     }
 }
-
-
-
