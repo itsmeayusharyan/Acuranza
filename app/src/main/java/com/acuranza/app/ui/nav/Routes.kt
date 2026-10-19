@@ -1,12 +1,12 @@
 package com.acuranza.app.ui.nav
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.QueryStats
@@ -66,7 +66,7 @@ val Tabs = listOf(
     Tab(Routes.HOME, "Home", Icons.Outlined.Home, Icons.Filled.Home),
     Tab(Routes.INSIGHTS, "Analytics", Icons.Outlined.QueryStats, Icons.Filled.QueryStats),
     Tab(Routes.TRANSACTIONS, "Transactions", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong),
-    Tab(Routes.MANAGEMENT, "Management", Icons.Outlined.Category, Icons.Filled.Category),
+    Tab(Routes.MANAGEMENT, "Management", Icons.Outlined.Dashboard, Icons.Filled.Dashboard),
     Tab(Routes.SETTINGS, "More", Icons.Outlined.Menu, Icons.Filled.Menu),
 )
 

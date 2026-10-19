@@ -52,6 +52,7 @@ import com.acuranza.app.ui.bills.BillsState
 import com.acuranza.app.ui.common.Pill
 import com.acuranza.app.ui.home.HomeContent
 import com.acuranza.app.ui.management.ManagementContent
+import com.acuranza.app.ui.management.ManagementState
 import com.acuranza.app.ui.home.HomeState
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.planning.PlanningContent
@@ -70,13 +71,8 @@ import com.acuranza.app.util.Period
 import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
-import androidx.compose.material.icons.outlined.Alarm
-import androidx.compose.material.icons.outlined.Assessment
-import androidx.compose.material.icons.outlined.Autorenew
-import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Password
-import androidx.compose.material.icons.outlined.RealEstateAgent
 import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Sync
@@ -231,11 +227,6 @@ class ScreensScreenshotTest {
                     Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
-            SettingsSection("Financial tools") {
-                SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {}
-                SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) {}
-                SettingsRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment, divider = false) {}
-            }
             SettingsSection("Appearance & privacy") {
                 SettingsRow(
                     "Theme",
@@ -255,10 +246,6 @@ class ScreensScreenshotTest {
                     trailing = { Pill("On", AcuranzaTheme.colors.good) },
                 )
             }
-            SettingsSection("Notifications") {
-                SettingsToggle("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.Alarm)
-                SettingsToggle("Important insights", "Overspending and unusual spends", false, {}, Icons.Outlined.Bolt, divider = false)
-            }
             SettingsSection("Security") {
                 SettingsRow("App PIN", "On", Icons.Outlined.Password) {}
                 SettingsRow("Decoy PIN", "Off · a second PIN that opens a sample profile", Icons.Outlined.TheaterComedy) {}
@@ -276,7 +263,7 @@ class ScreensScreenshotTest {
     /** The Management tab is assembled from the same widgets its screen uses. */
     @Test
     fun management() = paparazzi.snapshot {
-        Frame(tab = Routes.MANAGEMENT) { ManagementContent({}, {}, {}, {}) }
+        Frame(tab = Routes.MANAGEMENT) { ManagementContent(ManagementState(notifyBills = true)) }
     }
 
     @Test

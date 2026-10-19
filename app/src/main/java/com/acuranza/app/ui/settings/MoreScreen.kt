@@ -1,10 +1,7 @@
 package com.acuranza.app.ui.settings
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -23,26 +20,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Alarm
-import androidx.compose.material.icons.outlined.Assessment
-import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Fingerprint
-import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.RealEstateAgent
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import androidx.compose.material.icons.outlined.Sync
-import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material.icons.outlined.UploadFile
-import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -65,7 +53,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -118,8 +105,6 @@ fun MoreScreen(nav: NavController) {
     LaunchedEffect(Unit) { sampleLoaded = runCatching { c.demoData.isLoaded() }.getOrDefault(false) }
     val backupFlow = remember { com.acuranza.app.security.BackupFlow(context.applicationContext as com.acuranza.app.AcuranzaApp) }
 
-    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-
     val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) backupUri = uri
     }
@@ -137,18 +122,6 @@ fun MoreScreen(nav: NavController) {
                         Text("Settings", style = AcuranzaText.screenTitle)
                         Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                     }
-                }
-            }
-            item(key = "tools-money") {
-                SettingsSection("Financial tools") {
-                    SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {
-                        nav.navigate(Routes.RECURRING)
-                    }
-                    SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
-                    SettingsRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }
-                    SettingsRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) { nav.navigate(Routes.REPORTS) }
-                    SettingsRow("Warranties", "Receipts with a warranty end date", Icons.Outlined.VerifiedUser) { nav.navigate(Routes.WARRANTIES) }
-                    SettingsRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges, divider = false) { nav.navigate(Routes.PLANNING) }
                 }
             }
             item(key = "appearance") {
@@ -209,38 +182,6 @@ fun MoreScreen(nav: NavController) {
                             Pill(if (encrypted) "On" else "Pending", if (encrypted) AcuranzaTheme.colors.good else AcuranzaTheme.colors.warning)
                         },
                     )
-                }
-            }
-            item(key = "notif") {
-                SettingsSection("Notifications") {
-                    val ensurePermission: () -> Unit = {
-                        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                            PackageManager.PERMISSION_GRANTED
-                        ) {
-                            notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }
-                    SettingsToggle("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
-                        if (v) ensurePermission()
-                        scope.launch { c.settings.setNotifyBills(v) }
-                    }, Icons.Outlined.Alarm)
-                    SettingsToggle("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
-                        if (v) ensurePermission()
-                        scope.launch { c.settings.setNotifyInsights(v) }
-                    }, Icons.Outlined.Bolt, divider = false)
-                }
-            }
-            item(key = "period") {
-                SettingsSection("Budget month") {
-                    SettingsPickerRow(
-                        "Month starts on",
-                        (1..28).toList(),
-                        s.monthStartDay,
-                        { if (it == 1) "1st (calendar month)" else com.acuranza.app.ui.accounts.ordinal(it) + " (e.g. salary day)" },
-                        Icons.Outlined.CalendarMonth,
-                        divider = s.monthStartDay > 1,
-                    ) { d -> scope.launch { c.settings.setMonthStartDay(d) } }
-                    PaydaySettings(s)
                 }
             }
             item(key = "tools") { com.acuranza.app.ui.tools.ToolsSection(onMessage = { show(it) }) }
