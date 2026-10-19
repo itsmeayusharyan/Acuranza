@@ -538,6 +538,7 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         }
         composable(Routes.BILLS) { BillsScreen(nav) }
         composable(Routes.NOTIFICATIONS) { com.acuranza.app.ui.notifications.NotificationsScreen(nav) }
+        composable(Routes.EDIT_HOME) { com.acuranza.app.ui.home.EditHomeScreen(nav) }
         composable(Routes.INSIGHTS) { InsightsScreen(nav) }
         composable(Routes.CATEGORIES) { CategoriesScreen(nav) }
         composable(Routes.MANAGEMENT) { ManagementScreen(nav) }

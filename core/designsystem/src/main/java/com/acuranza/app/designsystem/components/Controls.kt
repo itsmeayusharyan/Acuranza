@@ -26,6 +26,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -47,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -429,6 +436,26 @@ fun SectionHeader(
 }
 
 /**
+ * Tactile press feedback: scales to [scaleDown] while pressed and eases back. Share the
+ * [interactionSource] with the clickable so the ripple and the scale fire together. A quick
+ * 150ms tween keeps the response inside the high-frequency budget: no bounce, no overshoot,
+ * and disabled controls (whose clickables never press) never scale.
+ */
+@Composable
+fun Modifier.pressScale(interactionSource: MutableInteractionSource, scaleDown: Float = 0.96f): Modifier {
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) scaleDown else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "pressScale",
+    )
+    return graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
+}
+
+/**
  * The main call-to-action button: solid ink with white text, 14dp corners, 52dp tall.
  */
 @Composable
@@ -440,12 +467,15 @@ fun PrimaryButton(
     icon: ImageVector? = null,
 ) {
     val shape = RoundedCornerShape(14.dp)
+    val interaction = remember { MutableInteractionSource() }
+    val indication = LocalIndication.current
     Row(
         modifier = modifier
             .heightIn(min = 52.dp)
             .clip(shape)
+            .then(if (enabled) Modifier.pressScale(interaction) else Modifier)
             .background(if (enabled) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.fill)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = indication, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -471,10 +501,13 @@ fun QuickAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val indication = LocalIndication.current
     Column(
         modifier
             .clip(RoundedCornerShape(12.dp))
-            .clickable(role = Role.Button, onClick = onClick)
+            .pressScale(interaction)
+            .clickable(interactionSource = interaction, indication = indication, role = Role.Button, onClick = onClick)
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -505,15 +538,18 @@ fun HeroActionButton(
     icon: ImageVector? = null,
 ) {
     val shape = RoundedCornerShape(12.dp)
+    val interaction = remember { MutableInteractionSource() }
+    val indication = LocalIndication.current
     Row(
         modifier = modifier
             .heightIn(min = 40.dp)
             .clip(shape)
+            .pressScale(interaction)
             .then(
                 if (filled) Modifier.background(Color.White)
                 else Modifier.border(1.dp, Color.White.copy(alpha = 0.55f), shape),
             )
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(interactionSource = interaction, indication = indication, role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,

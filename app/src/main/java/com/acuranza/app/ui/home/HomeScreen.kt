@@ -150,6 +150,8 @@ data class HomeState(
     val safeToSpend: com.acuranza.app.repo.SafeToSpend.Result? = null,
     /** What the salary-plan sheet starts from. */
     val salaryPlan: SalaryPlanInfo = SalaryPlanInfo(),
+    /** The dashboard sections to render, in the user's saved order (Settings → Appearance → Edit home). */
+    val sections: List<HomeSection> = HomeLayout.DEFAULT,
 ) {
     val isEmpty: Boolean get() = !loading && accounts.isEmpty() && recent.isEmpty()
 }
@@ -283,8 +285,15 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
         )
     }.flowOn(Dispatchers.Default)
 
-    val state: StateFlow<HomeState> = combine(baseState, unreadNotifications) { base, unread ->
-        base.copy(notificationsUnread = unread)
+    val state: StateFlow<HomeState> = combine(
+        baseState,
+        unreadNotifications,
+        c.settings.settings.map { it.homeLayout }.distinctUntilChanged(),
+    ) { base, unread, savedLayout ->
+        base.copy(
+            notificationsUnread = unread,
+            sections = HomeLayout.visible(HomeLayout.decode(savedLayout)),
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
     fun toggleHidden(current: Boolean) = viewModelScope.launch { c.settings.setHideAmounts(!current) }
@@ -495,86 +504,30 @@ fun HomeContent(
             }
         }
 
-        item(key = "quick") {
-            Row(pad.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickAction("Transfer", Icons.Outlined.SwapHoriz, onTransfer, Modifier.weight(1f))
-                QuickAction("Bills", Icons.AutoMirrored.Outlined.ReceiptLong, onBills, Modifier.weight(1f))
-                QuickAction("Reports", Icons.Outlined.Assessment, onReports, Modifier.weight(1f))
-                QuickAction("Accounts", Icons.Outlined.AccountBalance, onAccounts, Modifier.weight(1f))
-            }
-        }
-
-        state.safeToSpend?.let { safe ->
-            item(key = "safe") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
-                    SafeToSpendCard(safe, hidden, onSafeToSpend)
-                }
-            }
-        }
-
-        item(key = "stats") {
-            val s = state.summary
-            Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
-                SectionHeader("This month")
-                AcuranzaCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)) {
-                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                        StatChip("Income", s?.income ?: 0, Modifier.weight(1f), type = TxnType.INCOME, hidden = hidden)
-                        VerticalHairline()
-                        StatChip("Spent", s?.expense ?: 0, Modifier.weight(1f).padding(start = 14.dp), type = TxnType.EXPENSE, hidden = hidden)
-                        VerticalHairline()
-                        StatChip("Saved", s?.savings ?: 0, Modifier.weight(1f).padding(start = 14.dp), hidden = hidden)
-                    }
-                    moneyInNote(s?.givenBack ?: 0, s?.received ?: 0, hidden)?.let {
-                        Spacer(Modifier.height(10.dp))
-                        Text(it, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
-                    }
-                }
-            }
-        }
-
-        if (state.charts.hasPace) {
-            item(key = "pace") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
-                    SectionHeader("Spending pace", actionLabel = "Details", onAction = onActivity)
-                    AcuranzaCard {
-                        SpendPaceChart(
-                            current = state.charts.paceCurrent,
-                            previous = state.charts.pacePrevious,
-                            daysInMonth = state.charts.periodDays,
-                            projected = state.charts.projected,
-                            hidden = hidden,
-                        )
-                    }
-                }
-            }
-        }
-
+        // Action banners and the first-run card sit directly under the balance card: they ask the
+        // user for something, so they never compete with charts for attention.
         if (state.ignoredSms > 0) {
-            item(key = "ignored-sms") {
+item(key = "ignored-sms") {
                 com.acuranza.app.ui.accounts.IgnoredSmsBanner(state.ignoredSms, onIgnoredSms, onDismissIgnoredSms, pad.padding(top = 16.dp))
             }
         }
-
         if (state.pendingAccounts > 0) {
-            item(key = "pending-accounts") {
+item(key = "pending-accounts") {
                 com.acuranza.app.ui.accounts.PendingAccountsBanner(state.pendingAccounts, onPendingAccounts, pad.padding(top = 16.dp))
             }
         }
-
         if (state.unreviewed > 0) {
-            item(key = "review") {
+item(key = "review") {
                 ReviewBanner(state.unreviewed, pad.padding(top = 16.dp), onReview, state.reviewFromSms, state.reviewFromEmail)
             }
         }
-
         if (state.uncategorised > UNCATEGORISED_BANNER_MIN) {
-            item(key = "uncategorised") {
+item(key = "uncategorised") {
                 com.acuranza.app.ui.transactions.UncategorisedBanner(state.uncategorised, onUncategorised, pad.padding(top = 12.dp))
             }
         }
-
         if (state.isEmpty) {
-            item(key = "empty") {
+item(key = "empty") {
                 AcuranzaCard(pad.padding(top = AcuranzaTheme.spacing.section)) {
                     EmptyState(
                         title = "Set up Acuranza",
@@ -598,9 +551,59 @@ fun HomeContent(
             }
         }
 
-        if (state.bills.isNotEmpty()) {
-            item(key = "bills") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+        // The dashboard below is the user's own layout (Settings → Appearance → Edit home):
+        // every section keeps its data conditions, order and visibility come from the saved layout,
+        // and animateItem() makes reordering and show/hide feel fluid instead of jumpy.
+        state.sections.forEach { section ->
+            when (section) {
+                HomeSection.QUICK -> item(key = "quick") {
+            Row(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickAction("Transfer", Icons.Outlined.SwapHoriz, onTransfer, Modifier.weight(1f))
+                QuickAction("Bills", Icons.AutoMirrored.Outlined.ReceiptLong, onBills, Modifier.weight(1f))
+                QuickAction("Reports", Icons.Outlined.Assessment, onReports, Modifier.weight(1f))
+                QuickAction("Accounts", Icons.Outlined.AccountBalance, onAccounts, Modifier.weight(1f))
+            }
+        }
+                HomeSection.SAFE -> state.safeToSpend?.let { safe -> item(key = "safe") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
+                    SafeToSpendCard(safe, hidden, onSafeToSpend)
+                }
+            } }
+                HomeSection.STATS -> item(key = "stats") {
+            val s = state.summary
+            Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
+                SectionHeader("This month")
+                AcuranzaCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)) {
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                        StatChip("Income", s?.income ?: 0, Modifier.weight(1f), type = TxnType.INCOME, hidden = hidden)
+                        VerticalHairline()
+                        StatChip("Spent", s?.expense ?: 0, Modifier.weight(1f).padding(start = 14.dp), type = TxnType.EXPENSE, hidden = hidden)
+                        VerticalHairline()
+                        StatChip("Saved", s?.savings ?: 0, Modifier.weight(1f).padding(start = 14.dp), hidden = hidden)
+                    }
+                    moneyInNote(s?.givenBack ?: 0, s?.received ?: 0, hidden)?.let {
+                        Spacer(Modifier.height(10.dp))
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
+                    }
+                }
+            }
+        }
+                HomeSection.PACE -> if (state.charts.hasPace) item(key = "pace") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
+                    SectionHeader("Spending pace", actionLabel = "Details", onAction = onActivity)
+                    AcuranzaCard {
+                        SpendPaceChart(
+                            current = state.charts.paceCurrent,
+                            previous = state.charts.pacePrevious,
+                            daysInMonth = state.charts.periodDays,
+                            projected = state.charts.projected,
+                            hidden = hidden,
+                        )
+                    }
+                }
+            }
+                HomeSection.BILLS -> if (state.bills.isNotEmpty()) item(key = "bills") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Upcoming bills", actionLabel = "See all", onAction = onBills)
                     AcuranzaCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
                         state.bills.take(3).forEachIndexed { i, b ->
@@ -610,11 +613,8 @@ fun HomeContent(
                     }
                 }
             }
-        }
-
-        state.insights.firstOrNull()?.let { top ->
-            item(key = "insight") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+                HomeSection.INSIGHT -> state.insights.firstOrNull()?.let { top -> item(key = "insight") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Insight", actionLabel = if (state.insights.size > 1) "All ${state.insights.size}" else null, onAction = onInsights)
                     InsightCard(
                         severity = top.severity.toUi(),
@@ -624,16 +624,14 @@ fun HomeContent(
                         onClick = onInsights,
                     )
                 }
-            }
-        }
-
-        val spend = state.summary?.byCategory.orEmpty()
-        if (spend.isNotEmpty()) {
-            item(key = "spend") {
+            } }
+                HomeSection.SPEND -> {
+                    val spend = state.summary?.byCategory.orEmpty()
+                    if (spend.isNotEmpty()) item(key = "spend") {
                 val slices = remember(spend) {
                     spend.take(6).map { ChartSlice(it.category?.name ?: it.categoryKey, it.total, it.category.color()) }
                 }
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Where it went", actionLabel = "Details", onAction = onActivity)
                     AcuranzaCard {
                         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -687,11 +685,9 @@ fun HomeContent(
                     }
                 }
             }
-        }
-
-        if (state.charts.hasSixMonths) {
-            item(key = "six") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+                }
+                HomeSection.SIX -> if (state.charts.hasSixMonths) item(key = "six") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Income vs spending")
                     AcuranzaCard {
                         BarChart(groups = state.charts.sixMonths, height = 170.dp, hidden = hidden)
@@ -713,27 +709,21 @@ fun HomeContent(
                     }
                 }
             }
-        }
-
-        if (state.charts.hasHeat) {
-            item(key = "heat") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+                HomeSection.HEAT -> if (state.charts.hasHeat) item(key = "heat") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Daily spending")
                     AcuranzaCard {
                         SpendHeatmap(weeks = state.charts.heatWeeks, dayLabels = state.charts.heatLabels, hidden = hidden)
                     }
                 }
             }
-        }
-
-        if (state.charts.netWorth.size >= 2 || state.charts.todayHourly.size >= 2) {
-            item(key = "networth") {
+                HomeSection.NETWORTH -> if (state.charts.netWorth.size >= 2 || state.charts.todayHourly.size >= 2) item(key = "networth") {
                 var range by remember { mutableStateOf(TrendRange.M1) }
                 var selectedIdx by remember(range) { mutableStateOf<Int?>(null) }
                 val points = remember(state.charts.netWorth, state.charts.todayHourly, range) {
                     state.charts.trendPoints(range)
                 }
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Net worth trend")
                     AcuranzaCard {
                         AmountText(
@@ -754,11 +744,8 @@ fun HomeContent(
                     }
                 }
             }
-        }
-
-        if (state.recent.isNotEmpty()) {
-            item(key = "recent") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+                HomeSection.RECENT -> if (state.recent.isNotEmpty()) item(key = "recent") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Recent", actionLabel = "See all", onAction = onActivity)
                     AcuranzaCard(contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp)) {
                         state.recent.forEachIndexed { i, t ->
@@ -768,11 +755,8 @@ fun HomeContent(
                     }
                 }
             }
-        }
-
-        if (state.accounts.isNotEmpty()) {
-            item(key = "accounts") {
-                Column(pad.padding(top = AcuranzaTheme.spacing.section)) {
+                HomeSection.ACCOUNTS -> if (state.accounts.isNotEmpty()) item(key = "accounts") {
+                Column(Modifier.animateItem().padding(horizontal = 20.dp).padding(top = AcuranzaTheme.spacing.section)) {
                     SectionHeader("Accounts", actionLabel = "Manage", onAction = onAccounts)
                     AcuranzaCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
                         state.accounts.forEachIndexed { i, a ->
@@ -781,6 +765,7 @@ fun HomeContent(
                         }
                     }
                 }
+            }
             }
         }
     }

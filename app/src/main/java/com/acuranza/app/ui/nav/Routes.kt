@@ -31,6 +31,7 @@ object Routes {
     const val ACCOUNT_EDIT = "account/edit?id={id}&card={card}"
     const val BILLS = "bills"
     const val NOTIFICATIONS = "notifications"
+    const val EDIT_HOME = "home/edit"
     const val INSIGHTS = "insights"
     const val CATEGORIES = "categories"
     const val PENDING_ACCOUNTS = "accounts/pending"

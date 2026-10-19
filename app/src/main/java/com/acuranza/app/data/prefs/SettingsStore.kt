@@ -52,6 +52,8 @@ data class Settings(
     val dismissedInsightIds: Set<String> = emptySet(),
     /** In-app notification-center ids already read. */
     val readNotificationIds: Set<String> = emptySet(),
+    /** Saved dashboard layout (see HomeLayout); null = the stock layout. */
+    val homeLayout: String? = null,
     /** User's explicit choice for blocking screenshots and the recents preview; null follows [blockScreenshots]. */
     val blockScreenshotsChoice: Boolean? = null,
 ) {
@@ -104,6 +106,7 @@ class SettingsStore(
         val hideAmounts = booleanPreferencesKey("hide_amounts")
         val dismissedInsights = stringSetPreferencesKey("dismissed_insights")
         val readNotifications = stringSetPreferencesKey("read_notifications")
+        val homeLayout = stringPreferencesKey("home_layout")
         val notifiedInsights = stringSetPreferencesKey("notified_insights")
         val notifiedBills = stringSetPreferencesKey("notified_bills")
         val repairVersion = intPreferencesKey("repair_version")
@@ -130,6 +133,7 @@ class SettingsStore(
             hideAmounts = p[Keys.hideAmounts] ?: false,
             dismissedInsightIds = p[Keys.dismissedInsights] ?: emptySet(),
             readNotificationIds = p[Keys.readNotifications] ?: emptySet(),
+            homeLayout = p[Keys.homeLayout],
             blockScreenshotsChoice = p[Keys.blockScreenshots],
         )
     }
@@ -170,6 +174,12 @@ class SettingsStore(
     }
 
     suspend fun clearDismissedInsights() = edit { it.remove(Keys.dismissedInsights) }
+
+    /** Saves the dashboard layout; see HomeLayout for the encoding. */
+    suspend fun setHomeLayout(raw: String) = edit { it[Keys.homeLayout] = raw }
+
+    /** Returns the dashboard to the stock layout. */
+    suspend fun resetHomeLayout() = edit { it.remove(Keys.homeLayout) }
 
     /** Marks in-app notification-center items read; old ids fall off the bounded set. */
     suspend fun markNotificationsRead(ids: Collection<String>) = edit {

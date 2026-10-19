@@ -53,7 +53,9 @@ import com.acuranza.app.ui.notifications.NotificationsContent
 import com.acuranza.app.ui.bills.BillsContent
 import com.acuranza.app.ui.bills.BillsState
 import com.acuranza.app.ui.common.Pill
+import com.acuranza.app.ui.home.EditHomeContent
 import com.acuranza.app.ui.home.HomeContent
+import com.acuranza.app.ui.home.HomeLayout
 import com.acuranza.app.ui.management.ManagementContent
 import com.acuranza.app.ui.management.ManagementState
 import com.acuranza.app.ui.home.HomeState
@@ -286,6 +288,16 @@ class ScreensScreenshotTest {
                 onPrivacy = {},
                 onTerms = {},
                 onLicence = {},
+            )
+        }
+    }
+
+    @Test
+    fun edit_home() = paparazzi.snapshot {
+        AcuranzaTheme(darkTheme = true) {
+            EditHomeContent(
+                layout = HomeLayout.decode("quick,!heat,stats"),
+                saved = true,
             )
         }
     }

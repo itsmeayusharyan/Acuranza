@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.DashboardCustomize
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Restore
@@ -125,7 +126,10 @@ fun MoreScreen(nav: NavController) {
                         Icons.Outlined.Palette,
                     )
                     SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
-                        Icons.Outlined.VisibilityOff, divider = false)
+                        Icons.Outlined.VisibilityOff)
+                    SettingsRow("Edit home", "Choose what appears on your dashboard and in what order", Icons.Outlined.DashboardCustomize, divider = false) {
+                        nav.navigate(Routes.EDIT_HOME)
+                    }
                 }
             }
             item(key = "privacy") { PrivacySecuritySection(onMessage = { show(it) }) }
