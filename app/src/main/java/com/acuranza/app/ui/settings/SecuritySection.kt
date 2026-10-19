@@ -32,7 +32,6 @@ import com.acuranza.app.security.DecoySession
 import com.acuranza.app.security.PinHasher
 import com.acuranza.app.tools.ToolsPrefs
 import com.acuranza.app.tools.ToolsSettings
-import com.acuranza.app.ui.common.ActionRow
 import com.acuranza.app.ui.common.LocalSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,8 +59,8 @@ fun SecuritySection(onMessage: (String) -> Unit) {
     var pinDialog by remember { mutableStateOf<PinAction?>(null) }
     var recoveryOpen by remember { mutableStateOf(false) }
 
-    Section("Security") {
-        ActionRow(
+    SettingsSection("Security") {
+        SettingsRow(
             "App PIN",
             when {
                 !prefs.pinSet -> "Off · unlock with a PIN instead of fingerprint"
@@ -70,20 +69,23 @@ fun SecuritySection(onMessage: (String) -> Unit) {
             },
             Icons.Outlined.Password,
         ) { pinDialog = if (prefs.pinSet) PinAction.MANAGE else PinAction.SET }
-        ActionRow(
+        val decoyReady = prefs.pinSet && s.biometricLockEnabled
+        SettingsRow(
             "Decoy PIN",
             when {
                 prefs.decoySet -> "On · opens a separate sample profile"
-                !prefs.pinSet || !s.biometricLockEnabled -> "Needs app lock and an app PIN"
+                !decoyReady -> "Needs app lock and an app PIN"
                 else -> "Off · a second PIN that opens a sample profile"
             },
             Icons.Outlined.TheaterComedy,
-            enabled = prefs.pinSet && s.biometricLockEnabled,
+            tone = if (decoyReady) RowTone.NORMAL else RowTone.MUTED,
+            enabled = decoyReady,
         ) { pinDialog = if (prefs.decoySet) PinAction.REMOVE_DECOY else PinAction.SET_DECOY }
-        ActionRow(
+        SettingsRow(
             "Recovery options",
             "What still works if a PIN is forgotten or the phone is lost",
             Icons.Outlined.Shield,
+            divider = false,
         ) { recoveryOpen = true }
     }
 

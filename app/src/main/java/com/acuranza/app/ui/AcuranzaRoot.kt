@@ -108,6 +108,7 @@ import com.acuranza.app.ui.common.LocalHideAmounts
 import com.acuranza.app.ui.common.LocalSettings
 import com.acuranza.app.ui.home.HomeScreen
 import com.acuranza.app.ui.insights.InsightsScreen
+import com.acuranza.app.ui.management.ManagementScreen
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.nav.TabRoutes
 import com.acuranza.app.ui.nav.Tabs
@@ -510,6 +511,7 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.BILLS) { BillsScreen(nav) }
         composable(Routes.INSIGHTS) { InsightsScreen(nav) }
         composable(Routes.CATEGORIES) { CategoriesScreen(nav) }
+        composable(Routes.MANAGEMENT) { ManagementScreen(nav) }
         composable(Routes.PENDING_ACCOUNTS) { com.acuranza.app.ui.accounts.PendingAccountsScreen(nav) }
         composable(Routes.UNCATEGORISED) { com.acuranza.app.ui.transactions.UncategorisedScreen(nav) }
         composable(Routes.RECURRING) { com.acuranza.app.ui.features.RecurringScreen(nav) }

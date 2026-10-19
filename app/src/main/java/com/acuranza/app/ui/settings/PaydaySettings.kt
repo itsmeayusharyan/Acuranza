@@ -32,11 +32,8 @@ import androidx.compose.ui.unit.dp
 import com.acuranza.app.data.prefs.Settings
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.finance.PayWeekend
-import com.acuranza.app.ui.common.ActionRow
-import com.acuranza.app.ui.common.ChoiceField
 import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.LocalContainer
-import com.acuranza.app.ui.common.SwitchRow
 import com.acuranza.app.util.Time
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -56,32 +53,32 @@ fun PaydaySettings(s: Settings) {
     val scope = rememberCoroutineScope()
     var editHolidays by remember { mutableStateOf(false) }
 
-    SwitchRow(
+    SettingsToggle(
         "Paid early on weekends and holidays",
         "Salary due on a weekend or holiday comes the working day before; once it's in, Acuranza uses the day it arrived",
         s.paydayToWorkingDay,
         { v -> scope.launch { c.settings.setPaydayToWorkingDay(v) } },
         Icons.Outlined.Event,
+        divider = s.paydayToWorkingDay,
     )
     if (!s.paydayToWorkingDay) return
-    ChoiceField(
+    SettingsPickerRow(
         "Weekend",
         PayWeekend.entries.toList(),
         s.payWeekend,
         { it.label },
-        { w -> scope.launch { c.settings.setPayWeekend(w) } },
-        leading = null,
+    ) { w -> scope.launch { c.settings.setPayWeekend(w) } }
+    SettingsToggle(
+        title = "India's public holidays",
+        subtitle = "Republic Day, Holi, Diwali, Christmas and the other national holidays",
+        checked = s.nationalHolidays,
+        onChecked = { v -> scope.launch { c.settings.setNationalHolidays(v) } },
     )
-    SwitchRow(
-        "India's public holidays",
-        "Republic Day, Holi, Diwali, Christmas and the other national holidays",
-        s.nationalHolidays,
-        { v -> scope.launch { c.settings.setNationalHolidays(v) } },
-    )
-    ActionRow(
+    SettingsRow(
         "Your holidays",
         if (s.customHolidays.isEmpty()) "Add state or company holidays" else "${s.customHolidays.size} added",
         Icons.Outlined.CalendarMonth,
+        divider = false,
     ) { editHolidays = true }
 
     // The next three paydays, so the rule can be checked at a glance.
@@ -89,7 +86,7 @@ fun PaydaySettings(s: Settings) {
     val names = s.holidayNames
     val first = cycle.periodContaining(cycle.nextPayday(Time.today())).month
     val fmt = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
-    Column(Modifier.padding(vertical = 10.dp)) {
+    Column(Modifier.fillMaxWidth().padding(start = 52.dp, end = 16.dp, top = 2.dp, bottom = 10.dp)) {
         Text("Next paydays", style = MaterialTheme.typography.labelMedium)
         (0L..2L).map { first.plusMonths(it) }.forEach { m ->
             val why = cycle.reason(m, names)

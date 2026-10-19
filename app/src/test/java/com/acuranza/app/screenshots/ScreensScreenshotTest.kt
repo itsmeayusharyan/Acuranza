@@ -15,12 +15,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Fingerprint
-import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
@@ -37,6 +37,7 @@ import app.cash.paparazzi.Paparazzi
 import com.acuranza.app.data.BudgetEntity
 import com.acuranza.app.data.GoalEntity
 import com.acuranza.app.designsystem.components.AcuranzaLogo
+import com.acuranza.app.designsystem.components.SegmentedTabs
 import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.theme.AcuranzaText
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
@@ -48,15 +49,18 @@ import com.acuranza.app.repo.GoalStatus
 import com.acuranza.app.ui.AcuranzaBottomBar
 import com.acuranza.app.ui.bills.BillsContent
 import com.acuranza.app.ui.bills.BillsState
-import com.acuranza.app.ui.common.ActionRow
-import com.acuranza.app.ui.common.SwitchRow
+import com.acuranza.app.ui.common.Pill
 import com.acuranza.app.ui.home.HomeContent
+import com.acuranza.app.ui.management.ManagementContent
 import com.acuranza.app.ui.home.HomeState
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.planning.PlanningContent
 import com.acuranza.app.ui.planning.PlanningState
 import com.acuranza.app.ui.about.AboutContent
-import com.acuranza.app.ui.settings.Section
+import com.acuranza.app.ui.settings.RowTone
+import com.acuranza.app.ui.settings.SettingsRow
+import com.acuranza.app.ui.settings.SettingsSection
+import com.acuranza.app.ui.settings.SettingsToggle
 import com.acuranza.app.ui.transactions.AddTransactionContent
 import com.acuranza.app.ui.transactions.DayGroup
 import com.acuranza.app.ui.transactions.EditorRefs
@@ -70,10 +74,8 @@ import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Password
-import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.RealEstateAgent
 import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import androidx.compose.material.icons.outlined.Shield
@@ -212,50 +214,69 @@ class ScreensScreenshotTest {
 
     /** Settings is assembled from the same row widgets the More screen uses. */
     @Test
-    fun settings() = paparazzi.snapshot {
-        Frame(tab = Routes.SETTINGS) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
-                Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    AcuranzaLogo(size = 44.dp)
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text("Settings", style = AcuranzaText.screenTitle)
-                        Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
-                    }
+    fun settings() = paparazzi.snapshot { Frame(tab = Routes.SETTINGS) { settingsBody() } }
+
+    /** Dark is the default theme; the settings screen must read well in it. */
+    @Test
+    fun settings_dark() = paparazzi.snapshot { Frame(dark = true, tab = Routes.SETTINGS) { settingsBody() } }
+
+    @Composable
+    private fun settingsBody() {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+            Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                AcuranzaLogo(size = 44.dp)
+                Spacer(Modifier.width(14.dp))
+                Column {
+                    Text("Settings", style = AcuranzaText.screenTitle)
+                    Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                 }
-                Section("Account & management") {
-                    ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) {}
-                    ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) {}
-                    ActionRow("Insights", "Spending analysis and unusual activity", Icons.Outlined.QueryStats) {}
-                    ActionRow("Categories", "Your spending and income categories", Icons.Outlined.Category) {}
-                }
-                Section("Financial tools") {
-                    ActionRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {}
-                    ActionRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) {}
-                    ActionRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) {}
-                }
-                Section("Appearance & privacy") {
-                    SwitchRow("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff)
-                    SwitchRow("App lock", "Fingerprint, face or screen lock when opening Acuranza", true, {}, Icons.Outlined.Fingerprint)
-                    SwitchRow("Block screenshots", "Hide Acuranza in the recents preview and block screenshots", true, {}, Icons.Outlined.ScreenLockPortrait)
-                }
-                Section("Notifications") {
-                    SwitchRow("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.Alarm)
-                    SwitchRow("Important insights", "Overspending and unusual spends", false, {}, Icons.Outlined.Bolt)
-                }
-                Section("Security") {
-                    ActionRow("App PIN", "On", Icons.Outlined.Password) {}
-                    ActionRow("Decoy PIN", "Off · a second PIN that opens a sample profile", Icons.Outlined.TheaterComedy) {}
-                    ActionRow("Recovery options", "What still works if a PIN is forgotten or the phone is lost", Icons.Outlined.Shield) {}
-                }
-                Section("Data management") {
-                    ActionRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup) {}
-                    ActionRow("Automatic backups", "Daily or weekly, to a folder you choose", Icons.Outlined.Sync) {}
-                    ActionRow("Erase all data", "Deletes accounts, transactions and bills", Icons.Outlined.DeleteForever) {}
-                }
-                Spacer(Modifier.height(24.dp))
             }
+            SettingsSection("Financial tools") {
+                SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {}
+                SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) {}
+                SettingsRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment, divider = false) {}
+            }
+            SettingsSection("Appearance & privacy") {
+                SettingsRow(
+                    "Theme",
+                    "Follow the system, or pick light or dark",
+                    Icons.Outlined.Palette,
+                    footer = { SegmentedTabs(listOf("System", "Light", "Dark"), 2, onSelect = {}) },
+                )
+                SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff)
+                SettingsToggle("App lock", "Fingerprint, face or screen lock when opening Acuranza", true, {}, Icons.Outlined.Fingerprint)
+                SettingsToggle("Block screenshots", "Hide Acuranza in the recents preview and block screenshots", true, {}, Icons.Outlined.ScreenLockPortrait)
+                SettingsRow(
+                    "Database encryption",
+                    "AES-256 (SQLCipher), key kept in the phone's secure hardware keystore",
+                    Icons.Outlined.Lock,
+                    enabled = false,
+                    divider = false,
+                    trailing = { Pill("On", AcuranzaTheme.colors.good) },
+                )
+            }
+            SettingsSection("Notifications") {
+                SettingsToggle("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.Alarm)
+                SettingsToggle("Important insights", "Overspending and unusual spends", false, {}, Icons.Outlined.Bolt, divider = false)
+            }
+            SettingsSection("Security") {
+                SettingsRow("App PIN", "On", Icons.Outlined.Password) {}
+                SettingsRow("Decoy PIN", "Off · a second PIN that opens a sample profile", Icons.Outlined.TheaterComedy) {}
+                SettingsRow("Recovery options", "What still works if a PIN is forgotten or the phone is lost", Icons.Outlined.Shield, divider = false) {}
+            }
+            SettingsSection("Data management") {
+                SettingsRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup) {}
+                SettingsRow("Automatic backups", "Daily or weekly, to a folder you choose", Icons.Outlined.Sync) {}
+                SettingsRow("Erase all data", "Deletes accounts, transactions and bills", Icons.Outlined.DeleteForever, tone = RowTone.DESTRUCTIVE, divider = false) {}
+            }
+            Spacer(Modifier.height(24.dp))
         }
+    }
+
+    /** The Management tab is assembled from the same widgets its screen uses. */
+    @Test
+    fun management() = paparazzi.snapshot {
+        Frame(tab = Routes.MANAGEMENT) { ManagementContent({}, {}, {}, {}) }
     }
 
     @Test
@@ -264,8 +285,8 @@ class ScreensScreenshotTest {
     }
 
     @Test
-    fun bottom_bar_categories_active() = paparazzi.snapshot {
-        Frame(tab = Routes.CATEGORIES) { Box(Modifier.fillMaxSize()) }
+    fun bottom_bar_management_active() = paparazzi.snapshot {
+        Frame(tab = Routes.MANAGEMENT) { Box(Modifier.fillMaxSize()) }
     }
 
     @Test

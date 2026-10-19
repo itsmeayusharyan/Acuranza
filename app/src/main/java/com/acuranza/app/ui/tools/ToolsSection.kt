@@ -51,11 +51,11 @@ import com.acuranza.app.security.DecoySession
 import com.acuranza.app.tools.ToolsPrefs
 import com.acuranza.app.ui.settings.DECOY_PLACEHOLDER
 import com.acuranza.app.tools.ToolsSettings
-import com.acuranza.app.ui.common.ActionRow
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalSettings
-import com.acuranza.app.ui.common.SwitchRow
-import com.acuranza.app.ui.settings.Section
+import com.acuranza.app.ui.settings.SettingsRow
+import com.acuranza.app.ui.settings.SettingsSection
+import com.acuranza.app.ui.settings.SettingsToggle
 import com.acuranza.app.util.Period
 import com.acuranza.app.util.Time
 import kotlinx.coroutines.Dispatchers
@@ -118,9 +118,9 @@ fun ToolsSection(onMessage: (String) -> Unit) {
         }
     }
 
-    Section("Tools") {
-        ActionRow("Export data", "CSV, Excel, Beancount or Ledger", Icons.Outlined.FileDownload) { exportOpen = true }
-        SwitchRow(
+    SettingsSection("Tools") {
+        SettingsRow("Export data", "CSV, Excel, Beancount or Ledger", Icons.Outlined.FileDownload) { exportOpen = true }
+        SettingsToggle(
             "Daily digest",
             "Today's spending, budget left and items to review",
             prefs.digestEnabled,
@@ -135,7 +135,7 @@ fun ToolsSection(onMessage: (String) -> Unit) {
             Icons.Outlined.Today,
         )
         if (prefs.digestEnabled) {
-            ActionRow("Digest time", formatMinutes(prefs.digestMinutes), Icons.Outlined.Schedule) {
+            SettingsRow("Digest time", null, Icons.Outlined.Schedule, value = formatMinutes(prefs.digestMinutes)) {
                 TimePickerDialog(
                     context,
                     { _, h, m -> saveDigest(true, h * 60 + m) },
@@ -144,7 +144,7 @@ fun ToolsSection(onMessage: (String) -> Unit) {
                 ).show()
             }
         }
-        SwitchRow(
+        SettingsToggle(
             "Home screen widgets",
             if (s.biometricLockEnabled) "Show real amounts on the home-screen widget even with app lock on" else "Turn on app lock to choose",
             prefs.widgetAmountsWhenLocked,
@@ -154,6 +154,7 @@ fun ToolsSection(onMessage: (String) -> Unit) {
             },
             Icons.Outlined.Widgets,
             enabled = s.biometricLockEnabled,
+            divider = false,
         )
     }
 

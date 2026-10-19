@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,21 +23,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Handshake
-import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.RealEstateAgent
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Science
@@ -85,15 +83,13 @@ import com.acuranza.app.model.TxnType
 import com.acuranza.app.security.BackupCrypto
 import com.acuranza.app.security.BiometricGate
 import com.acuranza.app.security.UnlockResult
-import com.acuranza.app.ui.common.ActionRow
-import com.acuranza.app.ui.common.ChoiceField
 import com.acuranza.app.ui.common.ConfirmDialog
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalSettings
 import com.acuranza.app.ui.common.color
 import com.acuranza.app.ui.common.NO_FILE_PICKER
-import com.acuranza.app.ui.common.SwitchRow
+import com.acuranza.app.ui.common.Pill
 import com.acuranza.app.ui.common.launchOrFalse
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -143,48 +139,37 @@ fun MoreScreen(nav: NavController) {
                     }
                 }
             }
-            item(key = "account") {
-                Section("Account & management") {
-                    ActionRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) { nav.navigate(Routes.ACCOUNTS) }
-                    ActionRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
-                    ActionRow("Insights", "Spending analysis and unusual activity", Icons.Outlined.QueryStats) { nav.navigate(Routes.INSIGHTS) }
-                    ActionRow("Categories", "Your spending and income categories", Icons.Outlined.Category) { nav.navigate(Routes.CATEGORIES) }
-                }
-            }
             item(key = "tools-money") {
-                Section("Financial tools") {
-                    ActionRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {
+                SettingsSection("Financial tools") {
+                    SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {
                         nav.navigate(Routes.RECURRING)
                     }
-                    ActionRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
-                    ActionRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }
-                    ActionRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) { nav.navigate(Routes.REPORTS) }
-                    ActionRow("Warranties", "Receipts with a warranty end date", Icons.Outlined.VerifiedUser) { nav.navigate(Routes.WARRANTIES) }
-                    ActionRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges) { nav.navigate(Routes.PLANNING) }
+                    SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
+                    SettingsRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }
+                    SettingsRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) { nav.navigate(Routes.REPORTS) }
+                    SettingsRow("Warranties", "Receipts with a warranty end date", Icons.Outlined.VerifiedUser) { nav.navigate(Routes.WARRANTIES) }
+                    SettingsRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges, divider = false) { nav.navigate(Routes.PLANNING) }
                 }
             }
             item(key = "appearance") {
-                Section("Appearance & privacy") {
-                    Column(Modifier.padding(vertical = 8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.Palette, contentDescription = null, tint = AcuranzaTheme.colors.subtleText, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(14.dp))
-                            Column {
-                                Text("Theme", style = MaterialTheme.typography.bodyLarge)
-                                Text("Follow the system, or pick light or dark", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        SegmentedTabs(
-                            listOf("System", "Light", "Dark"),
-                            ThemeMode.entries.indexOf(s.themeMode),
-                            onSelect = { scope.launch { c.settings.setThemeMode(ThemeMode.entries[it]) } },
-                        )
-                    }
-                    SwitchRow("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
+                SettingsSection("Appearance & privacy") {
+                    SettingsRow(
+                        "Theme",
+                        "Follow the system, or pick light or dark",
+                        Icons.Outlined.Palette,
+                        footer = {
+                            SegmentedTabs(
+                                listOf("System", "Light", "Dark"),
+                                ThemeMode.entries.indexOf(s.themeMode),
+                                onSelect = { scope.launch { c.settings.setThemeMode(ThemeMode.entries[it]) } },
+                                modifier = Modifier.padding(top = 10.dp),
+                            )
+                        },
+                    )
+                    SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
                         Icons.Outlined.VisibilityOff)
                     val canLock = remember { BiometricGate.isAvailable(context) }
-                    SwitchRow(
+                    SettingsToggle(
                         "App lock",
                         if (canLock) "Fingerprint, face or screen lock when opening Acuranza" else "Set a screen lock on your phone to use this",
                         s.biometricLockEnabled,
@@ -205,7 +190,7 @@ fun MoreScreen(nav: NavController) {
                         Icons.Outlined.Fingerprint,
                         enabled = canLock,
                     )
-                    SwitchRow(
+                    SettingsToggle(
                         "Block screenshots",
                         "Hide Acuranza in the recents preview and block screenshots",
                         s.blockScreenshots,
@@ -214,20 +199,20 @@ fun MoreScreen(nav: NavController) {
                     )
                     val encrypted = com.acuranza.app.data.DatabaseEncryption.status ==
                         com.acuranza.app.data.DatabaseEncryption.Status.ENCRYPTED
-                    ActionRow(
-                        if (encrypted) "Database encrypted ✓" else "Database not encrypted yet",
-                        if (encrypted) {
-                            "AES-256 (SQLCipher), key kept in the phone's secure hardware keystore"
-                        } else {
-                            "Acuranza will encrypt it on the next launch"
-                        },
+                    SettingsRow(
+                        "Database encryption",
+                        if (encrypted) "AES-256 (SQLCipher), key kept in the phone's secure hardware keystore" else "Acuranza will encrypt it on the next launch",
                         Icons.Outlined.Lock,
                         enabled = false,
-                    ) {}
+                        divider = false,
+                        trailing = {
+                            Pill(if (encrypted) "On" else "Pending", if (encrypted) AcuranzaTheme.colors.good else AcuranzaTheme.colors.warning)
+                        },
+                    )
                 }
             }
             item(key = "notif") {
-                Section("Notifications") {
+                SettingsSection("Notifications") {
                     val ensurePermission: () -> Unit = {
                         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                             PackageManager.PERMISSION_GRANTED
@@ -235,49 +220,49 @@ fun MoreScreen(nav: NavController) {
                             notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
                     }
-                    SwitchRow("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
+                    SettingsToggle("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
                         if (v) ensurePermission()
                         scope.launch { c.settings.setNotifyBills(v) }
                     }, Icons.Outlined.Alarm)
-                    SwitchRow("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
+                    SettingsToggle("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
                         if (v) ensurePermission()
                         scope.launch { c.settings.setNotifyInsights(v) }
-                    }, Icons.Outlined.Bolt)
+                    }, Icons.Outlined.Bolt, divider = false)
                 }
             }
             item(key = "period") {
-                Section("Budget month") {
-                    ChoiceField(
+                SettingsSection("Budget month") {
+                    SettingsPickerRow(
                         "Month starts on",
                         (1..28).toList(),
                         s.monthStartDay,
                         { if (it == 1) "1st (calendar month)" else com.acuranza.app.ui.accounts.ordinal(it) + " (e.g. salary day)" },
-                        { d -> scope.launch { c.settings.setMonthStartDay(d) } },
-                        leading = null,
-                    )
+                        Icons.Outlined.CalendarMonth,
+                        divider = s.monthStartDay > 1,
+                    ) { d -> scope.launch { c.settings.setMonthStartDay(d) } }
                     PaydaySettings(s)
                 }
             }
             item(key = "tools") { com.acuranza.app.ui.tools.ToolsSection(onMessage = { show(it) }) }
             item(key = "security") { SecuritySection(onMessage = { show(it) }) }
             item(key = "data") {
-                Section("Data management") {
-                    ActionRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup, enabled = busy == null) {
+                SettingsSection("Data management") {
+                    SettingsRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup, enabled = busy == null) {
                         if (!createBackup.launchOrFalse("acuranza-backup-${LocalDate.now()}.acuranza")) show(NO_FILE_PICKER)
                     }
-                    ActionRow("Automatic backups", "Daily or weekly, to a folder you choose", Icons.Outlined.Sync) { nav.navigate(Routes.AUTO_BACKUP) }
-                    ActionRow("Restore from backup", "Replaces everything on this phone", Icons.Outlined.Restore, enabled = busy == null) {
+                    SettingsRow("Automatic backups", "Daily or weekly, to a folder you choose", Icons.Outlined.Sync) { nav.navigate(Routes.AUTO_BACKUP) }
+                    SettingsRow("Restore from backup", "Replaces everything on this phone", Icons.Outlined.Restore, enabled = busy == null) {
                         if (!openBackup.launchOrFalse(arrayOf("*/*"))) show(NO_FILE_PICKER)
                     }
-                    ActionRow("Import statements", "CSV from net banking to bring in past transactions", Icons.Outlined.UploadFile) {
+                    SettingsRow("Import statements", "CSV from net banking to bring in past transactions", Icons.Outlined.UploadFile) {
                         nav.navigate(Routes.STATEMENT_IMPORT)
                     }
                     if (sampleLoaded) {
-                        ActionRow("Remove sample data", "Deletes only the demo accounts, transactions and investments", Icons.Outlined.Science, enabled = busy == null) {
+                        SettingsRow("Remove sample data", "Deletes only the demo accounts, transactions and investments", Icons.Outlined.Science, enabled = busy == null) {
                             confirmRemoveSample = true
                         }
                     } else {
-                        ActionRow("Load sample data", "Explore Acuranza with demo accounts and transactions", Icons.Outlined.Science, enabled = busy == null) {
+                        SettingsRow("Load sample data", "Explore Acuranza with demo accounts and transactions", Icons.Outlined.Science, enabled = busy == null) {
                             busy = "Loading sample data…"
                             scope.launch {
                                 val loaded = runCatching { c.demoData.load() }.getOrDefault(false)
@@ -290,12 +275,18 @@ fun MoreScreen(nav: NavController) {
                             }
                         }
                     }
-                    ActionRow("Erase all data", "Deletes accounts, transactions and bills", Icons.Outlined.DeleteForever) { confirmErase = true }
+                    SettingsRow(
+                        "Erase all data",
+                        "Deletes accounts, transactions and bills",
+                        Icons.Outlined.DeleteForever,
+                        tone = RowTone.DESTRUCTIVE,
+                        divider = false,
+                    ) { confirmErase = true }
                 }
             }
             item(key = "about-link") {
-                Section("About") {
-                    ActionRow("About Acuranza", "Version, privacy policy and licence", Icons.Outlined.Info) {
+                SettingsSection("About") {
+                    SettingsRow("About Acuranza", "Version, privacy policy and licence", Icons.Outlined.Info, divider = false) {
                         nav.navigate(Routes.ABOUT)
                     }
                 }

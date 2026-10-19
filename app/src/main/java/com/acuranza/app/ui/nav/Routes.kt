@@ -20,6 +20,7 @@ object Routes {
     const val TRANSACTIONS = "transactions"
     const val PLANNING = "planning"
     const val SETTINGS = "settings"
+    const val MANAGEMENT = "management"
 
     const val REVIEW = "review"
     const val ADD_TXN = "txn/add?type={type}&account={account}"
@@ -65,7 +66,7 @@ val Tabs = listOf(
     Tab(Routes.HOME, "Home", Icons.Outlined.Home, Icons.Filled.Home),
     Tab(Routes.INSIGHTS, "Analytics", Icons.Outlined.QueryStats, Icons.Filled.QueryStats),
     Tab(Routes.TRANSACTIONS, "Transactions", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong),
-    Tab(Routes.CATEGORIES, "Categories", Icons.Outlined.Category, Icons.Filled.Category),
+    Tab(Routes.MANAGEMENT, "Management", Icons.Outlined.Category, Icons.Filled.Category),
     Tab(Routes.SETTINGS, "More", Icons.Outlined.Menu, Icons.Filled.Menu),
 )
 
