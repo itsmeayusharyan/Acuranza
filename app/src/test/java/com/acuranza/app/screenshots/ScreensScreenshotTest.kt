@@ -227,26 +227,24 @@ class ScreensScreenshotTest {
                     Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
-            SettingsSection("Appearance & privacy") {
+            SettingsSection("Appearance") {
                 SettingsRow(
                     "Theme",
                     "Follow the system, or pick light or dark",
                     Icons.Outlined.Palette,
                     footer = { SegmentedTabs(listOf("System", "Light", "Dark"), 2, onSelect = {}) },
                 )
-                SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff)
+                SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff, divider = false)
+            }
+            SettingsSection("Privacy & security") {
                 SettingsToggle("App lock", "Fingerprint, face or screen lock when opening Acuranza", true, {}, Icons.Outlined.Fingerprint)
                 SettingsToggle("Block screenshots", "Hide Acuranza in the recents preview and block screenshots", true, {}, Icons.Outlined.ScreenLockPortrait)
                 SettingsRow(
                     "Database encryption",
                     "AES-256 (SQLCipher), key kept in the phone's secure hardware keystore",
                     Icons.Outlined.Lock,
-                    enabled = false,
-                    divider = false,
                     trailing = { Pill("On", AcuranzaTheme.colors.good) },
                 )
-            }
-            SettingsSection("Security") {
                 SettingsRow("App PIN", "On", Icons.Outlined.Password) {}
                 SettingsRow("Decoy PIN", "Off · a second PIN that opens a sample profile", Icons.Outlined.TheaterComedy) {}
                 SettingsRow("Recovery options", "What still works if a PIN is forgotten or the phone is lost", Icons.Outlined.Shield, divider = false) {}

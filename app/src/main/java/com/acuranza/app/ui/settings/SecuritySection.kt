@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.TheaterComedy
 import androidx.compose.material3.AlertDialog
@@ -27,9 +30,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.fragment.app.FragmentActivity
+import com.acuranza.app.data.DatabaseEncryption
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
+import com.acuranza.app.security.BiometricGate
 import com.acuranza.app.security.DecoySession
 import com.acuranza.app.security.PinHasher
+import com.acuranza.app.security.UnlockResult
+import com.acuranza.app.ui.AppLock
+import com.acuranza.app.ui.common.LocalContainer
+import com.acuranza.app.ui.common.Pill
 import com.acuranza.app.tools.ToolsPrefs
 import com.acuranza.app.tools.ToolsSettings
 import com.acuranza.app.ui.common.LocalSettings
@@ -40,13 +50,15 @@ import kotlinx.coroutines.withContext
 const val DECOY_PLACEHOLDER = "decoy"
 
 /**
- * Security settings: the app PIN that unlocks Acuranza, the decoy PIN that opens a sample
- * profile, and recovery options — what still works if a PIN is forgotten or the phone is lost.
+ * Privacy & security settings: the app lock, screenshot blocking, database encryption status,
+ * the app PIN that unlocks Acuranza, the decoy PIN that opens a sample profile, and recovery
+ * options — what still works if a PIN is forgotten or the phone is lost.
  */
 @Composable
-fun SecuritySection(onMessage: (String) -> Unit) {
+fun PrivacySecuritySection(onMessage: (String) -> Unit) {
     val context = LocalContext.current
     val s = LocalSettings.current
+    val c = LocalContainer.current
     val scope = rememberCoroutineScope()
     val store = remember { ToolsSettings.get(context) }
     val realPrefs by remember { store.prefs }.collectAsStateWithLifecycle(initialValue = ToolsPrefs())
@@ -59,7 +71,45 @@ fun SecuritySection(onMessage: (String) -> Unit) {
     var pinDialog by remember { mutableStateOf<PinAction?>(null) }
     var recoveryOpen by remember { mutableStateOf(false) }
 
-    SettingsSection("Security") {
+    SettingsSection("Privacy & security") {
+        val canLock = remember { BiometricGate.isAvailable(context) }
+        SettingsToggle(
+            "App lock",
+            if (canLock) "Fingerprint, face or screen lock when opening Acuranza" else "Set a screen lock on your phone to use this",
+            s.biometricLockEnabled,
+            { v ->
+                val activity = context as? FragmentActivity
+                if (!v) {
+                    scope.launch { c.settings.setBiometricLock(false) }
+                } else if (activity != null) {
+                    scope.launch {
+                        if (BiometricGate.authenticate(activity, title = "Turn on app lock") == UnlockResult.Success) {
+                            // The user just proved it's them: keep this session unlocked.
+                            AppLock.markUnlocked()
+                            c.settings.setBiometricLock(true)
+                        }
+                    }
+                }
+            },
+            Icons.Outlined.Fingerprint,
+            enabled = canLock,
+        )
+        SettingsToggle(
+            "Block screenshots",
+            "Hide Acuranza in the recents preview and block screenshots",
+            s.blockScreenshots,
+            { v -> scope.launch { c.settings.setBlockScreenshots(v) } },
+            Icons.Outlined.ScreenLockPortrait,
+        )
+        val encrypted = DatabaseEncryption.status == DatabaseEncryption.Status.ENCRYPTED
+        SettingsRow(
+            "Database encryption",
+            if (encrypted) "AES-256 (SQLCipher), key kept in the phone's secure hardware keystore" else "Acuranza will encrypt it on the next launch",
+            Icons.Outlined.Lock,
+            trailing = {
+                Pill(if (encrypted) "On" else "Pending", if (encrypted) AcuranzaTheme.colors.good else AcuranzaTheme.colors.warning)
+            },
+        )
         SettingsRow(
             "App PIN",
             when {
