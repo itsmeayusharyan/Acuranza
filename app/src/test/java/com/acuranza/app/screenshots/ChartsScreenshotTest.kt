@@ -91,6 +91,7 @@ class ChartsScreenshotTest {
             reviewFromSms = 2,
             reviewFromEmail = 1,
             bills = FakeData.bills,
+            billsDue = FakeData.bills.size,
             insights = FakeData.insights,
             recent = FakeData.recent,
             accounts = FakeData.accounts,

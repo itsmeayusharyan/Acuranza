@@ -108,6 +108,7 @@ class ScreensScreenshotTest {
         summary = FakeData.summary,
         unreviewed = 3,
         bills = FakeData.bills,
+        billsDue = FakeData.bills.size,
         insights = FakeData.insights,
         recent = FakeData.recent,
         accounts = FakeData.accounts,
@@ -229,7 +230,6 @@ class ScreensScreenshotTest {
                     ActionRow("Categories", "Your spending and income categories", Icons.Outlined.Category) {}
                 }
                 Section("Financial tools") {
-                    ActionRow("Card bills", "Due dates and payments from your cards", Icons.Outlined.CreditCard) {}
                     ActionRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {}
                     ActionRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) {}
                     ActionRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) {}

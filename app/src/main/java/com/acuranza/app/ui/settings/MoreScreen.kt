@@ -29,7 +29,6 @@ import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Handshake
@@ -57,7 +56,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -118,7 +116,6 @@ fun MoreScreen(nav: NavController) {
     var confirmRemoveSample by remember { mutableStateOf(false) }
     var backupUri by remember { mutableStateOf<Uri?>(null) }
     var restoreUri by remember { mutableStateOf<Uri?>(null) }
-    val unpaidBills by c.bills.observeUnpaid().collectAsState(initial = emptyList())
 
     fun show(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
     var sampleLoaded by remember { mutableStateOf(false) }
@@ -156,12 +153,6 @@ fun MoreScreen(nav: NavController) {
             }
             item(key = "tools-money") {
                 Section("Financial tools") {
-                    val due = unpaidBills.size
-                    ActionRow(
-                        if (due > 0) "Card bills · $due due" else "Card bills",
-                        if (due > 0) "Tap to see amounts and due dates" else "Due dates and payments from your cards",
-                        Icons.Outlined.CreditCard,
-                    ) { nav.navigate(Routes.BILLS) }
                     ActionRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {
                         nav.navigate(Routes.RECURRING)
                     }

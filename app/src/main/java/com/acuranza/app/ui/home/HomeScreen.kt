@@ -1,9 +1,12 @@
 package com.acuranza.app.ui.home
 
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -127,6 +130,8 @@ data class HomeState(
     val reviewFromSms: Int = 0,
     val reviewFromEmail: Int = 0,
     val bills: List<BillItem> = emptyList(),
+    /** Unpaid card bills — the count behind the header's bills badge. */
+    val billsDue: Int = 0,
     val insights: List<Insight> = emptyList(),
     val recent: List<TransactionItem> = emptyList(),
     val accounts: List<AccountWithBalance> = emptyList(),
@@ -262,6 +267,7 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
             reviewFromSms = l.fromSms,
             reviewFromEmail = l.fromEmail,
             bills = l.bills.take(6),
+            billsDue = l.bills.size,
             insights = l.insights.filterNot { it.isSummary }.take(5),
             recent = l.recent,
             accounts = l.accounts,
@@ -341,6 +347,45 @@ const val UNCATEGORISED_BANNER_MIN = 5
 /** Days of bank SMS on ignored accounts the Home notice looks back over. */
 const val IGNORED_NOTICE_DAYS = 7L
 
+/**
+ * The insights shortcut that used to occupy the header's top-right corner. Removed from the UI in
+ * favour of the card-bills badge; kept intact — handler and all — for potential future use.
+ */
+@Composable
+private fun InsightsBulbButton(onInsights: () -> Unit) {
+    IconButton(onClick = onInsights) {
+        Icon(Icons.Outlined.Lightbulb, contentDescription = "Insights", tint = AcuranzaTheme.colors.subtleText)
+    }
+}
+
+/**
+ * The header's card-bills shortcut: the existing bills icon with a badge showing how many bills
+ * are due. Opens the existing bills screen; no badge when nothing is due.
+ */
+@Composable
+private fun BillsBadgeButton(billsDue: Int, onOpen: () -> Unit) {
+    IconButton(onClick = onOpen) {
+        BadgedBox(
+            badge = {
+                if (billsDue > 0) {
+                    Badge(
+                        containerColor = AcuranzaTheme.colors.accent,
+                        contentColor = AcuranzaTheme.colors.onInk,
+                    ) {
+                        Text("$billsDue")
+                    }
+                }
+            },
+        ) {
+            Icon(
+                Icons.Outlined.CreditCard,
+                contentDescription = if (billsDue > 0) "Card bills, $billsDue due" else "Card bills",
+                tint = AcuranzaTheme.colors.subtleText,
+            )
+        }
+    }
+}
+
 /** Stateless Home screen, rendered from [HomeState]; used by the app and by screenshot tests. */
 @Composable
 fun HomeContent(
@@ -391,9 +436,7 @@ fun HomeContent(
                         tint = AcuranzaTheme.colors.subtleText,
                     )
                 }
-                IconButton(onClick = onInsights) {
-                    Icon(Icons.Outlined.Lightbulb, contentDescription = "Insights", tint = AcuranzaTheme.colors.subtleText)
-                }
+                BillsBadgeButton(billsDue = state.billsDue, onOpen = onBills)
             }
         }
 
