@@ -10,12 +10,11 @@ permission, so Android itself guarantees your data cannot leave the device.
 • Goals with Monte-Carlo success probability, and safe-to-spend until payday
 • Recurring payments, subscriptions, loans and EMIs, card-bill reminders
 • Insights computed offline: spending spikes, savings rate, card utilisation
-• Receipts and warranties, PDF reports, CSV/Beancount/Ledger export
+• Receipts, PDF reports, CSV/Beancount/Ledger export
 • Encrypted database (SQLCipher + Android Keystore), biometric lock, decoy PIN, encrypted backups
 
-Acuranza is free software under GPL-3.0-or-later, based on the Kosh project by Amit Kumar Jha and
-contributors (github.com/AIM-IT4/kosh), with a redesigned interface, a strict offline build and a
-notification gate on first launch.
+Acuranza is free software under GPL-3.0-or-later, with its own interface, a strict offline build
+and a notification gate on first launch. Upstream attribution and licence text ship with the source
+distribution.
 
-Notifications are required at first launch — that is how bill due dates, spend alerts and warranty
-reminders reach you. Nothing else is asked for: no SMS, no contacts, no location.
+Notifications are required at first launch — that is how bill due dates and spend alerts reach you. Nothing else is asked for: no SMS, no contacts, no location.

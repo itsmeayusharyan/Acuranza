@@ -82,7 +82,7 @@ import com.acuranza.app.ui.common.FormColumn
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalHideAmounts
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.bankEnum
 import com.acuranza.app.ui.common.label
 import com.acuranza.app.ui.home.TxnRow
@@ -117,7 +117,7 @@ class AccountsViewModel(private val c: AppContainer) : ViewModel() {
 
 @Composable
 fun AccountsScreen(nav: NavController) {
-    val vm = koshViewModel { AccountsViewModel(it) }
+    val vm = acuranzaViewModel { AccountsViewModel(it) }
     val accounts by vm.accounts.collectAsStateWithLifecycle()
     val ignored by vm.ignored.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
@@ -286,7 +286,7 @@ class AccountDetailViewModel(private val c: AppContainer, private val id: Long) 
 
 @Composable
 fun AccountDetailScreen(nav: NavController, id: Long) {
-    val vm = koshViewModel(key = "acc-$id") { AccountDetailViewModel(it, id) }
+    val vm = acuranzaViewModel(key = "acc-$id") { AccountDetailViewModel(it, id) }
     val state by vm.state.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
     var reconcile by remember { mutableStateOf(false) }
@@ -475,7 +475,7 @@ private val TYPES = listOf(AccountType.BANK, AccountType.CREDIT_CARD, AccountTyp
 
 @Composable
 fun AccountEditScreen(nav: NavController, editId: Long?, defaultCard: Boolean) {
-    val vm = koshViewModel(key = "acc-edit-$editId") { AccountEditViewModel(it) }
+    val vm = acuranzaViewModel(key = "acc-edit-$editId") { AccountEditViewModel(it) }
     var existing by remember { mutableStateOf<AccountEntity?>(null) }
     var type by remember { mutableStateOf(if (defaultCard) AccountType.CREDIT_CARD else AccountType.BANK) }
     var bank by remember { mutableStateOf(Bank.HDFC) }

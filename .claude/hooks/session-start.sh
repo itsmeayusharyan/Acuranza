@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs the Android SDK Kosh builds against (compileSdk 35) in Claude Code cloud sessions and points
+# Installs the Android SDK Acuranza builds against (compileSdk 35) in Claude Code cloud sessions and points
 # Gradle at it through local.properties. Local machines use their own SDK, so this does nothing there.
 set -euo pipefail
 

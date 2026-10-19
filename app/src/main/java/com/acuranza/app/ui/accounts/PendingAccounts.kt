@@ -56,7 +56,7 @@ import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalHideAmounts
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.launchGuarded
 import com.acuranza.app.ui.common.label
 import com.acuranza.app.util.Time
@@ -174,7 +174,7 @@ fun AccountWithBalance.sourceLine(): String = when (val s = source) {
 
 @Composable
 fun PendingAccountsScreen(nav: NavController) {
-    val vm = koshViewModel { PendingAccountsViewModel(it) }
+    val vm = acuranzaViewModel { PendingAccountsViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
     var merging by remember { mutableStateOf<AccountWithBalance?>(null) }

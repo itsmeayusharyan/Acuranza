@@ -34,7 +34,7 @@ val LocalHideAmounts = compositionLocalOf { false }
 
 /** Creates (or reuses) a ViewModel built from the [AppContainer]. Pass a [key] when arguments differ. */
 @Composable
-inline fun <reified VM : ViewModel> koshViewModel(key: String? = null, crossinline create: (AppContainer) -> VM): VM {
+inline fun <reified VM : ViewModel> acuranzaViewModel(key: String? = null, crossinline create: (AppContainer) -> VM): VM {
     val container = LocalContainer.current
     return viewModel(key = key, factory = viewModelFactory { initializer { create(container) } })
 }

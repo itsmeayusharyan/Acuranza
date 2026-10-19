@@ -5,8 +5,8 @@ the main F-Droid repository. F-Droid builds the app from source and signs it wit
 
 ## Before you submit
 
-1. **Make the GitHub repository public** (`gh repo edit AIM-IT4/kosh --visibility public`). F-Droid can only
-   build from public source.
+1. **Make the GitHub repository public** (the origin remote: `gh repo edit --visibility public` from
+   the repo root). F-Droid can only build from public source.
 2. **Release first**: bumping `versionName`/`versionCode` on main makes the Release workflow tag `v<versionName>`
    and attach `Acuranza.apk`. Write a fresh F-Droid metadata file for `com.acuranza.app` at that version. After inclusion F-Droid picks up new tags on its own.
 3. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` for that release. F-Droid shows the

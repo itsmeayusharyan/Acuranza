@@ -286,7 +286,6 @@ class ScreensScreenshotTest {
                 onPrivacy = {},
                 onTerms = {},
                 onLicence = {},
-                onVisitSource = {},
             )
         }
     }

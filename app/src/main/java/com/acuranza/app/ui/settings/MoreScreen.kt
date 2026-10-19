@@ -180,7 +180,7 @@ fun MoreScreen(nav: NavController) {
                 Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Acuranza ${context.versionName()}", style = MaterialTheme.typography.labelLarge, color = AcuranzaTheme.colors.subtleText)
                     Text("Everything stays on this device · no internet access", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
-                    Text("Free & open source · GPL-3.0 · based on Kosh", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
+                    Text("Free & open source · GPL-3.0", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
         }

@@ -73,7 +73,7 @@ import com.acuranza.app.finance.InsightRoute
 import com.acuranza.app.finance.Severity
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalHideAmounts
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.rememberHaptic
 import com.acuranza.app.ui.common.toUi
 import com.acuranza.app.ui.nav.Routes
@@ -123,7 +123,7 @@ fun openInsightAction(nav: NavController, action: InsightAction) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(nav: NavController) {
-    val vm = koshViewModel { InsightsViewModel(it) }
+    val vm = acuranzaViewModel { InsightsViewModel(it) }
     val insights by vm.insights.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val haptic = rememberHaptic()

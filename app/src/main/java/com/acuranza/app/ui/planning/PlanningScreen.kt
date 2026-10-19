@@ -75,7 +75,7 @@ import com.acuranza.app.ui.common.FormColumn
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalHideAmounts
 import com.acuranza.app.ui.common.color
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.launchGuarded
 import com.acuranza.app.ui.common.rememberHaptic
 import com.acuranza.app.util.Time
@@ -128,7 +128,7 @@ object PlanningTabRequest {
 
 @Composable
 fun PlanningScreen(@Suppress("UNUSED_PARAMETER") nav: NavController) {
-    val vm = koshViewModel { PlanningViewModel(it) }
+    val vm = acuranzaViewModel { PlanningViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val requestedTab = PlanningTabRequest.pending

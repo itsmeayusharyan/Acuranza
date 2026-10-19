@@ -58,7 +58,7 @@ import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.bankEnum
 import com.acuranza.app.ui.common.color
 import com.acuranza.app.data.tombstones
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.launchGuarded
 import com.acuranza.app.ui.nav.popPast
 import com.acuranza.app.ui.common.label
@@ -126,7 +126,7 @@ class AddTransactionViewModel(private val c: AppContainer) : ViewModel() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(nav: NavController, editId: Long?, initialType: TxnType, initialAccountId: Long?) {
-    val vm = koshViewModel(key = "add-$editId") { AddTransactionViewModel(it) }
+    val vm = acuranzaViewModel(key = "add-$editId") { AddTransactionViewModel(it) }
     val refs by vm.refs.collectAsStateWithLifecycle()
     AddTransactionContent(
         refs = refs,

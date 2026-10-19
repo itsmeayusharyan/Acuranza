@@ -85,7 +85,7 @@ import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalHideAmounts
 import com.acuranza.app.ui.common.bankEnum
 import com.acuranza.app.ui.common.color
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.label
 import com.acuranza.app.ui.common.toUi
 import com.acuranza.app.ui.nav.Routes
@@ -302,7 +302,7 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
 
 @Composable
 fun HomeScreen(nav: NavController) {
-    val vm = koshViewModel { HomeViewModel(it) }
+    val vm = acuranzaViewModel { HomeViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
     val container = LocalContainer.current

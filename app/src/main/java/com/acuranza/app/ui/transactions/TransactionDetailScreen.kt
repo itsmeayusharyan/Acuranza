@@ -55,7 +55,7 @@ import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalHideAmounts
 import com.acuranza.app.ui.common.color
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.label
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.util.Time
@@ -89,7 +89,7 @@ class TransactionDetailViewModel(private val c: AppContainer, private val id: Lo
 
 @Composable
 fun TransactionDetailScreen(nav: NavController, id: Long) {
-    val vm = koshViewModel(key = "txn-$id") { TransactionDetailViewModel(it, id) }
+    val vm = acuranzaViewModel(key = "txn-$id") { TransactionDetailViewModel(it, id) }
     val state by vm.state.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
     var recategorise by remember { mutableStateOf(false) }

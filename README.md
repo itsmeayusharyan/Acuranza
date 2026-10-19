@@ -15,11 +15,12 @@ all, so Android itself guarantees that your money data never leaves the phone.
 Acuranza tracks income, expenses, credit cards, bills, budgets and goals. You add transactions by
 hand or import bank-statement CSVs, and every insight is computed on the phone.
 
-> Acuranza is a derivative of **[Kosh](https://github.com/AIM-IT4/kosh)** by Amit Kumar Jha and
-> contributors, used under the terms of the GNU General Public License v3.0 or later. The complete
-> upstream history is preserved in this repository's git log; Acuranza keeps Kosh's license and adds
-> its own interface, a stricter offline build, a notification gate on first launch, and a narrower,
-> spending-focused feature set (the Tax planner and the FD/EPF/NPS wealth sections were removed).
+> Acuranza is a derivative of the upstream Kosh project by Amit Kumar Jha and contributors, used
+> under the terms of the GNU General Public License v3.0 or later (this attribution is retained for
+> licence compliance). The complete upstream history is preserved in this repository's git log, and
+> every source file keeps the copyright notice it carried. Acuranza adds its own interface, a
+> stricter offline build, a notification gate on first launch, and a narrower, spending-focused
+> feature set (the Tax planner and the FD/EPF/NPS wealth sections were removed).
 
 ## Screens
 
@@ -63,8 +64,7 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
   prepayment calculator (fewer EMIs or a lower EMI).
 - **Tags, splits and IOUs**: tag transactions (`#goa-trip`), split one payment across categories,
   and track money lent to or borrowed from people.
-- **Receipts and warranties**: attach a bill photo or PDF to a transaction, encrypted on the phone,
-  with a reminder before a warranty ends.
+- **Receipts**: attach a bill photo or PDF to a transaction, encrypted on the phone.
 - **Reports**: monthly and yearly PDF reports, a year-in-review, and a calendar of daily spending
   and upcoming payments.
 - **Bank statement import**: CSV statements from net banking (HDFC, ICICI, SBI, Axis, Kotak and
@@ -91,8 +91,8 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
   (`allowBackup="false"`).
 
 Acuranza asks for exactly one permission before the app opens on first launch:
-**notifications**. They are how reminders reach you — card-bill due dates, unusual spending,
-warranties ending and payments you scheduled — and the app is gated until they are allowed
+**notifications**. They are how reminders reach you — card-bill due dates, unusual spending and
+payments you scheduled — and the app is gated until they are allowed
 (with a clear path through system settings; it never crashes or loops when denied).
 It asks for nothing else — no SMS, no contacts, no location, no network.
 
@@ -131,5 +131,5 @@ account numbers before sharing a statement. Security issues: see [SECURITY.md](S
 ## License
 
 Acuranza is free software under the [GNU General Public License v3.0 or later](LICENSE), as is the
-Kosh project it derives from. Each file keeps the upstream copyright notice it carried; the git
-history records every change made here.
+upstream project it derives from (see the attribution note above). Each file keeps the upstream
+copyright notice it carried; the git history records every change made here.

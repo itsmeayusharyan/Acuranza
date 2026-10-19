@@ -59,7 +59,7 @@ import com.acuranza.app.model.TxnType
 import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalHideAmounts
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.util.Time
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -142,7 +142,7 @@ fun UncategorisedBanner(count: Int, onClick: () -> Unit, modifier: Modifier = Mo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UncategorisedScreen(nav: NavController) {
-    val vm = koshViewModel { UncategorisedViewModel(it) }
+    val vm = acuranzaViewModel { UncategorisedViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
     val context = LocalContext.current

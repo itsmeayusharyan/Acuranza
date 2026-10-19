@@ -48,7 +48,7 @@ import com.acuranza.app.repo.TxnFilter
 import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalHideAmounts
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.rememberHaptic
 import com.acuranza.app.ui.home.TxnRow
 import com.acuranza.app.ui.nav.Routes
@@ -210,7 +210,7 @@ class TransactionsViewModel(private val c: AppContainer) : ViewModel() {
 
 @Composable
 fun TransactionsScreen(nav: NavController) {
-    val vm = koshViewModel { TransactionsViewModel(it) }
+    val vm = acuranzaViewModel { TransactionsViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val typed by vm.queryText.collectAsStateWithLifecycle()
     androidx.compose.runtime.LaunchedEffect(Unit) {

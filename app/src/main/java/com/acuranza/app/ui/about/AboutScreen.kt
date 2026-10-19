@@ -1,10 +1,5 @@
 package com.acuranza.app.ui.about
 
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Shield
@@ -39,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.acuranza.app.BuildConfig
@@ -49,13 +42,9 @@ import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.ui.settings.SettingsRow
 import com.acuranza.app.ui.settings.SettingsSection
 
-/** The only external URL Acuranza links to: the source repository it is built from. */
-private const val SOURCE_URL = "https://github.com/AIM-IT4/kosh"
-
-/** The About Acuranza screen: branding, version and legal links. Reached from Settings. */
+/** The About Acuranza screen: branding, version and legal sheets. Reached from Settings. */
 @Composable
 fun AboutScreen(nav: androidx.navigation.NavController) {
-    val context = LocalContext.current
     var sheet by remember { mutableStateOf<AboutSheet?>(null) }
     AboutContent(
         versionLabel = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
@@ -63,7 +52,6 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
         onPrivacy = { sheet = AboutSheet.PRIVACY },
         onTerms = { sheet = AboutSheet.TERMS },
         onLicence = { sheet = AboutSheet.LICENCE },
-        onVisitSource = { openSource(context) },
     )
     when (sheet) {
         AboutSheet.PRIVACY -> InfoSheet(
@@ -103,10 +91,8 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
         ) {
             InfoParagraph(
                 "Acuranza is free and open-source software under the GNU General Public License " +
-                    "v3.0. You may use, study, share and modify it; there is no warranty.",
-            )
-            InfoParagraph(
-                "It is a derivative of Kosh by Amit Kumar Jha, published under the same licence.",
+                    "v3.0. You may use, study, share and modify it; there is no warranty. The full " +
+                    "licence text accompanies the app's source distribution.",
             )
         }
         null -> Unit
@@ -115,19 +101,9 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
 
 private enum class AboutSheet { PRIVACY, TERMS, LICENCE }
 
-private fun openSource(context: Context) {
-    runCatching {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_URL)))
-    }.onFailure { e ->
-        if (e is ActivityNotFoundException) {
-            Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
-        }
-    }
-}
-
 /**
  * Stateless body of the About screen, so tests can render it without BuildConfig: a branding
- * block, then the legal and project links in the same row kit Settings uses.
+ * block, then the legal sheets in the same row kit Settings uses.
  */
 @Composable
 fun AboutContent(
@@ -136,7 +112,6 @@ fun AboutContent(
     onPrivacy: () -> Unit,
     onTerms: () -> Unit = {},
     onLicence: () -> Unit,
-    onVisitSource: () -> Unit,
 ) {
     val c = AcuranzaTheme.colors
     Column(
@@ -199,11 +174,10 @@ fun AboutContent(
 
         // The section kit expects its parent to own the horizontal padding (as Settings' list does).
         Column(Modifier.padding(horizontal = 20.dp)) {
-            SettingsSection("Legal & project") {
+            SettingsSection("Legal") {
                 SettingsRow("Privacy policy", "What Acuranza stores, and what it never sends", Icons.Outlined.Shield) { onPrivacy() }
                 SettingsRow("Terms of service", "The plain terms of using the app", Icons.Outlined.Gavel) { onTerms() }
-                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Description) { onLicence() }
-                SettingsRow("Source code", "Read, audit and build it yourself", Icons.Outlined.Code, value = "GitHub", divider = false) { onVisitSource() }
+                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Description, divider = false) { onLicence() }
             }
         }
 

@@ -59,7 +59,7 @@ import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalHideAmounts
 import com.acuranza.app.ui.common.Pill
 import com.acuranza.app.ui.common.bankEnum
-import com.acuranza.app.ui.common.koshViewModel
+import com.acuranza.app.ui.common.acuranzaViewModel
 import com.acuranza.app.ui.common.launchGuarded
 import com.acuranza.app.ui.common.label
 import com.acuranza.app.ui.common.rememberHaptic
@@ -99,7 +99,7 @@ class BillsViewModel(private val c: AppContainer) : ViewModel() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BillsScreen(nav: NavController) {
-    val vm = koshViewModel { BillsViewModel(it) }
+    val vm = acuranzaViewModel { BillsViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
     var paying by remember { mutableStateOf<BillItem?>(null) }
