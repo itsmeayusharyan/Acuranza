@@ -1,0 +1,1 @@
+Edit home fix: the section list now scrolls and the Reset to default control is always visible, so every section and reset work on any screen size. Rapid edits no longer overwrite each other while saving.
