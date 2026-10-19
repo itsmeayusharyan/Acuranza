@@ -692,7 +692,7 @@ item(key = "empty") {
                     AcuranzaCard {
                         BarChart(groups = state.charts.sixMonths, height = 170.dp, hidden = hidden)
                         Spacer(Modifier.height(10.dp))
-                        Text("SAVINGS RATE", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.tertiaryText)
+                        Text("SAVINGS RATE", style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
                         Spacer(Modifier.height(4.dp))
                         Row(Modifier.fillMaxWidth()) {
                             state.charts.savingsRates.forEach { r ->

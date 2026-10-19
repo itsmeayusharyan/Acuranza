@@ -63,6 +63,7 @@ import com.acuranza.app.designsystem.components.ProgressRing
 import com.acuranza.app.designsystem.components.SecondaryButton
 import com.acuranza.app.designsystem.components.SwipeActionsRow
 import com.acuranza.app.designsystem.components.accent
+import com.acuranza.app.designsystem.theme.AcuranzaText
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.di.AppContainer
 import com.acuranza.app.finance.Insight
@@ -223,7 +224,7 @@ private fun SummaryCard(s: Insight, hidden: Boolean, onAction: (InsightAction) -
                 Spacer(Modifier.width(16.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text("THIS MONTH", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText, fontWeight = FontWeight.Medium)
+                Text("THIS MONTH", style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
                 Text(s.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
         }

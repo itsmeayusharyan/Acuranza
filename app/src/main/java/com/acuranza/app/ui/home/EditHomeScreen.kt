@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.acuranza.app.designsystem.components.IconBubble
+import com.acuranza.app.designsystem.theme.AcuranzaText
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalContainer
@@ -107,7 +108,7 @@ fun EditHomeContent(
         Column(Modifier.fillMaxSize().padding(padding)) {
             Text(
                 "SECTIONS",
-                style = MaterialTheme.typography.labelMedium,
+                style = AcuranzaText.sectionLabel,
                 color = AcuranzaTheme.colors.subtleText,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 6.dp),
             )
