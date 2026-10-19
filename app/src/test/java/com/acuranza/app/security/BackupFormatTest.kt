@@ -89,7 +89,7 @@ class BackupFormatTest {
             LoanEntity(1, "Home loan", "SBI", "HOME", 50_00_000_00, 8.5, 240, 20_000, emi = 43_391_00,
                 prepaymentsJson = """[{"day":20100,"amount":100000,"reduce":"TENURE"}]""", createdAt = 9),
         ),
-        attachments = listOf(AttachmentEntity(1, 7, "a.bin", "image/jpeg", 3, "Bill", warrantyUntil = 20_365, createdAt = 9)),
+        attachments = listOf(AttachmentEntity(1, 7, "a.bin", "image/jpeg", 3, "Bill", createdAt = 9)),
         attachmentFiles = mapOf("a.bin" to byteArrayOf(1, 2, 3)),
     )
 

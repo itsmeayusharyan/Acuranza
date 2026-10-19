@@ -26,8 +26,6 @@ class Notifications(private val context: Context) {
                     .apply { description = "Credit card bills and due-date reminders" },
                 NotificationChannel(CH_INSIGHTS, "Insights", NotificationManager.IMPORTANCE_LOW)
                     .apply { description = "Budget and goal alerts" },
-                NotificationChannel(CH_MATURITY, "Reminders", NotificationManager.IMPORTANCE_DEFAULT)
-                    .apply { description = "Warranty end dates and recurring-payment reminders" },
             ),
         )
     }
@@ -39,8 +37,6 @@ class Notifications(private val context: Context) {
     fun bill(key: Int, title: String, text: String) = post(CH_BILLS, NOTIF_BILL_BASE + key, title, text, ROUTE_BILLS)
 
     fun insight(key: Int, title: String, text: String) = post(CH_INSIGHTS, NOTIF_INSIGHT_BASE + key, title, text, ROUTE_INSIGHTS)
-
-    fun warranty(key: Int, title: String, text: String) = post(CH_MATURITY, NOTIF_WARRANTY_BASE + key, title, text, ROUTE_WARRANTIES)
 
     fun reminder(key: Int, title: String, text: String) = post(CH_INSIGHTS, NOTIF_REMINDER_BASE + key, title, text, ROUTE_RECURRING)
 
@@ -81,27 +77,23 @@ class Notifications(private val context: Context) {
     companion object {
         const val CH_BILLS = "bills"
         const val CH_INSIGHTS = "insights"
-        const val CH_MATURITY = "maturity"
 
         /** Intent extra naming the screen to open: one of the ROUTE_ constants. */
         const val EXTRA_ROUTE = "acuranza.route"
         const val ROUTE_REVIEW = "review"
         const val ROUTE_BILLS = "bills"
         const val ROUTE_INSIGHTS = "insights"
-        const val ROUTE_WARRANTIES = "warranties"
         const val ROUTE_RECURRING = "recurring"
 
         /** Lock-screen text per channel, with no amounts or merchants. */
         private val PUBLIC_TEXT = mapOf(
             CH_BILLS to "Card bill reminder",
             CH_INSIGHTS to "New insight",
-            CH_MATURITY to "Reminder",
         )
 
         private const val NOTIF_BILL_BASE = 300_000
         private const val NOTIF_INSIGHT_BASE = 400_000
         private const val NOTIF_MATURITY_BASE = 500_000
-        private const val NOTIF_WARRANTY_BASE = 600_000
         private const val NOTIF_REMINDER_BASE = 700_000
     }
 }

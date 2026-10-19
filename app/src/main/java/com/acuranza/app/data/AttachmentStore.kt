@@ -12,7 +12,7 @@ import java.io.File
 import java.util.UUID
 
 /**
- * Receipt and warranty files, encrypted (AES-256-GCM under a key wrapped by the Android Keystore) in the app's
+ * Receipt files, encrypted (AES-256-GCM under a key wrapped by the Android Keystore) in the app's
  * private storage. Photos are scaled to at most [MAX_SIDE] pixels and saved as JPEG to keep backups small; PDFs are
  * kept as they are, up to [MAX_BYTES].
  */

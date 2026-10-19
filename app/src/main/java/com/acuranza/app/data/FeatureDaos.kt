@@ -108,12 +108,6 @@ interface AttachmentDao {
     @Query("SELECT * FROM attachments WHERE transactionId = :transactionId ORDER BY createdAt")
     fun observeFor(transactionId: Long): Flow<List<AttachmentEntity>>
 
-    @Query("SELECT * FROM attachments WHERE warrantyUntil IS NOT NULL ORDER BY warrantyUntil")
-    fun observeWarranties(): Flow<List<AttachmentEntity>>
-
-    @Query("SELECT * FROM attachments WHERE warrantyUntil IS NOT NULL")
-    suspend fun warranties(): List<AttachmentEntity>
-
     @Query("SELECT * FROM attachments")
     suspend fun all(): List<AttachmentEntity>
 

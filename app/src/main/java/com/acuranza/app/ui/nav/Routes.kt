@@ -30,6 +30,7 @@ object Routes {
     const val ACCOUNT_DETAIL = "account/{id}"
     const val ACCOUNT_EDIT = "account/edit?id={id}&card={card}"
     const val BILLS = "bills"
+    const val NOTIFICATIONS = "notifications"
     const val INSIGHTS = "insights"
     const val CATEGORIES = "categories"
     const val PENDING_ACCOUNTS = "accounts/pending"
@@ -45,7 +46,6 @@ object Routes {
     const val REPORTS = "reports"
     const val YEAR_REVIEW = "reports/year/{year}"
     const val CALENDAR = "calendar"
-    const val WARRANTIES = "warranties"
     const val ABOUT = "about"
 
     fun addTxn(type: TxnType = TxnType.EXPENSE, accountId: Long? = null) = "txn/add?type=${type.name}&account=${accountId ?: -1}"

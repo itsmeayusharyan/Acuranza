@@ -50,6 +50,8 @@ data class Settings(
     val notifyInsights: Boolean = true,
     val hideAmounts: Boolean = false,
     val dismissedInsightIds: Set<String> = emptySet(),
+    /** In-app notification-center ids already read. */
+    val readNotificationIds: Set<String> = emptySet(),
     /** User's explicit choice for blocking screenshots and the recents preview; null follows [blockScreenshots]. */
     val blockScreenshotsChoice: Boolean? = null,
 ) {
@@ -101,6 +103,7 @@ class SettingsStore(
         val notifyInsights = booleanPreferencesKey("notify_insights")
         val hideAmounts = booleanPreferencesKey("hide_amounts")
         val dismissedInsights = stringSetPreferencesKey("dismissed_insights")
+        val readNotifications = stringSetPreferencesKey("read_notifications")
         val notifiedInsights = stringSetPreferencesKey("notified_insights")
         val notifiedBills = stringSetPreferencesKey("notified_bills")
         val repairVersion = intPreferencesKey("repair_version")
@@ -126,6 +129,7 @@ class SettingsStore(
             notifyInsights = p[Keys.notifyInsights] ?: true,
             hideAmounts = p[Keys.hideAmounts] ?: false,
             dismissedInsightIds = p[Keys.dismissedInsights] ?: emptySet(),
+            readNotificationIds = p[Keys.readNotifications] ?: emptySet(),
             blockScreenshotsChoice = p[Keys.blockScreenshots],
         )
     }
@@ -166,6 +170,13 @@ class SettingsStore(
     }
 
     suspend fun clearDismissedInsights() = edit { it.remove(Keys.dismissedInsights) }
+
+    /** Marks in-app notification-center items read; old ids fall off the bounded set. */
+    suspend fun markNotificationsRead(ids: Collection<String>) = edit {
+        val current = (it[Keys.readNotifications] ?: emptySet()).toList()
+        it[Keys.readNotifications] = (current + ids).distinct().takeLast(MAX_IDS).toSet()
+    }
+
 
     /** Returns the ids from [ids] not yet notified, and records them as notified. */
     suspend fun claimNewInsightNotifications(ids: Collection<String>): Set<String> = claim(Keys.notifiedInsights, ids)

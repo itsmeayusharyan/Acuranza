@@ -3,6 +3,7 @@ package com.acuranza.app.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -336,7 +337,6 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
             Notifications.ROUTE_REVIEW -> Routes.REVIEW
             Notifications.ROUTE_BILLS -> Routes.BILLS
             Notifications.ROUTE_INSIGHTS -> Routes.INSIGHTS
-            Notifications.ROUTE_WARRANTIES -> Routes.WARRANTIES
             Notifications.ROUTE_RECURRING -> Routes.RECURRING
             com.acuranza.app.tools.QuickLaunch.ROUTE_ADD_EXPENSE -> Routes.addTxn(TxnType.EXPENSE)
             com.acuranza.app.tools.QuickLaunch.ROUTE_ADD_INCOME -> Routes.addTxn(TxnType.INCOME)
@@ -379,9 +379,10 @@ private fun BottomBar(nav: NavHostController, current: String?) {
 }
 
 /**
- * Five evenly spaced, icon-only destinations. The active one sits in a solid ink circle with a
- * contrasting icon; inactive icons are plain outlines. Each slot is a full-height touch target
- * whose content description carries the label.
+ * Five evenly spaced, icon-only destinations in one consistent outline style. The active tab gets
+ * a soft accent wash behind its icon, an ink-tinted icon and a small accent dot; everything
+ * cross-fades with short springs so switching feels smooth rather than abrupt. Each slot is a
+ * full-height touch target whose content description carries the label.
  */
 @Composable
 fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
@@ -390,16 +391,32 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
         Row(
             Modifier
                 .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.displayCutout)
                 .navigationBarsPadding()
                 .height(64.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Tabs.forEach { tab ->
                 val selected = current == tab.route
-                val circle by animateColorAsState(
-                    targetValue = if (selected) AcuranzaTheme.colors.ink else Color.Transparent,
-                    animationSpec = tween(180),
-                    label = "tab-circle",
+                val wash by animateColorAsState(
+                    targetValue = if (selected) AcuranzaTheme.colors.accentTint else Color.Transparent,
+                    animationSpec = tween(200),
+                    label = "tab-wash",
+                )
+                val tint by animateColorAsState(
+                    targetValue = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText,
+                    animationSpec = tween(200),
+                    label = "tab-tint",
+                )
+                val iconScale by animateFloatAsState(
+                    targetValue = if (selected) 1f else 0.94f,
+                    animationSpec = spring(stiffness = 380f, dampingRatio = 0.75f),
+                    label = "tab-scale",
+                )
+                val dot by animateFloatAsState(
+                    targetValue = if (selected) 1f else 0f,
+                    animationSpec = tween(200),
+                    label = "tab-dot",
                 )
                 Box(
                     Modifier
@@ -418,18 +435,29 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Box(
-                        Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(circle),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            if (selected) tab.selectedIcon else tab.icon,
-                            contentDescription = null,
-                            tint = if (selected) AcuranzaTheme.colors.onInk else AcuranzaTheme.colors.tertiaryText,
-                            modifier = Modifier.size(22.dp),
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(wash),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                tab.icon,
+                                contentDescription = null,
+                                tint = tint,
+                                modifier = Modifier.size(22.dp).scale(iconScale),
+                            )
+                        }
+                        // Reserved space keeps all five icons on one line whether or not the dot shows.
+                        Box(
+                            Modifier
+                                .padding(top = 3.dp)
+                                .size(4.dp)
+                                .graphicsLayer { alpha = dot; scaleX = dot; scaleY = dot }
+                                .clip(CircleShape)
+                                .background(AcuranzaTheme.colors.accent),
                         )
                     }
                 }
@@ -509,6 +537,7 @@ private fun AcuranzaNavHost(nav: NavHostController) {
             )
         }
         composable(Routes.BILLS) { BillsScreen(nav) }
+        composable(Routes.NOTIFICATIONS) { com.acuranza.app.ui.notifications.NotificationsScreen(nav) }
         composable(Routes.INSIGHTS) { InsightsScreen(nav) }
         composable(Routes.CATEGORIES) { CategoriesScreen(nav) }
         composable(Routes.MANAGEMENT) { ManagementScreen(nav) }
@@ -541,7 +570,6 @@ private fun AcuranzaNavHost(nav: NavHostController) {
             com.acuranza.app.ui.features.YearReviewScreen(nav, entry.arguments!!.getInt("year"))
         }
         composable(Routes.CALENDAR) { com.acuranza.app.ui.features.CalendarScreen(nav) }
-        composable(Routes.WARRANTIES) { com.acuranza.app.ui.features.WarrantiesScreen(nav) }
         composable(Routes.ABOUT) { com.acuranza.app.ui.about.AboutScreen(nav) }
     }
 }

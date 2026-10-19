@@ -6,8 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,17 +13,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Gavel
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,17 +40,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.acuranza.app.BuildConfig
 import com.acuranza.app.designsystem.components.AcuranzaLogo
+import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
+import com.acuranza.app.ui.settings.SettingsRow
+import com.acuranza.app.ui.settings.SettingsSection
 
 /** The only external URL Acuranza links to: the source repository it is built from. */
 private const val SOURCE_URL = "https://github.com/AIM-IT4/kosh"
 
-/** The About Acuranza screen: logo, version, and legal links. Reached from Settings. */
+/** The About Acuranza screen: branding, version and legal links. Reached from Settings. */
 @Composable
 fun AboutScreen(nav: androidx.navigation.NavController) {
     val context = LocalContext.current
@@ -60,6 +61,7 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
         versionLabel = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
         onBack = { nav.popBackStack() },
         onPrivacy = { sheet = AboutSheet.PRIVACY },
+        onTerms = { sheet = AboutSheet.TERMS },
         onLicence = { sheet = AboutSheet.LICENCE },
         onVisitSource = { openSource(context) },
     )
@@ -80,6 +82,21 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
             )
             InfoParagraph("Deleting your data or uninstalling the app removes it from the phone completely.")
         }
+        AboutSheet.TERMS -> InfoSheet(
+            title = "Terms of service",
+            onDismiss = { sheet = null },
+        ) {
+            InfoParagraph("Acuranza is provided as-is, free of charge, for personal use.")
+            InfoParagraph(
+                "It keeps books and draws charts; nothing in it is financial advice. Decisions you " +
+                    "make with its numbers are your own.",
+            )
+            InfoParagraph(
+                "Your data is your responsibility: keep backups, and keep a backup's password safe — " +
+                    "it cannot be recovered.",
+            )
+            InfoParagraph("Use of the app is governed by its licence; see Licence.")
+        }
         AboutSheet.LICENCE -> InfoSheet(
             title = "Licence",
             onDismiss = { sheet = null },
@@ -96,7 +113,7 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
     }
 }
 
-private enum class AboutSheet { PRIVACY, LICENCE }
+private enum class AboutSheet { PRIVACY, TERMS, LICENCE }
 
 private fun openSource(context: Context) {
     runCatching {
@@ -108,144 +125,100 @@ private fun openSource(context: Context) {
     }
 }
 
-/** Stateless body of the About screen, so tests can render it without BuildConfig. */
+/**
+ * Stateless body of the About screen, so tests can render it without BuildConfig: a branding
+ * block, then the legal and project links in the same row kit Settings uses.
+ */
 @Composable
 fun AboutContent(
     versionLabel: String,
     onBack: () -> Unit,
     onPrivacy: () -> Unit,
+    onTerms: () -> Unit = {},
     onLicence: () -> Unit,
     onVisitSource: () -> Unit,
 ) {
     val c = AcuranzaTheme.colors
-    Box(
+    Column(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState()),
     ) {
-        Column(
+        // Header: a slightly lighter band with the title centred between the back arrow and its ghost twin.
+        Box(
             Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            // Header: a slightly lighter band with the title centred between the back arrow and its ghost twin.
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(c.cardSurface)
-                    .heightIn(min = 56.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "About Acuranza",
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
-                )
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
-                    }
-                    Spacer(Modifier.weight(1f))
-                    // A ghost spacer of the same width keeps the title optically centred.
-                    Spacer(Modifier.size(48.dp))
-                }
-            }
-
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 40.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                AcuranzaLogo(size = 88.dp, shape = com.acuranza.app.designsystem.components.LogoShape.RoundedSquare)
-                Spacer(Modifier.height(16.dp))
-                Text("Acuranza", style = MaterialTheme.typography.titleLarge, color = c.ink)
-                Spacer(Modifier.height(4.dp))
-                Text(versionLabel, style = MaterialTheme.typography.bodySmall, color = c.subtleText)
-            }
-
-            Spacer(Modifier.height(32.dp))
-            LinkGroup(
-                rows = listOf(
-                    "Privacy policy" to onPrivacy,
-                    "Licence" to onLicence,
-                    "Visit source on GitHub" to onVisitSource,
-                ),
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
-
-            Spacer(Modifier.height(24.dp))
-            Spacer(Modifier.weight(1f))
-        }
-
-        // Branding footer, pinned above the system navigation area.
-        Column(
-            Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .navigationBarsPadding()
-                .padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .background(c.cardSurface)
+                .height(56.dp),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
-                "Acuranza",
-                style = MaterialTheme.typography.labelMedium,
-                color = c.tertiaryText,
+                "About",
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
             )
-            Text(
-                "Your money, on your phone",
-                style = MaterialTheme.typography.labelSmall,
-                color = c.tertiaryText,
-            )
-        }
-    }
-}
-
-/** A rounded card of full-width link rows with chevrons, divided by hairlines. */
-@Composable
-private fun LinkGroup(rows: List<Pair<String, () -> Unit>>, modifier: Modifier = Modifier) {
-    val c = AcuranzaTheme.colors
-    val shape = RoundedCornerShape(16.dp)
-    Column(
-        modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(c.cardSurface)
-            .border(1.dp, c.hairline, shape),
-    ) {
-        rows.forEachIndexed { i, (label, onClick) ->
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 52.dp)
-                    .clickable(role = Role.Button, onClick = onClick)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(label, style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.weight(1f))
-                Icon(
-                    Icons.Outlined.ChevronRight,
-                    contentDescription = null,
-                    tint = c.tertiaryText,
-                    modifier = Modifier.size(20.dp),
-                )
+                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                }
+                Spacer(Modifier.weight(1f))
+                // A ghost spacer of the same width keeps the title optically centred.
+                Spacer(Modifier.size(48.dp))
             }
-            if (i < rows.lastIndex) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp)
-                        .height(1.dp)
-                        .background(c.divider),
-                )
+        }
+
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(top = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            AcuranzaLogo(size = 76.dp, shape = LogoShape.RoundedSquare)
+            Spacer(Modifier.height(14.dp))
+            Text("Acuranza", style = MaterialTheme.typography.headlineSmall, color = c.ink)
+            Spacer(Modifier.height(2.dp))
+            Text("Your money, on your phone", style = MaterialTheme.typography.bodyMedium, color = c.subtleText)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                versionLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = c.subtleText,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(c.fill)
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+            )
+        }
+
+        // The section kit expects its parent to own the horizontal padding (as Settings' list does).
+        Column(Modifier.padding(horizontal = 20.dp)) {
+            SettingsSection("Legal & project") {
+                SettingsRow("Privacy policy", "What Acuranza stores, and what it never sends", Icons.Outlined.Shield) { onPrivacy() }
+                SettingsRow("Terms of service", "The plain terms of using the app", Icons.Outlined.Gavel) { onTerms() }
+                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Description) { onLicence() }
+                SettingsRow("Source code", "Read, audit and build it yourself", Icons.Outlined.Code, value = "GitHub", divider = false) { onVisitSource() }
             }
+        }
+
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                "Offline by design · everything stays on this device",
+                style = MaterialTheme.typography.labelSmall,
+                color = c.tertiaryText,
+            )
         }
     }
 }

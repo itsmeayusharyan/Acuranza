@@ -25,7 +25,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         LoanEntity::class,
         AttachmentEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
 )
 abstract class AcuranzaDatabase : RoomDatabase() {
@@ -152,6 +152,25 @@ abstract class AcuranzaDatabase : RoomDatabase() {
             }
         }
 
+        /** v11 removes the warranty feature: the attachments table loses its `warrantyUntil` column. */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `attachments_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transactionId` INTEGER NOT NULL, " +
+                        "`fileName` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `sizeBytes` INTEGER NOT NULL, `label` TEXT, " +
+                        "`createdAt` INTEGER NOT NULL, FOREIGN KEY(`transactionId`) REFERENCES `transactions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "INSERT INTO `attachments_new` (`id`, `transactionId`, `fileName`, `mimeType`, `sizeBytes`, `label`, `createdAt`) " +
+                        "SELECT `id`, `transactionId`, `fileName`, `mimeType`, `sizeBytes`, `label`, `createdAt` FROM `attachments`",
+                )
+                db.execSQL("DROP TABLE `attachments`")
+                db.execSQL("ALTER TABLE `attachments_new` RENAME TO `attachments`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_attachments_transactionId` ON `attachments` (`transactionId`)")
+            }
+        }
+
+        /** v9 only adds indexes, so balances and SMS imports stop scanning every transaction. */
         val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Acuranza tracks spending, not holdings: the FD/EPF/NPS tables and the household
@@ -169,7 +188,7 @@ abstract class AcuranzaDatabase : RoomDatabase() {
 
         val ALL_MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-            MIGRATION_9_10,
+            MIGRATION_9_10, MIGRATION_10_11,
         )
 
         /**

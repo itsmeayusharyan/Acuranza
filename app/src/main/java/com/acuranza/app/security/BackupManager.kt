@@ -230,7 +230,7 @@ object BackupJson {
         .put("attachments", arr(d.attachments) { x ->
             JSONObject().put("id", x.id).put("transactionId", x.transactionId).put("fileName", x.fileName)
                 .put("mimeType", x.mimeType).put("sizeBytes", x.sizeBytes).putOpt("label", x.label)
-                .putOpt("warrantyUntil", x.warrantyUntil).put("createdAt", x.createdAt)
+                .put("createdAt", x.createdAt)
         })
         .put("attachmentFiles", JSONObject().apply {
             d.attachmentFiles.forEach { (name, bytes) -> put(name, java.util.Base64.getEncoder().encodeToString(bytes)) }
@@ -331,7 +331,7 @@ object BackupJson {
                 AttachmentEntity(
                     id = x.getLong("id"), transactionId = x.getLong("transactionId"), fileName = x.getString("fileName"),
                     mimeType = x.getString("mimeType"), sizeBytes = x.optLong("sizeBytes"), label = x.str("label"),
-                    warrantyUntil = x.long("warrantyUntil"), createdAt = x.optLong("createdAt"),
+                    createdAt = x.optLong("createdAt"),
                 )
             },
             attachmentFiles = o.optJSONObject("attachmentFiles")?.let { f ->

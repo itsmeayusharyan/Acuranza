@@ -278,7 +278,5 @@ data class AttachmentEntity(
     val mimeType: String,
     val sizeBytes: Long,
     val label: String? = null,
-    /** Epoch day the warranty ends, for a reminder before it does. */
-    val warrantyUntil: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
 )

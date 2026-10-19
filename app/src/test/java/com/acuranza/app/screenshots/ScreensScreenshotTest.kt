@@ -45,8 +45,11 @@ import com.acuranza.app.finance.Budgets
 import com.acuranza.app.finance.Goals
 import com.acuranza.app.model.TxnType
 import com.acuranza.app.repo.BudgetStatus
+import com.acuranza.app.repo.NotificationItem
+import com.acuranza.app.repo.NotificationItem.Kind
 import com.acuranza.app.repo.GoalStatus
 import com.acuranza.app.ui.AcuranzaBottomBar
+import com.acuranza.app.ui.notifications.NotificationsContent
 import com.acuranza.app.ui.bills.BillsContent
 import com.acuranza.app.ui.bills.BillsState
 import com.acuranza.app.ui.common.Pill
@@ -281,8 +284,50 @@ class ScreensScreenshotTest {
                 versionLabel = "Version 1.3.0 (4)",
                 onBack = {},
                 onPrivacy = {},
+                onTerms = {},
                 onLicence = {},
                 onVisitSource = {},
+            )
+        }
+    }
+
+    @Test
+    fun notifications() = paparazzi.snapshot {
+        AcuranzaTheme(darkTheme = true) {
+            NotificationsContent(
+                items = listOf(
+                    NotificationItem(
+                        id = "bill_1",
+                        kind = Kind.BILL,
+                        title = "Axis Card bill overdue",
+                        message = "₹12,345 was due 12 Oct.",
+                        whenLabel = "7d overdue",
+                        route = "bills",
+                        epochDay = 0,
+                        unread = true,
+                    ),
+                    NotificationItem(
+                        id = "bill_2",
+                        kind = Kind.BILL,
+                        title = "HDFC Card bill due in 2 days",
+                        message = "₹4,500 is due on 21 Oct.",
+                        whenLabel = "In 2 days",
+                        route = "bills",
+                        epochDay = 0,
+                        unread = true,
+                    ),
+                    NotificationItem(
+                        id = "insight_a",
+                        kind = Kind.INSIGHT,
+                        title = "Dining is up 40% this month",
+                        message = "You've spent more on dining than usual.",
+                        whenLabel = "Today",
+                        route = "insights",
+                        epochDay = 0,
+                        unread = false,
+                    ),
+                ),
+                hidden = false,
             )
         }
     }

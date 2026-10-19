@@ -75,6 +75,7 @@ class FeaturePrefs(context: Context, private val store: DataStore<Preferences> =
         val autoLastError = stringPreferencesKey("auto_backup_last_error")
         val envelope = booleanPreferencesKey("budget_envelope_mode")
         val hiddenRecurring = stringSetPreferencesKey("hidden_recurring")
+        /** Once-only ids for worker-posted reminders (recurring price changes); legacy key name kept. */
         val notifiedWarranties = stringSetPreferencesKey("notified_warranties")
         val rolloverSince = stringSetPreferencesKey("rollover_since")
         val salary = longPreferencesKey("plan_salary")
@@ -143,7 +144,7 @@ class FeaturePrefs(context: Context, private val store: DataStore<Preferences> =
     }
 
     /** Returns the ids from [ids] not yet notified, and records them as notified. */
-    suspend fun claimWarrantyNotifications(ids: Collection<String>): Set<String> {
+    suspend fun claimNotificationIds(ids: Collection<String>): Set<String> {
         var fresh: Set<String> = emptySet()
         edit {
             val current = it[Keys.notifiedWarranties] ?: emptySet()

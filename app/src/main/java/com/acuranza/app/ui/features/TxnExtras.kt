@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
@@ -66,17 +65,13 @@ import com.acuranza.app.model.Money
 import com.acuranza.app.model.TxnType
 import com.acuranza.app.ui.common.AmountField
 import com.acuranza.app.ui.common.ChoiceField
-import com.acuranza.app.ui.common.DateField
-import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalHideAmounts
 import com.acuranza.app.ui.nav.popBackSafely
-import com.acuranza.app.util.Time
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
 
 /** Tags, split and receipts of one transaction, shown on its detail screen. */
 @Composable
@@ -251,11 +246,11 @@ private fun ReceiptsCard(t: TransactionEntity) {
 
     AcuranzaCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionHeader("Receipts & warranty", Modifier.weight(1f))
+            SectionHeader("Receipts", Modifier.weight(1f))
             TextButton(onClick = { if (!pick.launchOrFalse(arrayOf("image/*", "application/pdf"))) error = NO_FILE_PICKER }) { Text("Add") }
         }
         if (files.isEmpty()) {
-            Text("Keep the bill or warranty card with the payment. Files are encrypted and stay on this phone.",
+            Text("Keep the bill or receipt photo with the payment. Files are encrypted and stay on this phone.",
                 style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
         }
         files.forEach { a ->
@@ -263,9 +258,8 @@ private fun ReceiptsCard(t: TransactionEntity) {
                 Icon(if (a.mimeType == AttachmentStore.PDF) Icons.Outlined.Description else Icons.Outlined.Image, null, tint = AcuranzaTheme.colors.subtleText)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(a.label ?: if (a.mimeType == AttachmentStore.PDF) "PDF" else "Photo", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                    val w = a.warrantyUntil?.let { LocalDate.ofEpochDay(it) }
                     Text(
-                        listOfNotNull("${a.sizeBytes / 1024} KB", w?.let { if (it.isBefore(Time.today())) "warranty ended ${Fmt.date(it)}" else "warranty till ${Fmt.date(it)}" })
+                        listOfNotNull("${a.sizeBytes / 1024} KB")
                             .joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = AcuranzaTheme.colors.subtleText,
@@ -285,27 +279,20 @@ private fun ReceiptsCard(t: TransactionEntity) {
 
     picked?.let { uri ->
         var label by remember(uri) { mutableStateOf("") }
-        var warranty by remember(uri) { mutableStateOf<LocalDate?>(null) }
         var busy by remember(uri) { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { if (!busy) picked = null },
             title = { Text("Add receipt") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AcuranzaTextField(label, { label = it.take(40) }, "Label (optional)", supporting = "e.g. Bill, Warranty card")
-                    if (warranty != null) {
-                        DateField("Warranty until", warranty!!, { warranty = it })
-                        TextButton(onClick = { warranty = null }) { Text("No warranty") }
-                    } else {
-                        TextButton(onClick = { warranty = Time.toDate(t.timestamp).plusYears(1) }) { Text("Add a warranty end date") }
-                    }
+                    AcuranzaTextField(label, { label = it.take(40) }, "Label (optional)", supporting = "e.g. Bill, receipt")
                 }
             },
             confirmButton = {
                 TextButton(enabled = !busy, onClick = {
                     busy = true
                     scope.launch {
-                        runCatching { withContext(Dispatchers.IO) { c.attachments.add(t.id, uri, label.trim().ifBlank { null }, warranty) } }
+                        runCatching { withContext(Dispatchers.IO) { c.attachments.add(t.id, uri, label.trim().ifBlank { null }) } }
                             .onFailure { error = it.message ?: "Couldn't add the file" }
                         busy = false
                         picked = null
@@ -332,48 +319,5 @@ private fun ReceiptsCard(t: TransactionEntity) {
                 else Spacer(Modifier.height(120.dp))
             },
         )
-    }
-}
-
-/** Every warranty saved with a receipt, soonest to end first. */
-@Composable
-fun WarrantiesScreen(nav: androidx.navigation.NavController) {
-    val c = LocalContainer.current
-    val files by c.attachments.observeWarranties().collectAsState(initial = null)
-    val today = Time.today()
-    com.acuranza.app.ui.common.AcuranzaScreen(title = "Warranties", onBack = { nav.popBackSafely() }) { pad ->
-        val list = files ?: return@AcuranzaScreen
-        androidx.compose.foundation.lazy.LazyColumn(
-            Modifier.padding(pad),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, bottom = 48.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            if (list.isEmpty()) {
-                item {
-                    com.acuranza.app.designsystem.components.EmptyState(
-                        "No warranties",
-                        "Add a receipt with a warranty date to a purchase and Acuranza reminds you a month before it ends.",
-                        icon = Icons.Outlined.AttachFile,
-                    )
-                }
-            }
-            items(list.size) { i ->
-                val a = list[i]
-                val until = LocalDate.ofEpochDay(a.warrantyUntil ?: 0)
-                val days = java.time.temporal.ChronoUnit.DAYS.between(today, until)
-                AcuranzaCard(onClick = { nav.navigate(com.acuranza.app.ui.nav.Routes.txn(a.transactionId)) }) {
-                    Text(a.label ?: "Receipt", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                    Text(
-                        when {
-                            days < 0 -> "Ended ${Fmt.fullDate(until)}"
-                            days == 0L -> "Ends today"
-                            else -> "Ends ${Fmt.fullDate(until)} · in $days days"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (days in 0..30) AcuranzaTheme.colors.warning else if (days < 0) AcuranzaTheme.colors.subtleText else AcuranzaTheme.colors.subtleText,
-                    )
-                }
-            }
-        }
     }
 }

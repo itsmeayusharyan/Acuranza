@@ -23,7 +23,6 @@ import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.RealEstateAgent
 import androidx.compose.material.icons.outlined.TrackChanges
-import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -82,7 +81,6 @@ fun ManagementScreen(nav: NavController) {
         onLoans = { nav.navigate(Routes.LOANS) },
         onLending = { nav.navigate(Routes.DEBTS) },
         onReports = { nav.navigate(Routes.REPORTS) },
-        onWarranties = { nav.navigate(Routes.WARRANTIES) },
         onPlanning = { nav.navigate(Routes.PLANNING) },
         onNotifyBills = { v ->
             if (v) ensurePermission()
@@ -112,7 +110,6 @@ fun ManagementContent(
     onLoans: () -> Unit = {},
     onLending: () -> Unit = {},
     onReports: () -> Unit = {},
-    onWarranties: () -> Unit = {},
     onPlanning: () -> Unit = {},
     onNotifyBills: (Boolean) -> Unit = {},
     onNotifyInsights: (Boolean) -> Unit = {},
@@ -137,7 +134,6 @@ fun ManagementContent(
                     SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { onLoans() }
                     SettingsRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { onLending() }
                     SettingsRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) { onReports() }
-                    SettingsRow("Warranties", "Receipts with a warranty end date", Icons.Outlined.VerifiedUser) { onWarranties() }
                     SettingsRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges, divider = false) { onPlanning() }
                 }
             }

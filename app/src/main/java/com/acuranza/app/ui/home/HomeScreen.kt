@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -91,6 +92,7 @@ import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.util.Period
 import com.acuranza.app.util.Time
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -130,8 +132,10 @@ data class HomeState(
     val reviewFromSms: Int = 0,
     val reviewFromEmail: Int = 0,
     val bills: List<BillItem> = emptyList(),
-    /** Unpaid card bills — the count behind the header's bills badge. */
+    /** Unpaid card bills — used by the bills card and "left to spend". */
     val billsDue: Int = 0,
+    /** Unread items for the header's notification bell. */
+    val notificationsUnread: Int = 0,
     val insights: List<Insight> = emptyList(),
     val recent: List<TransactionItem> = emptyList(),
     val accounts: List<AccountWithBalance> = emptyList(),
@@ -244,6 +248,9 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
         val holidayNames: Map<java.time.LocalDate, String>,
     )
 
+    private val unreadNotifications = c.notificationCenter.observeNotifications()
+        .map { list -> list.count { it.unread } }
+
     fun dismissIgnoredNotice() = viewModelScope.launch { c.settings.dismissIgnoredNotice() }
 
     fun saveSalaryPlan(salary: Long?, savingsTarget: Long?, payDay: Int) = viewModelScope.launch {
@@ -251,7 +258,9 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
         c.settings.setMonthStartDay(payDay)
     }
 
-    val state: StateFlow<HomeState> = combine(money, lists, charts, counts, safeToSpend) { (nw, trend, s), l, ch, (other, ignored), safe ->
+    // kotlinx' named combine overloads stop at five flows, so the unread count is layered on top
+    // of the base state instead of being a sixth source.
+    private val baseState: Flow<HomeState> = combine(money, lists, charts, counts, safeToSpend) { (nw, trend, s), l, ch, (other, ignored), safe ->
         HomeState(
             safeToSpend = safe.first,
             salaryPlan = safe.second,
@@ -272,7 +281,11 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
             recent = l.recent,
             accounts = l.accounts,
         )
-    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
+    }.flowOn(Dispatchers.Default)
+
+    val state: StateFlow<HomeState> = combine(baseState, unreadNotifications) { base, unread ->
+        base.copy(notificationsUnread = unread)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
     fun toggleHidden(current: Boolean) = viewModelScope.launch { c.settings.setHideAmounts(!current) }
 
@@ -313,6 +326,7 @@ fun HomeScreen(nav: NavController) {
         onInsights = { nav.navigateToTab(Routes.INSIGHTS) },
         onReview = { nav.navigate(Routes.REVIEW) },
         onBills = { nav.navigate(Routes.BILLS) },
+        onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
         onActivity = { nav.navigateToTab(Routes.TRANSACTIONS) },
         onCategory = { key ->
             com.acuranza.app.ui.transactions.ActivityFilterRequest.pendingCategory = key
@@ -359,27 +373,27 @@ private fun InsightsBulbButton(onInsights: () -> Unit) {
 }
 
 /**
- * The header's card-bills shortcut: the existing bills icon with a badge showing how many bills
- * are due. Opens the existing bills screen; no badge when nothing is due.
+ * The header's notification bell: opens the in-app notification center, with a badge showing the
+ * number of unread items. No badge when everything is read.
  */
 @Composable
-private fun BillsBadgeButton(billsDue: Int, onOpen: () -> Unit) {
+private fun NotificationsBellButton(unread: Int, onOpen: () -> Unit) {
     IconButton(onClick = onOpen) {
         BadgedBox(
             badge = {
-                if (billsDue > 0) {
+                if (unread > 0) {
                     Badge(
                         containerColor = AcuranzaTheme.colors.accent,
                         contentColor = AcuranzaTheme.colors.onInk,
                     ) {
-                        Text("$billsDue")
+                        Text("$unread")
                     }
                 }
             },
         ) {
             Icon(
-                Icons.Outlined.CreditCard,
-                contentDescription = if (billsDue > 0) "Card bills, $billsDue due" else "Card bills",
+                Icons.Outlined.Notifications,
+                contentDescription = if (unread > 0) "Notifications, $unread unread" else "Notifications",
                 tint = AcuranzaTheme.colors.subtleText,
             )
         }
@@ -396,6 +410,7 @@ fun HomeContent(
     onInsights: () -> Unit = {},
     onReview: () -> Unit = {},
     onBills: () -> Unit = {},
+    onNotifications: () -> Unit = {},
     onActivity: () -> Unit = {},
     onCategory: (String) -> Unit = {},
     onTransaction: (Long) -> Unit = {},
@@ -436,7 +451,7 @@ fun HomeContent(
                         tint = AcuranzaTheme.colors.subtleText,
                     )
                 }
-                BillsBadgeButton(billsDue = state.billsDue, onOpen = onBills)
+                NotificationsBellButton(unread = state.notificationsUnread, onOpen = onNotifications)
             }
         }
 

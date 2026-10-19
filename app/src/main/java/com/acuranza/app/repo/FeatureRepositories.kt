@@ -115,19 +115,17 @@ class LoanRepository(private val db: AcuranzaDatabase) {
     }
 }
 
-/** Receipt and warranty files linked to transactions. */
+/** Receipt files (photos, PDFs) linked to transactions. */
 class AttachmentRepository(private val db: AcuranzaDatabase, private val store: AttachmentStore) {
     fun observeFor(txnId: Long): Flow<List<AttachmentEntity>> = db.attachments().observeFor(txnId)
 
-    fun observeWarranties(): Flow<List<AttachmentEntity>> = db.attachments().observeWarranties()
-
-    suspend fun add(txnId: Long, uri: Uri, label: String? = null, warrantyUntil: LocalDate? = null): Long {
+    suspend fun add(txnId: Long, uri: Uri, label: String? = null): Long {
         val saved = store.save(uri)
         return runCatching {
             db.attachments().insert(
                 AttachmentEntity(
                     transactionId = txnId, fileName = saved.fileName, mimeType = saved.mimeType, sizeBytes = saved.sizeBytes,
-                    label = label, warrantyUntil = warrantyUntil?.toEpochDay(),
+                    label = label,
                 ),
             )
         }.getOrElse { store.delete(saved.fileName); throw it }
@@ -146,6 +144,4 @@ class AttachmentRepository(private val db: AcuranzaDatabase, private val store: 
     }
 
     fun bytes(a: AttachmentEntity): ByteArray = store.read(a.fileName)
-
-    suspend fun warranties(): List<AttachmentEntity> = db.attachments().warranties()
 }

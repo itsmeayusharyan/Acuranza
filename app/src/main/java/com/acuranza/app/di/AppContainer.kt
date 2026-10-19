@@ -39,6 +39,7 @@ class AppContainer(context: Context, sandbox: com.acuranza.app.security.DecoySan
     val planningPrefs = com.acuranza.app.data.prefs.PlanningPrefs(app)
     val goals = GoalRepository(db, settings, planningPrefs)
     val insights = InsightRepository(db, accounts, settings, budgets, planningPrefs)
+    val notificationCenter = com.acuranza.app.repo.NotificationCenter(bills, insights, transactions, settings)
     val netWorth = NetWorthRepository(db, accounts, loans)
     val goalOutlooks = com.acuranza.app.repo.GoalSimulations(goals, planningPrefs)
 
