@@ -304,20 +304,44 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
     }
 
     /** An account for a pending row: an existing digits/bank match, else a clearly-labelled new one. */
-    private suspend fun resolveAccountFor(row: SmsImportEntity): Long {
-        val accounts = db.accounts().all().filterNot { it.archived }
-        accounts.firstOrNull { a -> row.accountLast4?.let { it in a.allDigits } == true }?.let { return it.id }
-        val type = if (row.channel == com.acuranza.app.model.TxnChannel.CARD) AccountType.CREDIT_CARD else AccountType.BANK
-        accounts.firstOrNull { it.bank == row.bank && it.type == type }?.let { return it.id }
-        return db.accounts().insert(
-            AccountEntity(
-                name = row.bank + (row.accountLast4?.let { " $it" } ?: ""),
-                type = type,
-                bank = row.bank,
-                last4 = row.accountLast4,
-                autoCreated = true,
-            ),
-        )
+    /** The accounts the matcher sees, in its vocabulary. */
+    private suspend fun candidates(): List<com.acuranza.app.data.sms.SmsAccountMatcher.CandidateAccount> =
+        db.accounts().all().filterNot { it.archived }.map {
+            com.acuranza.app.data.sms.SmsAccountMatcher.CandidateAccount(
+                id = it.id,
+                name = it.name,
+                bank = it.bank,
+                type = it.type,
+                allDigits = it.allDigits,
+            )
+        }
+
+    /**
+     * Read-only: what would happen to [row] on confirm — which account it matches and how
+     * confidently, so the review screen can show it and the user can override it. A [None]
+     * match means confirming would create a new, clearly-labelled account; the UI flags that.
+     */
+    suspend fun accountHint(row: SmsImportEntity): com.acuranza.app.data.sms.SmsAccountMatcher.Match =
+        com.acuranza.app.data.sms.SmsAccountMatcher.match(candidates(), row.bank, row.accountLast4, row.channel)
+
+    /** All live accounts as picker entries for the review screen. */
+    suspend fun pickerAccounts(): List<com.acuranza.app.data.sms.SmsAccountMatcher.CandidateAccount> = candidates()
+
+    private suspend fun resolveAccountFor(row: SmsImportEntity): Long = when (val m = accountHint(row)) {
+        is com.acuranza.app.data.sms.SmsAccountMatcher.Match.Exact -> m.account.id
+        is com.acuranza.app.data.sms.SmsAccountMatcher.Match.ByBank -> m.account.id
+        com.acuranza.app.data.sms.SmsAccountMatcher.Match.None -> {
+            val type = if (row.channel == com.acuranza.app.model.TxnChannel.CARD) AccountType.CREDIT_CARD else AccountType.BANK
+            db.accounts().insert(
+                AccountEntity(
+                    name = row.bank + (row.accountLast4?.let { " $it" } ?: ""),
+                    type = type,
+                    bank = row.bank,
+                    last4 = row.accountLast4,
+                    autoCreated = true,
+                ),
+            )
+        }
     }
 
     /** Fingerprints already imported; a scan skips those without touching the database again. */

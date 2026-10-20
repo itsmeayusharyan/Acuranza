@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -232,8 +234,18 @@ private fun SmsPendingReviewContent(
     onCancel: () -> Unit,
     onConfirm: (keep: List<SmsImportEntity>, edits: Map<Long, SmsImportRepository.PendingEdit>) -> Unit,
 ) {
+    val c = LocalContainer.current
     val edits = remember(pending) { pending.associate { it.id to mutableStateOf(PendingEditState()) } }
     var expanded by remember { mutableStateOf(-1L) }
+    // Account matching: the hint says where each candidate would land; the user can override it.
+    var hints by remember(pending) { mutableStateOf<Map<Long, com.acuranza.app.data.sms.SmsAccountMatcher.Match>>(emptyMap()) }
+    var accounts by remember { mutableStateOf<List<com.acuranza.app.data.sms.SmsAccountMatcher.CandidateAccount>>(emptyList()) }
+    var chosen by remember(pending) { mutableStateOf<Map<Long, Long>>(emptyMap()) }
+    var choosing by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(pending) {
+        accounts = c.smsImports.pickerAccounts()
+        hints = pending.associate { it.id to c.smsImports.accountHint(it) }
+    }
     val needsReview = pending.filter { it.confidence != SmsConfidence.HIGH }
     val confident = pending.filter { it.confidence == SmsConfidence.HIGH }
     val rows = remember(pending) {
@@ -283,6 +295,24 @@ private fun SmsPendingReviewContent(
                                             style = MaterialTheme.typography.bodySmall,
                                             color = AcuranzaTheme.colors.tertiaryText,
                                         )
+                                        val targetName = chosen[item.id]?.let { id -> accounts.firstOrNull { it.id == id }?.name }
+                                            ?: when (val hint = hints[item.id]) {
+                                                is com.acuranza.app.data.sms.SmsAccountMatcher.Match.Exact -> hint.account.name
+                                                is com.acuranza.app.data.sms.SmsAccountMatcher.Match.ByBank -> hint.account.name
+                                                com.acuranza.app.data.sms.SmsAccountMatcher.Match.None -> null
+                                                null -> null
+                                            }
+                                        val needsAccountPick = hints[item.id] is com.acuranza.app.data.sms.SmsAccountMatcher.Match.None
+                                        Text(
+                                            if (targetName != null) "→ $targetName" else "→ new account: ${item.bank}${item.accountLast4?.let { " $it" } ?: ""}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (needsAccountPick) AcuranzaTheme.colors.warning else AcuranzaTheme.colors.accent,
+                                            modifier = Modifier.padding(top = 1.dp).clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null,
+                                                role = androidx.compose.ui.semantics.Role.Button,
+                                            ) { choosing = item.id },
+                                        )
                                     }
                                     Text(
                                         Money.format(edit.amount ?: item.amount),
@@ -329,7 +359,11 @@ private fun SmsPendingReviewContent(
                     val editMap = pending.mapNotNull { item ->
                         val e = edits[item.id]!!.value
                         if (e.excluded) null
-                        else item.id to SmsImportRepository.PendingEdit(amount = e.amount, merchant = e.merchant)
+                        else item.id to SmsImportRepository.PendingEdit(
+                            amount = e.amount,
+                            merchant = e.merchant,
+                            accountId = chosen[item.id],
+                        )
                     }.toMap()
                     onConfirm(keep, editMap)
                 },
@@ -337,6 +371,29 @@ private fun SmsPendingReviewContent(
             )
         }
         Spacer(Modifier.height(12.dp))
+    }
+
+    choosing?.let { rowId ->
+        AlertDialog(
+            onDismissRequest = { choosing = null },
+            title = { Text("Which account?") },
+            text = {
+                Column {
+                    accounts.forEach { account ->
+                        TextButton(onClick = {
+                            chosen = chosen + (rowId to account.id)
+                            choosing = null
+                        }) { Text("${account.name} · ${account.type.name.lowercase().replaceFirstChar { it.uppercase() }}") }
+                    }
+                    TextButton(onClick = {
+                        chosen = chosen - rowId
+                        choosing = null
+                    }) { Text("Create a new account for ${pending.firstOrNull { it.id == rowId }?.bank ?: "this bank"}") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { choosing = null }) { Text("Keep") } },
+        )
     }
 }
 

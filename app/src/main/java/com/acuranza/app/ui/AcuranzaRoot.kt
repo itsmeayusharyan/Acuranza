@@ -449,18 +449,21 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            Modifier
-                                .size(44.dp)
-                                .graphicsLayer {
-                                    alpha = circle
-                                    scaleX = circle.coerceAtLeast(0.01f)
-                                    scaleY = circle.coerceAtLeast(0.01f)
-                                }
-                                .clip(CircleShape)
-                                .background(AcuranzaTheme.colors.accent),
-                            contentAlignment = Alignment.Center,
-                        ) {
+                        Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                            // The accent circle is its own layer so the appear/disappear animation
+                            // only ever fades the decoration — the icon sibling stays visible in
+                            // every state (selected, unselected, mid-transition, theme change).
+                            Box(
+                                Modifier
+                                    .matchParentSize()
+                                    .graphicsLayer {
+                                        alpha = circle
+                                        scaleX = circle.coerceAtLeast(0.01f)
+                                        scaleY = circle.coerceAtLeast(0.01f)
+                                    }
+                                    .clip(CircleShape)
+                                    .background(AcuranzaTheme.colors.accent),
+                            )
                             Icon(
                                 tab.icon,
                                 contentDescription = null,
