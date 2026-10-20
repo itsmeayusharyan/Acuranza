@@ -20,6 +20,13 @@ import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -56,8 +63,6 @@ import com.acuranza.app.ui.common.Pill
 import com.acuranza.app.ui.home.EditHomeContent
 import com.acuranza.app.ui.home.HomeContent
 import com.acuranza.app.ui.home.HomeLayout
-import com.acuranza.app.ui.management.ManagementContent
-import com.acuranza.app.ui.management.ManagementState
 import com.acuranza.app.ui.home.HomeState
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.planning.PlanningContent
@@ -232,13 +237,21 @@ class ScreensScreenshotTest {
                     Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
+            SettingsSection("Management") {
+                SettingsRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) {}
+                SettingsRow("Categories", "Your spending and income categories", Icons.Outlined.Category, divider = false) {}
+            }
+            SettingsSection("Financial tools") {
+                SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {}
+                SettingsRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges, divider = false) {}
+            }
+            SettingsSection("Notifications") {
+                SettingsToggle("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.Alarm)
+                SettingsToggle("Important insights", "Overspending and unusual spends", false, {}, Icons.Outlined.Bolt, divider = false)
+            }
             SettingsSection("Appearance") {
-                SettingsRow(
-                    "Theme",
-                    "Follow the system, or pick light or dark",
-                    Icons.Outlined.Palette,
-                    footer = { SegmentedTabs(listOf("System", "Light", "Dark"), 2, onSelect = {}) },
-                )
+                SettingsRow("Theme", "System default · follows your phone's setting", Icons.Outlined.Palette, value = "Dark") {}
+                SettingsRow("Accent colour", "Tints buttons, badges and the nav dot", Icons.Outlined.ColorLens, value = "Blue") {}
                 SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff, divider = false)
             }
             SettingsSection("Privacy & security") {
@@ -263,20 +276,9 @@ class ScreensScreenshotTest {
         }
     }
 
-    /** The Management tab is assembled from the same widgets its screen uses. */
-    @Test
-    fun management() = paparazzi.snapshot {
-        Frame(tab = Routes.MANAGEMENT) { ManagementContent(ManagementState(notifyBills = true)) }
-    }
-
     @Test
     fun bottom_bar_analytics_active() = paparazzi.snapshot {
         Frame(tab = Routes.INSIGHTS) { Box(Modifier.fillMaxSize()) }
-    }
-
-    @Test
-    fun bottom_bar_management_active() = paparazzi.snapshot {
-        Frame(tab = Routes.MANAGEMENT) { Box(Modifier.fillMaxSize()) }
     }
 
     @Test

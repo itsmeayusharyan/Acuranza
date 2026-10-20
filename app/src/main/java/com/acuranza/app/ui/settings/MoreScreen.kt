@@ -20,7 +20,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.Handshake
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.RealEstateAgent
+import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.DashboardCustomize
 import androidx.compose.material.icons.outlined.Info
@@ -53,7 +68,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.core.content.ContextCompat
+import com.acuranza.app.designsystem.theme.StaggeredEntrance
+import com.acuranza.app.model.AccentColor
+import com.acuranza.app.ui.accounts.ordinal
 import com.acuranza.app.ui.nav.Routes
+import com.acuranza.app.ui.settings.SettingsPickerRow
 import com.acuranza.app.data.prefs.ThemeMode
 import com.acuranza.app.designsystem.components.AcuranzaCard
 import androidx.compose.foundation.text.KeyboardOptions
@@ -95,6 +115,12 @@ fun MoreScreen(nav: NavController) {
     var restoreUri by remember { mutableStateOf<Uri?>(null) }
 
     fun show(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
+    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val ensureNotificationPermission: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     var sampleLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { sampleLoaded = runCatching { c.demoData.isLoaded() }.getOrDefault(false) }
     val backupFlow = remember { com.acuranza.app.security.BackupFlow(context.applicationContext as com.acuranza.app.AcuranzaApp) }
@@ -118,23 +144,84 @@ fun MoreScreen(nav: NavController) {
                     }
                 }
             }
-            item(key = "appearance") {
-                SettingsSection("Appearance") {
-                    SettingsRow(
-                        "Theme",
-                        "Follow the system, or pick light or dark",
-                        Icons.Outlined.Palette,
-                    )
-                    SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
-                        Icons.Outlined.VisibilityOff)
-                    SettingsRow("Edit home", "Choose what appears on your dashboard and in what order", Icons.Outlined.DashboardCustomize, divider = false) {
-                        nav.navigate(Routes.EDIT_HOME)
+            item(key = "management") {
+                StaggeredEntrance(0) {
+                    SettingsSection("Management") {
+                        SettingsRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) { nav.navigate(Routes.ACCOUNTS) }
+                        SettingsRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
+                        SettingsRow("Categories", "Your spending and income categories", Icons.Outlined.Category, divider = false) { nav.navigate(Routes.CATEGORIES) }
                     }
                 }
             }
-            item(key = "privacy") { PrivacySecuritySection(onMessage = { show(it) }) }
-            item(key = "tools") { com.acuranza.app.ui.tools.ToolsSection(onMessage = { show(it) }) }
+            item(key = "tools") {
+                StaggeredEntrance(1) {
+                    SettingsSection("Financial tools") {
+                        SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) { nav.navigate(Routes.RECURRING) }
+                        SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
+                        SettingsRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }
+                        SettingsRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) { nav.navigate(Routes.REPORTS) }
+                        SettingsRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges, divider = false) { nav.navigate(Routes.PLANNING) }
+                    }
+                }
+            }
+            item(key = "budget-month") {
+                StaggeredEntrance(2) {
+                    SettingsSection("Budget month") {
+                        SettingsPickerRow(
+                            "Month starts on",
+                            (1..28).toList(),
+                            s.monthStartDay,
+                            { if (it == 1) "1st (calendar month)" else ordinal(it) + " (e.g. salary day)" },
+                            Icons.Outlined.CalendarMonth,
+                            divider = s.monthStartDay > 1,
+                        ) { d -> scope.launch { c.settings.setMonthStartDay(d) } }
+                        PaydaySettings(s)
+                    }
+                }
+            }
+            item(key = "privacy") { StaggeredEntrance(3) { PrivacySecuritySection(onMessage = { show(it) }) } }
+            item(key = "notifications") {
+                StaggeredEntrance(4) {
+                    SettingsSection("Notifications") {
+                        SettingsToggle("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
+                            if (v) ensureNotificationPermission()
+                            scope.launch { c.settings.setNotifyBills(v) }
+                        }, Icons.Outlined.Alarm)
+                        SettingsToggle("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
+                            if (v) ensureNotificationPermission()
+                            scope.launch { c.settings.setNotifyInsights(v) }
+                        }, Icons.Outlined.Bolt, divider = false)
+                    }
+                }
+            }
+            item(key = "appearance") {
+                StaggeredEntrance(5) {
+                    SettingsSection("Appearance") {
+                        SettingsPickerRow(
+                            "Theme",
+                            ThemeMode.entries,
+                            s.themeMode,
+                            { when (it) { ThemeMode.SYSTEM -> "System default"; ThemeMode.DARK -> "Dark"; ThemeMode.LIGHT -> "Light" } },
+                            Icons.Outlined.Palette,
+                        ) { mode -> scope.launch { c.settings.setThemeMode(mode) } }
+                        SettingsPickerRow(
+                            "Accent colour",
+                            AccentColor.entries,
+                            s.accentChoice,
+                            { it.label },
+                            Icons.Outlined.ColorLens,
+                        ) { choice -> scope.launch { c.settings.setAccentColor(choice) } }
+                        SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
+                            Icons.Outlined.VisibilityOff)
+                        SettingsRow("Edit home", "Choose what appears on your dashboard and in what order", Icons.Outlined.DashboardCustomize, divider = false) {
+                            nav.navigate(Routes.EDIT_HOME)
+                        }
+                    }
+                }
+            }
+            item(key = "tools-extra") { StaggeredEntrance(6) { com.acuranza.app.ui.tools.ToolsSection(onMessage = { show(it) }) } }
             item(key = "data") {
+                StaggeredEntrance(7) {
                 SettingsSection("Data management") {
                     SettingsRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup, enabled = busy == null) {
                         if (!createBackup.launchOrFalse("acuranza-backup-${LocalDate.now()}.acuranza")) show(NO_FILE_PICKER)
@@ -173,11 +260,14 @@ fun MoreScreen(nav: NavController) {
                     ) { confirmErase = true }
                 }
             }
+            }
             item(key = "about-link") {
+                StaggeredEntrance(8) {
                 SettingsSection("About") {
                     SettingsRow("About Acuranza", "Version, privacy policy and licence", Icons.Outlined.Info, divider = false) {
                         nav.navigate(Routes.ABOUT)
                     }
+                }
                 }
             }
             item(key = "about") {

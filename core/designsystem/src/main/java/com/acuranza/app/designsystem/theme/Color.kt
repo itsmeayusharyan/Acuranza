@@ -5,6 +5,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import com.acuranza.app.model.AccentColor
 
 /**
  * The Acuranza palette.
@@ -164,3 +165,23 @@ internal val DarkAcuranzaColors = AcuranzaColors(
 )
 
 val LocalAcuranzaColors = staticCompositionLocalOf { LightAcuranzaColors }
+
+/**
+ * Resolves a user-chosen [com.acuranza.app.model.AccentColor] onto the theme's lightness scale:
+ * the bright variant for dark surfaces, the deep one for light, and an 8% wash for tints, so every
+ * accent keeps the same contrast relationships the brand blue has.
+ */
+fun AccentColor.accentColor(dark: Boolean): Color = when (this) {
+    AccentColor.BLUE -> if (dark) BrandPalette.BlueBright else BrandPalette.Blue
+    AccentColor.TEAL -> if (dark) Color(0xFF2DD4BF) else Color(0xFF0D9488)
+    AccentColor.VIOLET -> if (dark) Color(0xFFA78BFA) else Color(0xFF7C3AED)
+    AccentColor.ROSE -> if (dark) Color(0xFFFB7185) else Color(0xFFE11D48)
+}
+
+/** The low-opacity wash of the accent used behind icons, chips, active fills and the nav dot. */
+fun AccentColor.accentTint(dark: Boolean): Color = when (this) {
+    AccentColor.BLUE -> if (dark) BrandPalette.BlueTintDark else BrandPalette.BlueTint
+    AccentColor.TEAL -> if (dark) Color(0xFF0E2E2A) else Color(0xFFEBF8F6)
+    AccentColor.VIOLET -> if (dark) Color(0xFF241E42) else Color(0xFFF4F0FE)
+    AccentColor.ROSE -> if (dark) Color(0xFF2C181F) else Color(0xFFFFEFF2)
+}

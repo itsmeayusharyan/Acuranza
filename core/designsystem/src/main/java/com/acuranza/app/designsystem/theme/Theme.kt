@@ -1,5 +1,7 @@
 package com.acuranza.app.designsystem.theme
 
+import com.acuranza.app.model.AccentColor
+
 import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
@@ -139,17 +141,19 @@ val LocalSpacing = staticCompositionLocalOf { Spacing() }
 fun AcuranzaTheme(
     darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
+    accent: AccentColor = AccentColor.BLUE,
     content: @Composable () -> Unit,
 ) {
+    val acuranza = (if (darkTheme) DarkAcuranzaColors else LightAcuranzaColors)
+        .copy(accent = accent.accentColor(darkTheme), accentTint = accent.accentTint(darkTheme))
     val scheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkScheme
-        else -> LightScheme
+        darkTheme -> DarkScheme.copy(primary = acuranza.accent)
+        else -> LightScheme.copy(primary = acuranza.accent)
     }
-    val acuranza = if (darkTheme) DarkAcuranzaColors else LightAcuranzaColors
     CompositionLocalProvider(
         LocalAcuranzaColors provides acuranza,
         LocalSpacing provides Spacing(),

@@ -54,6 +54,8 @@ data class Settings(
     val readNotificationIds: Set<String> = emptySet(),
     /** Saved dashboard layout (see HomeLayout); null = the stock layout. */
     val homeLayout: String? = null,
+    /** The accent hue the whole app uses; the brand blue by default. */
+    val accentChoice: com.acuranza.app.model.AccentColor = com.acuranza.app.model.AccentColor.BLUE,
     /** User's explicit choice for blocking screenshots and the recents preview; null follows [blockScreenshots]. */
     val blockScreenshotsChoice: Boolean? = null,
 ) {
@@ -107,6 +109,7 @@ class SettingsStore(
         val dismissedInsights = stringSetPreferencesKey("dismissed_insights")
         val readNotifications = stringSetPreferencesKey("read_notifications")
         val homeLayout = stringPreferencesKey("home_layout")
+        val accentChoice = stringPreferencesKey("accent_choice")
         val notifiedInsights = stringSetPreferencesKey("notified_insights")
         val notifiedBills = stringSetPreferencesKey("notified_bills")
         val repairVersion = intPreferencesKey("repair_version")
@@ -134,6 +137,9 @@ class SettingsStore(
             dismissedInsightIds = p[Keys.dismissedInsights] ?: emptySet(),
             readNotificationIds = p[Keys.readNotifications] ?: emptySet(),
             homeLayout = p[Keys.homeLayout],
+            accentChoice = p[Keys.accentChoice]?.let { raw ->
+                com.acuranza.app.model.AccentColor.entries.firstOrNull { it.name == raw }
+            } ?: com.acuranza.app.model.AccentColor.BLUE,
             blockScreenshotsChoice = p[Keys.blockScreenshots],
         )
     }
@@ -180,6 +186,9 @@ class SettingsStore(
 
     /** Returns the dashboard to the stock layout. */
     suspend fun resetHomeLayout() = edit { it.remove(Keys.homeLayout) }
+
+    /** Persists the app-wide accent; the theme recomposes around it on the next emission. */
+    suspend fun setAccentColor(choice: com.acuranza.app.model.AccentColor) = edit { it[Keys.accentChoice] = choice.name }
 
     /** Marks in-app notification-center items read; old ids fall off the bounded set. */
     suspend fun markNotificationsRead(ids: Collection<String>) = edit {

@@ -38,7 +38,6 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
   <img src="docs/screenshots/card-bills.png" width="230">&nbsp;
   <img src="docs/screenshots/insights.png" width="230">&nbsp;
   <img src="docs/screenshots/settings.png" width="230">
-  <img src="docs/screenshots/management.png" width="230">
 </p>
 
 

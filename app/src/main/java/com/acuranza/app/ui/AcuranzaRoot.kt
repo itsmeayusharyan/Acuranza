@@ -96,6 +96,7 @@ import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.components.PrimaryButton
 import com.acuranza.app.designsystem.theme.BrandPalette
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
+import com.acuranza.app.designsystem.theme.rememberReducedMotion
 import com.acuranza.app.model.TxnType
 import com.acuranza.app.notify.Notifications
 import com.acuranza.app.security.BiometricGate
@@ -109,7 +110,6 @@ import com.acuranza.app.ui.common.LocalHideAmounts
 import com.acuranza.app.ui.common.LocalSettings
 import com.acuranza.app.ui.home.HomeScreen
 import com.acuranza.app.ui.insights.InsightsScreen
-import com.acuranza.app.ui.management.ManagementScreen
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.nav.TabRoutes
 import com.acuranza.app.ui.nav.Tabs
@@ -153,11 +153,14 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
         onDispose {}
     }
 
-    AcuranzaTheme(darkTheme = dark) {
+    AcuranzaTheme(darkTheme = dark, accent = settings?.accentChoice ?: com.acuranza.app.model.AccentColor.BLUE) {
         CompositionLocalProvider(
             LocalContainer provides container,
             LocalSettings provides (settings ?: Settings()),
             LocalHideAmounts provides (settings?.hideAmounts ?: false),
+            // The one gate for staged motion: staggered entrances skip entirely, stock tweens and
+            // springs already collapse via the system's animation-duration scale.
+            com.acuranza.app.designsystem.theme.LocalReducedMotion provides rememberReducedMotion(),
         ) {
             var splashDone by remember { mutableStateOf(AppLock.splashShown) }
             LaunchedEffect(Unit) {
@@ -194,10 +197,20 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
             }
             val locked = lockEnabled && !unlocked && stage != Stage.Splash
 
+            // Theme switches ease the backdrop over 220ms instead of hard-flashing the whole
+            // screen; the content tree is never cross-faded because that would recreate the
+            // NavHost and lose navigation and scroll state.
+            val backdrop by androidx.compose.animation.animateColorAsState(
+                targetValue = MaterialTheme.colorScheme.background,
+                animationSpec = com.acuranza.app.designsystem.theme.motionTween(
+                    com.acuranza.app.designsystem.theme.Motion.STANDARD,
+                ),
+                label = "theme-backdrop",
+            )
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(backdrop)
                     .windowInsetsPadding(WindowInsets.statusBars),
             ) {
                 // The lock is drawn over the app instead of replacing it, so re-locking after a minute away keeps
@@ -398,24 +411,26 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
         ) {
             Tabs.forEach { tab ->
                 val selected = current == tab.route
+                val reduced = com.acuranza.app.designsystem.theme.LocalReducedMotion.current
                 val wash by animateColorAsState(
                     targetValue = if (selected) AcuranzaTheme.colors.accentTint else Color.Transparent,
-                    animationSpec = tween(200),
+                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(200),
                     label = "tab-wash",
                 )
                 val tint by animateColorAsState(
                     targetValue = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText,
-                    animationSpec = tween(200),
+                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(200),
                     label = "tab-tint",
                 )
                 val iconScale by animateFloatAsState(
                     targetValue = if (selected) 1f else 0.94f,
-                    animationSpec = spring(stiffness = 380f, dampingRatio = 0.75f),
+                    animationSpec = if (reduced) androidx.compose.animation.core.snap()
+                    else spring(stiffness = 380f, dampingRatio = 0.75f),
                     label = "tab-scale",
                 )
                 val dot by animateFloatAsState(
                     targetValue = if (selected) 1f else 0f,
-                    animationSpec = tween(200),
+                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(200),
                     label = "tab-dot",
                 )
                 Box(
@@ -541,7 +556,6 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.EDIT_HOME) { com.acuranza.app.ui.home.EditHomeScreen(nav) }
         composable(Routes.INSIGHTS) { InsightsScreen(nav) }
         composable(Routes.CATEGORIES) { CategoriesScreen(nav) }
-        composable(Routes.MANAGEMENT) { ManagementScreen(nav) }
         composable(Routes.PENDING_ACCOUNTS) { com.acuranza.app.ui.accounts.PendingAccountsScreen(nav) }
         composable(Routes.UNCATEGORISED) { com.acuranza.app.ui.transactions.UncategorisedScreen(nav) }
         composable(Routes.RECURRING) { com.acuranza.app.ui.features.RecurringScreen(nav) }
