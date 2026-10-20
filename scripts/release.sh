@@ -8,10 +8,9 @@
 #   2. signed release build                (:app:assembleRelease with the configured keystore)
 #   3. security audit of the signed APK    (scripts/security-audit.sh — 11 checks, non-zero on findings)
 #   4. artifact copy + hash                (/data/workspace/Acuranza-<version>.apk)
-#   5. GitHub sync                         (scripts/release-sync.sh: commit, rebase, push, log)
 #
-# Nothing syncs unless the tests and the audit passed, and the sync itself never force-pushes.
-# A release that fails anywhere reports and leaves the remote untouched.
+# Releasing does NOT touch GitHub — run /sync (or scripts/release-sync.sh) when you want the
+# source pushed. A release that fails anywhere reports and stops.
 
 set -euo pipefail
 
@@ -40,13 +39,11 @@ AUDIT_LOG="/data/workspace/release-audit-v$VERSION.log"
 bash scripts/security-audit.sh "$APK" > "$AUDIT_LOG" 2>&1 || { tail -5 "$AUDIT_LOG"; echo "RELEASE-FAIL: audit findings — see $AUDIT_LOG"; exit 1; }
 grep -q "ALL CHECKS PASSED" "$AUDIT_LOG" || { echo "RELEASE-FAIL: audit incomplete — see $AUDIT_LOG"; exit 1; }
 
-echo "== 4/5 artifact =="
+echo "== 4/4 artifact =="
 ARTIFACT="/data/workspace/Acuranza-$VERSION.apk"
 cp "$APK" "$ARTIFACT"
 SHA="$(sha256sum "$ARTIFACT" | awk '{print $1}')"
 echo "artifact=$ARTIFACT sha256=$SHA"
 
-echo "== 5/5 GitHub sync =="
-bash scripts/release-sync.sh "$ARTIFACT"
-
-echo "RELEASE-OK: v$VERSION (code $VERSION_CODE) tested, signed, audited ($SHA) and synced."
+echo "RELEASE-OK: v$VERSION (code $VERSION_CODE) tested, signed, audited ($SHA)."
+echo "GitHub not touched — run /sync (or scripts/release-sync.sh) to push the source."

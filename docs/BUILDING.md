@@ -72,14 +72,14 @@ push; `release.yml` builds and signs on a tag and runs the same checks before pu
 
 ## Publishing the source
 
-The whole gate — tests, signed build, audit, artifact and GitHub sync — is one command:
+The whole gate — tests, signed build, audit and artifact — is one command:
 
 ```bash
 scripts/release.sh
 ```
 
-It stops at the first failed test, audit finding, or sync problem, and only syncs a release that
-passed everything. The sync step itself is `scripts/release-sync.sh` (also runnable alone):
+It stops at the first failed test or audit finding. Releasing does not touch GitHub: push the
+source when you choose, with `/sync` in chat or:
 
 ```bash
 scripts/release-sync.sh app/build/outputs/apk/release/app-release.apk
