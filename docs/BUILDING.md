@@ -85,6 +85,11 @@ source when you choose, with `!sync` in chat or:
 scripts/release-sync.sh app/build/outputs/apk/release/app-release.apk
 ```
 
+The sync also publishes the signed APK as a GitHub release — `v<version>` with the version's
+fastlane changelog as the notes and the APK attached for download — so every version you
+release is downloadable from the repository's Releases page. Re-running it refreshes the
+existing release instead of duplicating it.
+
 It stages every tracked change (added, edited, renamed, deleted — `.gitignore` keeps build
 outputs, the keystore and local config out), commits with the release version, rebases onto the
 remote branch so remote commits are never overwritten, and pushes. Add `--tag` to also push the

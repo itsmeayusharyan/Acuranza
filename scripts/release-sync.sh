@@ -98,5 +98,33 @@ if [ "$PUSH_TAG" = "yes" ]; then
 fi
 
 COMMIT="$(git rev-parse HEAD)"
+
+# Publish the signed APK as a GitHub release for this version. The release notes come from the
+# version's fastlane changelog (what changed in this release); an existing release gets its
+# asset refreshed so re-syncing is safe.
+GITHUB_REPO="${GITHUB_REPO:-itsmeayusharyan/Acuranza}"
+TAG="v$VERSION"
+NOTES="$(mktemp)"
+CHANGELOG="fastlane/metadata/android/en-US/changelogs/$VERSION_CODE.txt"
+if [ -s "$CHANGELOG" ]; then
+  cat "$CHANGELOG" > "$NOTES"
+else
+  echo "See the commit history for what changed in this release." > "$NOTES"
+fi
+if [ -n "$APK" ] && [ -f "$APK" ]; then
+  if gh release view "$TAG" -R "$GITHUB_REPO" >/dev/null 2>&1; then
+    gh release edit "$TAG" -R "$GITHUB_REPO" --notes-file "$NOTES"
+    gh release upload "$TAG" -R "$GITHUB_REPO" "$APK" --clobber
+  else
+    gh release create "$TAG" -R "$GITHUB_REPO" "$APK" \
+      --title "Acuranza v$VERSION" --notes-file "$NOTES" --target "$COMMIT"
+  fi
+  echo "release=$TAG apk=$(basename "$APK") result=RELEASE-UPLOADED $(date -u +%FT%TZ)" >> "$LOG"
+else
+  echo "release=$TAG result=RELEASE-SKIPPED no-apk $(date -u +%FT%TZ)" >> "$LOG"
+  echo "NOTE: no signed APK passed in, so no GitHub release was created."
+fi
+rm -f "$NOTES"
+
 echo "v$VERSION (code $VERSION_CODE) commit=$COMMIT apk=${APK:-n/a} result=PUSHED remote=$REMOTE $(date -u +%FT%TZ)" >> "$LOG"
 echo "SYNC-OK: v$VERSION (code $VERSION_CODE) pushed to $REMOTE/acuranza at $COMMIT"
