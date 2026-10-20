@@ -7,5 +7,5 @@ local.properties
 .idea/
 *.iml
 .kotlin/
-.claude/worktrees/
+.claude/
 cli.zip
