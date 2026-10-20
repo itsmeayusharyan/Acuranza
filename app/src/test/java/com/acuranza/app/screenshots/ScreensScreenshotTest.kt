@@ -242,14 +242,13 @@ class ScreensScreenshotTest {
                 }
             }
             AcuranzaCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                SettingsRow("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance) {}
-                SettingsRow("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.Outlined.Category) {}
-                SettingsRow("Budget month", "Where every budget period starts, payday rules", Icons.Outlined.CalendarMonth) {}
-                SettingsRow("Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield) {}
-                SettingsRow("Notifications", "Bill reminders and important insights", Icons.Outlined.Alarm) {}
                 SettingsRow("Appearance", "Theme, accent colour, hide amounts, edit home", Icons.Outlined.Palette) {}
-                SettingsRow("Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune) {}
                 SettingsRow("Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup) {}
+                SettingsRow("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.Outlined.Category) {}
+                SettingsRow("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance) {}
+                SettingsRow("Notifications", "Reminders, and where your budget month starts", Icons.Outlined.Alarm) {}
+                SettingsRow("Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield) {}
+                SettingsRow("Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune) {}
                 SettingsRow("About", "Version, privacy policy and licence", Icons.Outlined.Info, divider = false) {}
             }
             Spacer(Modifier.height(24.dp))

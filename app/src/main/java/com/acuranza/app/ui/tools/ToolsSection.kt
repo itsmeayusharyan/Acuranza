@@ -118,7 +118,7 @@ fun ToolsSection(onMessage: (String) -> Unit) {
         }
     }
 
-    SettingsSection("Tools") {
+    SettingsSection(null) {
         SettingsRow("Export data", "CSV, Excel, Beancount or Ledger", Icons.Outlined.FileDownload) { exportOpen = true }
         SettingsToggle(
             "Daily digest",

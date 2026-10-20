@@ -77,10 +77,13 @@ fun SettingsDivider(startInset: Dp = 52.dp) {
 
 /** A titled group of settings rows on a card; rows bring their own padding and dividers. */
 @Composable
-fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+fun SettingsSection(title: String?, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 24.dp)) {
-        Text(title.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
-        Spacer(Modifier.height(8.dp))
+        // On subpages the page title already names the group, so the in-card label is dropped.
+        if (title != null) {
+            Text(title.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
+            Spacer(Modifier.height(8.dp))
+        }
         AcuranzaCard(contentPadding = PaddingValues(0.dp)) {
             content()
         }

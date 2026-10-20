@@ -71,7 +71,7 @@ fun PrivacySecuritySection(onMessage: (String) -> Unit) {
     var pinDialog by remember { mutableStateOf<PinAction?>(null) }
     var recoveryOpen by remember { mutableStateOf(false) }
 
-    SettingsSection("Privacy & security") {
+    SettingsSection(null) {
         val canLock = remember { BiometricGate.isAvailable(context) }
         SettingsToggle(
             "App lock",

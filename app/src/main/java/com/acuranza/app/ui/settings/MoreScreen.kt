@@ -50,14 +50,13 @@ private data class SettingsCategory(
 )
 
 private val SettingsCategories = listOf(
-    SettingsCategory("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
-    SettingsCategory("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
-    SettingsCategory("Budget month", "Where every budget period starts, payday rules", Icons.Outlined.CalendarMonth, Routes.SETTINGS_BUDGET),
-    SettingsCategory("Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
-    SettingsCategory("Notifications", "Bill reminders and important insights", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
     SettingsCategory("Appearance", "Theme, accent colour, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
-    SettingsCategory("Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune, Routes.SETTINGS_TOOLS),
     SettingsCategory("Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
+    SettingsCategory("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
+    SettingsCategory("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
+    SettingsCategory("Notifications", "Reminders, and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
+    SettingsCategory("Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
+    SettingsCategory("Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune, Routes.SETTINGS_TOOLS),
     SettingsCategory("About", "Version, privacy policy and licence", Icons.Outlined.Info, Routes.ABOUT),
 )
 

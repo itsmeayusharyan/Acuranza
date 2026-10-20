@@ -110,7 +110,7 @@ private fun SettingsPage(
 @Composable
 fun ManagementSettingsPage(nav: NavController) {
     SettingsPage("Management", "Accounts, imports and categories", nav) {
-        SettingsSection("Account & management") {
+        SettingsSection(null) {
             SettingsRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) { nav.navigate(Routes.ACCOUNTS) }
             SettingsRow("Review imports", "Confirm imported transactions", Icons.Outlined.Inbox) { nav.navigate(Routes.REVIEW) }
             SettingsRow("Categories", "Add, rename, restyle and delete your categories", Icons.Outlined.Category, divider = false) { nav.navigate(Routes.CATEGORIES) }
@@ -121,32 +121,12 @@ fun ManagementSettingsPage(nav: NavController) {
 @Composable
 fun FinancialToolsPage(nav: NavController) {
     SettingsPage("Financial tools", "Everything beyond everyday tracking", nav) {
-        SettingsSection("Tools") {
+        SettingsSection(null) {
             SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) { nav.navigate(Routes.RECURRING) }
             SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
             SettingsRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }
             SettingsRow("Reports", "Monthly and yearly PDF, year in review, calendar", Icons.Outlined.Assessment) { nav.navigate(Routes.REPORTS) }
             SettingsRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges, divider = false) { nav.navigate(Routes.PLANNING) }
-        }
-    }
-}
-
-@Composable
-fun BudgetMonthPage(nav: NavController) {
-    val c = LocalContainer.current
-    val s = LocalSettings.current
-    val scope = rememberCoroutineScope()
-    SettingsPage("Budget month", "Where every budget period starts", nav) {
-        SettingsSection("Budget month") {
-            SettingsPickerRow(
-                "Month starts on",
-                (1..28).toList(),
-                s.monthStartDay,
-                { if (it == 1) "1st (calendar month)" else ordinal(it) + " (e.g. salary day)" },
-                Icons.Outlined.CalendarMonth,
-                divider = s.monthStartDay > 1,
-            ) { d -> scope.launch { c.settings.setMonthStartDay(d) } }
-            PaydaySettings(s)
         }
     }
 }
@@ -173,8 +153,8 @@ fun NotificationsPage(nav: NavController) {
             notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    SettingsPage("Notifications", "What Acuranza reminds you about", nav) {
-        SettingsSection("Reminders") {
+    SettingsPage("Notifications", "Reminders, and where your budget month starts", nav) {
+        SettingsSection(null) {
             SettingsToggle("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
                 if (v) ensurePermission()
                 scope.launch { c.settings.setNotifyBills(v) }
@@ -182,7 +162,15 @@ fun NotificationsPage(nav: NavController) {
             SettingsToggle("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
                 if (v) ensurePermission()
                 scope.launch { c.settings.setNotifyInsights(v) }
-            }, Icons.Outlined.Bolt, divider = false)
+            }, Icons.Outlined.Bolt)
+            SettingsPickerRow(
+                "Month starts on",
+                (1..28).toList(),
+                s.monthStartDay,
+                { if (it == 1) "1st (calendar month)" else ordinal(it) + " (e.g. salary day)" },
+                Icons.Outlined.CalendarMonth,
+            ) { d -> scope.launch { c.settings.setMonthStartDay(d) } }
+            PaydaySettings(s)
         }
     }
 }
@@ -193,7 +181,7 @@ fun AppearancePage(nav: NavController) {
     val s = LocalSettings.current
     val scope = rememberCoroutineScope()
     SettingsPage("Appearance", "Theme, accent colour and your dashboard", nav) {
-        SettingsSection("Appearance") {
+        SettingsSection(null) {
             SettingsPickerRow(
                 "Theme",
                 ThemeMode.entries,
@@ -264,7 +252,7 @@ fun DataManagementPage(nav: NavController) {
                 }
             }
         }
-        SettingsSection("Backups") {
+        SettingsSection(null) {
             SettingsRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup, enabled = busy == null) {
                 if (!createBackup.launchOrFalse("acuranza-backup-${LocalDate.now()}.acuranza")) show(NO_FILE_PICKER)
             }
@@ -272,19 +260,15 @@ fun DataManagementPage(nav: NavController) {
             SettingsRow("Restore from backup", "Replaces everything on this phone", Icons.Outlined.Restore, enabled = busy == null) {
                 if (!openBackup.launchOrFalse(arrayOf("*/*"))) show(NO_FILE_PICKER)
             }
-        }
-        SettingsSection("Import") {
-            SettingsRow("Import statements", "CSV from net banking to bring in past transactions", Icons.Outlined.UploadFile, divider = false) {
+            SettingsRow("Import statements", "CSV from net banking to bring in past transactions", Icons.Outlined.UploadFile) {
                 nav.navigate(Routes.STATEMENT_IMPORT)
             }
-        }
-        SettingsSection("Sample data") {
             if (sampleLoaded) {
-                SettingsRow("Remove sample data", "Deletes only the demo accounts, transactions and investments", Icons.Outlined.Science, enabled = busy == null, divider = false) {
+                SettingsRow("Remove sample data", "Deletes only the demo accounts, transactions and investments", Icons.Outlined.Science, enabled = busy == null) {
                     confirmRemoveSample = true
                 }
             } else {
-                SettingsRow("Load sample data", "Explore Acuranza with demo accounts and transactions", Icons.Outlined.Science, enabled = busy == null, divider = false) {
+                SettingsRow("Load sample data", "Explore Acuranza with demo accounts and transactions", Icons.Outlined.Science, enabled = busy == null) {
                     busy = "Loading sample data…"
                     scope.launch {
                         val loaded = runCatching { c.demoData.load() }.getOrDefault(false)
@@ -295,8 +279,6 @@ fun DataManagementPage(nav: NavController) {
                     }
                 }
             }
-        }
-        SettingsSection("Danger zone") {
             SettingsRow(
                 "Erase all data",
                 "Deletes accounts, transactions and bills",
