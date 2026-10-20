@@ -1,31 +1,23 @@
 name: Release
 
 # Builds the release APK signed with the Acuranza release key and publishes it as a GitHub release.
-# Runs when a version tag is pushed (`git tag v1.0.0 && git push origin v1.0.0`), or from the Actions tab
-# (Release > Run workflow), which tags the chosen commit with v<versionName> itself.
-# Needs three repository secrets: ACURANZA_KEYSTORE_BASE64 (`base64 -w0 keystore/acuranza-release.jks`),
+#
+# Releases are normally published by `scripts/release-sync.sh` (!sync): it pushes the source,
+# creates the vX.Y.Z tag and attaches the locally built, audited APK with the version's changelog
+# as notes. This workflow therefore no longer fires on tag or branch pushes — it exists for the
+# Actions tab (Release > Run workflow) and needs the three repository secrets configured there:
+# ACURANZA_KEYSTORE_BASE64 (`base64 -w0 keystore/acuranza-release.jks`),
 # ACURANZA_STORE_PASSWORD and ACURANZA_KEY_PASSWORD.
 
 on:
-  push:
-    tags: ["v*"]
-    # A version bump on main releases it, once: versions that already have a release are skipped.
-    branches: [main]
-    paths: ["app/build.gradle.kts", ".github/workflows/release.yml"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
-env:
-  # The APK is published from the release-sync script directly; this CI build only runs once
-  # the repo actually has the signing secrets configured, so tag pushes don't leave failed runs.
-  HAS_KEYSTORE: ${{ secrets.ACURANZA_KEYSTORE_BASE64 }}
-
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: env.HAS_KEYSTORE != ''
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
