@@ -446,7 +446,16 @@ fun Modifier.pressScale(interactionSource: MutableInteractionSource, scaleDown: 
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (pressed) scaleDown else 1f,
-        animationSpec = tween(durationMillis = 150),
+        // Expressive press: a fast spring that settles back with a hint of life instead of a
+        // linear tween. Under reduced motion it snaps — instant feedback, no movement.
+        animationSpec = if (com.acuranza.app.designsystem.theme.LocalReducedMotion.current) {
+            androidx.compose.animation.core.snap()
+        } else {
+            androidx.compose.animation.core.spring(
+                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy,
+                stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+            )
+        },
         label = "pressScale",
     )
     return graphicsLayer {
@@ -466,7 +475,7 @@ fun PrimaryButton(
     enabled: Boolean = true,
     icon: ImageVector? = null,
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(50)
     val interaction = remember { MutableInteractionSource() }
     val indication = LocalIndication.current
     Row(
@@ -537,7 +546,7 @@ fun HeroActionButton(
     filled: Boolean = true,
     icon: ImageVector? = null,
 ) {
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(50)
     val interaction = remember { MutableInteractionSource() }
     val indication = LocalIndication.current
     Row(
@@ -576,7 +585,7 @@ fun SecondaryButton(
     enabled: Boolean = true,
     icon: ImageVector? = null,
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(50)
     Row(
         modifier = modifier
             .heightIn(min = 52.dp)

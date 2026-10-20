@@ -116,8 +116,8 @@ data class Spacing(
     val xxxl: Dp = 32.dp,
     /** Horizontal padding for screen content. */
     val screen: Dp = 20.dp,
-    /** Corner radius of standard cards. */
-    val cardRadius: Dp = 16.dp,
+    /** Corner radius of standard cards — 20dp everywhere, large surfaces read expressive, not fussy. */
+    val cardRadius: Dp = 20.dp,
     /** Vertical gap between sections. */
     val section: Dp = 24.dp,
 )

@@ -504,15 +504,28 @@ private fun AcuranzaNavHost(nav: NavHostController) {
     NavHost(
         navController = nav,
         startDestination = Routes.HOME,
+        // Expressive pushes: position follows a fast, barely-bouncy spring; opacity fades in
+        // parallel. Pops mirror it, slightly quicker. The system animation scale (and the
+        // reduced-motion gate via Motion's specs) still collapses these to instant when asked.
         enterTransition = {
             if (targetState.destination.route in TabRoutes) fadeIn(tween(220))
-            else slideInHorizontally(tween(300)) { it / 4 } + fadeIn(tween(300))
+            else slideInHorizontally(
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = 0.9f,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+                ),
+            ) { it / 4 } + fadeIn(tween(240))
         },
         exitTransition = { fadeOut(tween(180)) },
         popEnterTransition = { fadeIn(tween(220)) },
         popExitTransition = {
             if (initialState.destination.route in TabRoutes) fadeOut(tween(180))
-            else slideOutHorizontally(tween(260)) { it / 4 } + fadeOut(tween(260))
+            else slideOutHorizontally(
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = 0.9f,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+                ),
+            ) { it / 4 } + fadeOut(tween(220))
         },
     ) {
         composable(Routes.HOME) { HomeScreen(nav) }
