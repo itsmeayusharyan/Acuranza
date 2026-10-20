@@ -12,10 +12,19 @@ android {
 
     defaultConfig {
         applicationId = "com.acuranza.app"
+        // English-only UI (standing decision): library locale tables for the other ~80
+        // languages never ship, which trims resources.arsc.
+        resourceConfigurations += setOf("en")
+        // ARM-only native libraries: the app is sideloaded to phones, and every Android phone
+        // is arm64 (armeabi-v7a kept for 32-bit devices). x86/x86_64 served emulators only —
+        // the four SQLCipher copies were 87% of the APK.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
         minSdk = 26
         targetSdk = 35
-        versionCode = 26
-        versionName = "1.11.1"
+        versionCode = 28
+        versionName = "1.12.0"
         vectorDrawables { useSupportLibrary = true }
     }
 

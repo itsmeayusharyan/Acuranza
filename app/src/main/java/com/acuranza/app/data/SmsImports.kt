@@ -65,6 +65,8 @@ data class SmsImportEntity(
     val timestamp: Long,
     val channel: TxnChannel,
     val confidence: SmsConfidence,
+    /** The parser's own category for the message (e.g. "transfer" for a card repayment); used at confirm. */
+    val suggestedCategory: String? = null,
 )
 
 @Dao

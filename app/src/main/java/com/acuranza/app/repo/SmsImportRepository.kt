@@ -237,6 +237,7 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
                         timestamp = txn.timestampMillis,
                         channel = txn.channel,
                         confidence = result.confidence,
+                        suggestedCategory = txn.suggestedCategory,
                     ),
                 )
                 if (id == -1L) PendingOutcome.Duplicate(-1) else PendingOutcome.Added(id)
@@ -274,7 +275,9 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
         var created = 0
         for (row in keep) {
             val edit = edits[row.id]
-            val category = edit?.categoryKey ?: CategoryGuesser.guess(row.merchant, row.merchant ?: "", row.type, row.channel)
+            val category = edit?.categoryKey
+                ?: row.suggestedCategory
+                ?: CategoryGuesser.guess(row.merchant, row.merchant ?: "", row.type, row.channel)
             val accountId = edit?.accountId ?: resolveAccountFor(row)
             val txnId = db.transactions().insertIgnore(
                 TransactionEntity(

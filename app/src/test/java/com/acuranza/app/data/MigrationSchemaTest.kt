@@ -2,6 +2,7 @@ package com.acuranza.app.data
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -188,6 +189,21 @@ class MigrationSchemaTest {
         assertTrue("investment_history" !in tables)
         assertTrue("household_items" !in tables)
         assertEquals(setOf("epochDay", "liquid", "cardDebt", "total"), columns(v10, "net_worth_history").keys)
+    }
+
+    @Test
+    fun version13AddsOnlyTheSuggestedCategoryColumn() {
+        val v12 = schema(12)
+        val v13 = schema(13)
+        // v13 adds exactly one nullable column to sms_imports; nothing else moves.
+        assertEquals(tables(v13), tables(v12))
+        assertEquals(setOf("suggestedCategory"), columns(v13, "sms_imports").keys - columns(v12, "sms_imports").keys)
+        tables(v12).forEach { table ->
+            if (table == "sms_imports") return@forEach // the one table v13 changes
+            assertEquals(table, columns(v12, table).keys, columns(v13, table).keys)
+            assertEquals(table, indexSql(v12, table), indexSql(v13, table))
+        }
+        assertFalse(columns(v13, "sms_imports").getValue("suggestedCategory").getBoolean("notNull"))
     }
 
     @Test

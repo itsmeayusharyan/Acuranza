@@ -27,7 +27,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SmsImportBatchEntity::class,
         SmsImportEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true,
 )
 abstract class AcuranzaDatabase : RoomDatabase() {
@@ -155,6 +155,13 @@ abstract class AcuranzaDatabase : RoomDatabase() {
             }
         }
 
+        /** v13 keeps the parser's own category suggestion on the parked row (card repayments are "transfer"). */
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sms_imports` ADD COLUMN `suggestedCategory` TEXT")
+            }
+        }
+
         /** v12 adds SMS import bookkeeping: batches (the undo unit) and per-message rows (no message bodies). */
         val MIGRATION_11_12 = object : Migration(11, 12) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -212,7 +219,7 @@ abstract class AcuranzaDatabase : RoomDatabase() {
 
         val ALL_MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
+            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
         )
 
         /**
