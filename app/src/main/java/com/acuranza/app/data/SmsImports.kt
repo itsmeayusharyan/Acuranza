@@ -125,6 +125,23 @@ interface SmsImportDao {
     @androidx.room.Query("DELETE FROM sms_import_batches WHERE id = :batchId")
     suspend fun deleteBatch(batchId: Long)
 
+    // ---- Permissionless capture: rows without a transaction await the user's confirmation ----
+
+    /** The persistent pseudo-batch that holds shared/pasted candidates before they are confirmed. */
+    @androidx.room.Query("SELECT * FROM sms_import_batches WHERE label = 'Pending review' LIMIT 1")
+    suspend fun pendingBatch(): SmsImportBatchEntity?
+
+    /** Candidates waiting for review: no transaction yet, newest first. */
+    @androidx.room.Query("SELECT * FROM sms_imports WHERE transactionId IS NULL ORDER BY timestamp DESC")
+    suspend fun pending(): List<SmsImportEntity>
+
+    @androidx.room.Query("SELECT COUNT(*) FROM sms_imports WHERE transactionId IS NULL")
+    suspend fun pendingCount(): Int
+
+    /** Attaches the confirmed transaction to its import row and moves the row into the real batch. */
+    @androidx.room.Query("UPDATE sms_imports SET transactionId = :transactionId, batchId = :batchId WHERE id = :importId")
+    suspend fun linkTransaction(importId: Long, transactionId: Long, batchId: Long)
+
     /** Every SMS import row with its transaction, newest first — the management list. */
     @androidx.room.Query(
         "SELECT sms_imports.id AS importId, sms_imports.transactionId AS transactionId, " +

@@ -57,6 +57,8 @@ echo "$MANIFEST" | grep -q 'android:dataExtractionRules' && pass "data extractio
 EXPORTED=$(echo "$MANIFEST" | grep -c 'android:exported="true"' || true)
 # Expected exported components, all intentional or permission-guarded:
 #   - MainActivity (launcher)
+#   - SmsShareActivity (ACTION_SEND text/plain: the user-initiated share target for bank
+#     messages; reads only the shared text, stores only extracted fields, gated by consent)
 #   - MonthWidgetProvider, QuickAddWidgetProvider (APPWIDGET_UPDATE: launcher-only)
 #   - QuickAddTileService (BIND_QUICK_SETTINGS_TILE: system-only)
 #   - WorkManager SystemJobService (BIND_JOB_SERVICE), DiagnosticsReceiver (DUMP)
@@ -75,7 +77,7 @@ for m in re.finditer(r'<(activity|receiver|service|provider)\b', t):
     if exp and not perm:
         n = name.group(1) if name else '?'
         # the launcher activity is the one allowed unguarded exported component
-        if 'MainActivity' not in n and 'WidgetProvider' not in n and 'TileService' not in n and 'androidx.' not in n:
+        if 'MainActivity' not in n and 'SmsShareActivity' not in n and 'WidgetProvider' not in n and 'TileService' not in n and 'androidx.' not in n:
             bad.append(n)
 print("\n".join(bad))
 PY

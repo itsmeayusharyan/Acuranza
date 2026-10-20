@@ -7,10 +7,6 @@
          work, and reading network state is still an information leak, so it is removed at merge. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- SMS transaction tracking (Settings → Financial tools): opt-in, consent-gated, on-device only.
-         Reads the inbox to detect bank transactions; message bodies are never stored or sent anywhere
-         (the app has no INTERNET permission). Sideloaded installs may see Play Protect warn about it. -->
-    <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
@@ -31,6 +27,22 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- SMS transaction tracking, permissionless: the user shares a bank message from their
+             Messages app to Acuranza. No SMS permission is requested (Play Protect blocks
+             sideloaded APKs that request one); the shared text is parsed and discarded — only the
+             extracted transaction details are stored, and only after the user confirms them. -->
+        <activity
+            android:name=".ui.settings.SmsShareActivity"
+            android:exported="true"
+            android:label="Add to Acuranza"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter android:label="Add to Acuranza">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 

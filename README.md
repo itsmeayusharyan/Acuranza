@@ -79,12 +79,13 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
 
 - **No network, by construction.** The APK does not request the INTERNET permission (or any other
   network permission), so no code in it — ours or a dependency's — can open a socket.
-- **Opt-in SMS tracking, on-device.** In Settings → Financial tools you can enable SMS transaction
-  tracking: Acuranza then reads bank and payment messages on the phone, extracts amount, date,
-  merchant and account, and turns them into transactions you confirm. Message bodies are never
-  stored — only the extracted details — and the app still holds no network permission, so nothing
-  can leave the device. Consent and permission can be withdrawn at any time; imported records can
-  be deleted individually, as a batch undo, or all at once.
+- **Opt-in SMS tracking, on-device, permissionless.** In Settings → Financial tools you can enable
+  SMS transaction tracking: you share bank messages to Acuranza from your Messages app (or paste
+  them), and Acuranza extracts amount, date, merchant and account into transactions you confirm.
+  OTP/PIN/password messages, promotions and ambiguous text are never processed; message bodies are
+  parsed and discarded, never stored. The app requests no SMS permission — sideloaded APKs that do
+  get blocked by Play Protect — and holds no network permission, so nothing can leave the device.
+  Consent can be withdrawn and all SMS data deleted at any time.
   from bank-statement CSV files you pick yourself, or from manual entry.
 - **Encrypted database:** SQLCipher (AES-256), with the key kept in the Android Keystore.
 - **Biometric lock, app PIN with a decoy PIN** (opens an empty profile), privacy mode and
@@ -98,9 +99,8 @@ Acuranza asks for exactly one permission before the app opens on first launch:
 **notifications**. They are how reminders reach you — card-bill due dates, unusual spending and
 payments you scheduled — and the app is gated until they are allowed
 (with a clear path through system settings; it never crashes or loops when denied).
-Beyond that, SMS transaction tracking asks for the SMS permission when — and only when — you
-explicitly consent to it in Settings → Financial tools. It asks for nothing else: no contacts, no
-location, no network.
+SMS transaction tracking needs no permission at all — messages arrive only when you share or
+paste them. It asks for nothing else: no SMS, no contacts, no location, no network.
 
 ## Architecture
 

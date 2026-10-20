@@ -1,7 +1,5 @@
 package com.acuranza.app.ui.settings
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Sms
@@ -37,15 +34,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.acuranza.app.data.SmsImportBatchEntity
 import com.acuranza.app.data.SmsImportDao
-import com.acuranza.app.data.prefs.Settings
-import com.acuranza.app.data.sms.ScanCandidate
-import com.acuranza.app.data.sms.hasSmsPermission
+import com.acuranza.app.data.SmsImportEntity
 import com.acuranza.app.designsystem.components.AcuranzaCard
 import com.acuranza.app.designsystem.components.PrimaryButton
 import com.acuranza.app.designsystem.components.SecondaryButton
@@ -53,35 +47,38 @@ import com.acuranza.app.designsystem.theme.AcuranzaText
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.model.Money
 import com.acuranza.app.model.TxnType
-import com.acuranza.app.repo.ApprovedSmsImport
+import com.acuranza.app.repo.SmsImportRepository
 import com.acuranza.app.sms.SmsConfidence
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalSettings
 import com.acuranza.app.ui.nav.popBackSafely
-import com.acuranza.app.work.WorkScheduler
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-private val dateTimeFormat = DateTimeFormatter.ofPattern("d MMM, h:mm a").withZone(ZoneId.systemDefault())
 private val dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy").withZone(ZoneId.systemDefault())
 
-/** Settings → Financial tools → SMS transaction tracking: consent, first import, control, management. */
+/**
+ * Settings → Financial tools → SMS transaction tracking, permissionless edition: bank messages
+ * arrive by Android's share sheet (SmsShareActivity) or by paste, are parsed on-device, and only
+ * the extracted details are stored — after the user confirms them. The app holds no SMS
+ * permission (Play Protect blocks sideloaded APKs that request one), so nothing ever reads the
+ * inbox.
+ */
 @Composable
 fun SmsTrackingScreen(nav: NavController) {
     val c = LocalContainer.current
     val s = LocalSettings.current
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
-    var candidates by remember { mutableStateOf<List<ScanCandidate>?>(null) }
-    var scanning by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var refresh by remember { mutableStateOf(0) }
-    val runner = c.smsScanRunner
+    var pending by remember { mutableStateOf<List<SmsImportEntity>>(emptyList()) }
+    var reviewing by remember { mutableStateOf(false) }
+    var paste by remember { mutableStateOf("") }
 
     LaunchedEffect(message) {
         message?.let {
@@ -89,79 +86,18 @@ fun SmsTrackingScreen(nav: NavController) {
             message = null
         }
     }
-
-    val startReview: () -> Unit = {
-        if (runner != null) {
-            scope.launch {
-                scanning = true
-                val (_, found) = runner.run(auto = false, dryRun = true)
-                scanning = false
-                candidates = found
-                if (found.isEmpty()) message = "No bank transactions found in the last 12 months"
-            }
-        }
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        scope.launch {
-            c.settings.setSmsConsent(true)
-            c.settings.setSmsAutoScan(true)
-            WorkScheduler.setSmsScanEnabled(context, true)
-            startReview()
-        }
+    LaunchedEffect(refresh, s.smsConsent) {
+        pending = if (s.smsConsent && !c.decoy) c.smsImports.pending() else emptyList()
     }
 
     AcuranzaScreen(
         title = "SMS transaction tracking",
-        subtitle = "Bank messages, read on this device only",
+        subtitle = "Bank messages, shared by you, read on this device only",
         onBack = { nav.popBackSafely() },
         snackbar = snackbar,
     ) { padding ->
         when {
-            scanning -> Column(Modifier.padding(padding).padding(horizontal = 20.dp)) {
-                Spacer(Modifier.height(24.dp))
-                Text("Scanning your inbox…", style = AcuranzaText.screenTitle)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Reading bank messages from the last 12 months. Nothing is saved until you confirm the import.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AcuranzaTheme.colors.subtleText,
-                )
-            }
-            candidates != null -> SmsReviewContent(
-                candidates = candidates.orEmpty(),
-                onCancel = { candidates = null },
-                onConfirm = { edits ->
-                    scope.launch {
-                        val items = candidates.orEmpty().mapIndexedNotNull { index, candidate ->
-                            val edit = edits[index] ?: return@mapIndexedNotNull null
-                            if (edit.excluded) return@mapIndexedNotNull null
-                            val parsed = candidate.graded.txn
-                            val accountId = candidate.matchedAccountId ?: c.smsImports.resolveAccount(parsed)
-                            ApprovedSmsImport(
-                                parsed = parsed,
-                                sender = candidate.graded.sender,
-                                amount = edit.amount ?: parsed.amount,
-                                categoryKey = edit.categoryKey ?: candidate.suggestedCategory,
-                                merchant = edit.merchant ?: parsed.merchant,
-                                timestampMillis = parsed.timestampMillis,
-                                accountId = accountId,
-                                confidence = candidate.graded.confidence,
-                            )
-                        }
-                        candidates = null
-                        if (items.isNotEmpty()) {
-                            val (_, created) = c.smsImports.importBatch("First import", items)
-                            if (created > 0) c.settings.setSmsFirstImportDone()
-                            message = "$created transactions imported — flagged ones wait in Review"
-                        } else {
-                            message = "Nothing selected to import"
-                        }
-                        refresh++
-                    }
-                },
-            )
-            runner == null -> Column(Modifier.padding(padding).padding(horizontal = 20.dp)) {
+            c.decoy -> Column(Modifier.padding(padding).padding(horizontal = 20.dp)) {
                 Spacer(Modifier.height(24.dp))
                 Text("Unavailable", style = AcuranzaText.screenTitle)
                 Spacer(Modifier.height(8.dp))
@@ -169,31 +105,43 @@ fun SmsTrackingScreen(nav: NavController) {
             }
             !s.smsConsent -> SmsConsentContent(
                 modifier = Modifier.padding(padding),
-                onAgree = { permissionLauncher.launch(android.Manifest.permission.READ_SMS) },
+                onAgree = { scope.launch { c.settings.setSmsConsent(true) } },
             )
-            else -> SmsOverviewContent(
-                settings = s,
-                hasPermission = context.hasSmsPermission(),
-                refreshKey = refresh,
-                modifier = Modifier.padding(padding),
-                onToggleAuto = { on ->
+            reviewing -> SmsPendingReviewContent(
+                pending = pending,
+                onCancel = { reviewing = false },
+                onConfirm = { keep, edits ->
                     scope.launch {
-                        c.settings.setSmsAutoScan(on)
-                        WorkScheduler.setSmsScanEnabled(context, on && context.hasSmsPermission())
-                    }
-                },
-                onRefresh = {
-                    scope.launch {
-                        val (result, _) = runner!!.run(auto = false, dryRun = false)
-                        message = when {
-                            result.imported > 0 -> "${result.imported} new transactions imported"
-                            result.status != "ok" -> result.status
-                            else -> "No new bank messages"
+                        val created = c.smsImports.confirmPending(keep, edits)
+                        reviewing = false
+                        message = if (created > 0) {
+                            "$created transactions imported — flagged ones wait in Review"
+                        } else {
+                            "Nothing selected to import"
                         }
                         refresh++
                     }
                 },
-                onFirstImport = startReview,
+            )
+            else -> SmsOverviewContent(
+                pending = pending,
+                refreshKey = refresh,
+                paste = paste,
+                onPasteChange = { paste = it },
+                onAddPasted = {
+                    scope.launch {
+                        when (val outcome = c.smsImports.addPending(paste)) {
+                            is SmsImportRepository.PendingOutcome.Added -> {
+                                paste = ""
+                                message = "Saved for review"
+                            }
+                            is SmsImportRepository.PendingOutcome.Duplicate -> message = "Already added"
+                            is SmsImportRepository.PendingOutcome.Rejected -> message = "Not imported: ${outcome.reason}"
+                        }
+                        refresh++
+                    }
+                },
+                onReview = { reviewing = true },
                 onDeleteImport = { importId ->
                     scope.launch {
                         c.smsImports.deleteImport(importId)
@@ -217,16 +165,17 @@ fun SmsTrackingScreen(nav: NavController) {
                 onWithdraw = {
                     scope.launch {
                         c.settings.revokeSmsConsent()
-                        WorkScheduler.setSmsScanEnabled(context, false)
-                        message = "SMS access withdrawn. Imported transactions stay until you delete them."
+                        message = "Consent withdrawn. Imported transactions stay until you delete them."
+                        refresh++
                     }
                 },
+                modifier = Modifier.padding(padding),
             )
         }
     }
 }
 
-/** What the user agrees to before the permission dialog ever appears. */
+/** What the user agrees to before anything is processed. */
 @Composable
 private fun SmsConsentContent(modifier: Modifier, onAgree: () -> Unit) {
     Column(modifier.fillMaxSize().padding(horizontal = 20.dp)) {
@@ -235,27 +184,21 @@ private fun SmsConsentContent(modifier: Modifier, onAgree: () -> Unit) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Icon(Icons.Outlined.Sms, contentDescription = null, tint = AcuranzaTheme.colors.accent)
-                    Text("What this does", style = MaterialTheme.typography.titleMedium)
+                    Text("How it works", style = MaterialTheme.typography.titleMedium)
                 }
-                Bullet("Reads bank and payment SMS on this phone — UPI, card spends, ATM withdrawals, credits, refunds and fees.")
-                Bullet("Extracts the amount, date, merchant and account, and turns them into transactions you confirm.")
-                Bullet("Stores only those extracted details. The message text itself is never saved, exported or sent anywhere.")
-                Bullet("Everything runs offline in Acuranza's private storage. There is no account, cloud or sync.")
-                Bullet("You choose automatic background scanning, and can turn it off or delete everything at any time.")
+                Bullet("Share a bank message from your Messages app to Acuranza (long-press → Share → Acuranza), or paste one here.")
+                Bullet("Acuranza extracts the amount, date, merchant and account, and turns the message into a transaction you confirm.")
+                Bullet("OTP, PIN, password and authentication messages are never processed. Promotions and balance alerts are ignored.")
+                Bullet("The message text is parsed and discarded. Only the extracted details are stored — in Acuranza's private, encrypted storage.")
+                Bullet("No SMS permission is requested, so Play Protect installs Acuranza like any other app.")
+                Bullet("Everything runs offline. There is no account, cloud or sync, and you can delete everything at any time.")
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            "Note for sideloaded installs: Google Play Protect may warn about apps with SMS access. " +
-                "That screen is about the permission, not about Acuranza's signature.",
-            style = MaterialTheme.typography.bodySmall,
-            color = AcuranzaTheme.colors.tertiaryText,
-        )
         Spacer(Modifier.height(16.dp))
-        PrimaryButton("I agree — scan my SMS", onClick = onAgree, modifier = Modifier.fillMaxWidth())
+        PrimaryButton("I agree — enable", onClick = onAgree, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         Text(
-            "Acuranza will ask for the SMS permission next. Nothing is scanned before you agree.",
+            "Nothing is processed — shared, pasted or otherwise — before you agree.",
             style = MaterialTheme.typography.bodySmall,
             color = AcuranzaTheme.colors.tertiaryText,
         )
@@ -270,47 +213,42 @@ private fun Bullet(text: String) {
     }
 }
 
-/** The user's per-row edits to a scanned candidate. */
-data class ReviewEdit(
-    /** Amount in paise as edited; null keeps the parsed amount. */
+/** The user's per-row corrections before a pending candidate becomes a transaction. */
+private data class PendingEditState(
     val amount: Long? = null,
     val merchant: String? = null,
-    val categoryKey: String? = null,
     val excluded: Boolean = false,
 )
 
-private sealed interface ReviewRow {
-    data class Header(val text: String) : ReviewRow
-    data class Candidate(val globalIndex: Int, val candidate: ScanCandidate) : ReviewRow
+private sealed interface PendingList {
+    data class Header(val text: String) : PendingList
+    data class Row(val item: SmsImportEntity) : PendingList
 }
 
-/** First-import review: nothing is saved until Confirm import. */
+/** Confirm-import review of the pending candidates. Nothing is imported until Confirm. */
 @Composable
-private fun SmsReviewContent(
-    candidates: List<ScanCandidate>,
-    onConfirm: (edits: Map<Int, ReviewEdit>) -> Unit,
+private fun SmsPendingReviewContent(
+    pending: List<SmsImportEntity>,
     onCancel: () -> Unit,
+    onConfirm: (keep: List<SmsImportEntity>, edits: Map<Long, SmsImportRepository.PendingEdit>) -> Unit,
 ) {
-    val needsReview = candidates.filter { it.graded.confidence != SmsConfidence.HIGH }
-    val confident = candidates.filter { it.graded.confidence == SmsConfidence.HIGH }
-    val edits = remember(candidates) {
-        List(candidates.size) { mutableStateOf(ReviewEdit()) }
-    }
-    var expanded by remember { mutableStateOf(-1) }
-
-    val rows = remember(candidates) {
+    val edits = remember(pending) { pending.associate { it.id to mutableStateOf(PendingEditState()) } }
+    var expanded by remember { mutableStateOf(-1L) }
+    val needsReview = pending.filter { it.confidence != SmsConfidence.HIGH }
+    val confident = pending.filter { it.confidence == SmsConfidence.HIGH }
+    val rows = remember(pending) {
         buildList {
-            if (needsReview.isNotEmpty()) add(ReviewRow.Header("Needs review — ${needsReview.size}"))
-            needsReview.forEachIndexed { i, c -> add(ReviewRow.Candidate(i, c)) }
-            if (confident.isNotEmpty()) add(ReviewRow.Header("Confident — ${confident.size}"))
-            confident.forEachIndexed { i, c -> add(ReviewRow.Candidate(needsReview.size + i, c)) }
+            if (needsReview.isNotEmpty()) add(PendingList.Header("Needs review — ${needsReview.size}"))
+            needsReview.forEach { add(PendingList.Row(it)) }
+            if (confident.isNotEmpty()) add(PendingList.Header("Confident — ${confident.size}"))
+            confident.forEach { add(PendingList.Row(it)) }
         }
     }
-    val includedCount = candidates.indices.count { !edits[it].value.excluded }
+    val included = pending.count { !edits[it.id]!!.value.excluded }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Spacer(Modifier.height(12.dp))
-        Text("${candidates.size} bank transactions found", style = MaterialTheme.typography.titleLarge)
+        Text("${pending.size} bank transactions ready", style = MaterialTheme.typography.titleLarge)
         Text(
             "Check each one — edit what's wrong, switch off what isn't yours. Nothing is saved until you confirm.",
             style = MaterialTheme.typography.bodyMedium,
@@ -320,45 +258,44 @@ private fun SmsReviewContent(
         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(rows) { row ->
                 when (row) {
-                    is ReviewRow.Header -> Text(
+                    is PendingList.Header -> Text(
                         row.text.uppercase(),
                         style = AcuranzaText.sectionLabel,
                         color = AcuranzaTheme.colors.subtleText,
                         modifier = Modifier.padding(top = 4.dp),
                     )
-                    is ReviewRow.Candidate -> {
-                        val editState = edits[row.globalIndex]
+                    is PendingList.Row -> {
+                        val item = row.item
+                        val editState = edits[item.id]!!
                         val edit by editState
-                        val txn = row.candidate.graded.txn
-                        AcuranzaCard(onClick = { expanded = if (expanded == row.globalIndex) -1 else row.globalIndex }) {
+                        AcuranzaCard(onClick = { expanded = if (expanded == item.id) -1L else item.id }) {
                             Column(Modifier.padding(vertical = 14.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
                                         Text(
-                                            edit.merchant ?: txn.merchant ?: row.candidate.graded.sender,
+                                            edit.merchant ?: item.merchant ?: item.bank,
                                             style = MaterialTheme.typography.titleMedium,
                                             maxLines = 1,
                                         )
                                         Text(
-                                            "${txn.bank.displayName}${txn.accountLast4?.let { " $it" } ?: ""} · " +
-                                                dateFormat.format(Instant.ofEpochMilli(txn.timestampMillis)) + " · " +
-                                                row.candidate.graded.confidence.name.lowercase().replaceFirstChar { it.uppercase() },
+                                            "${item.bank}${item.accountLast4?.let { " $it" } ?: ""} · " +
+                                                dateFormat.format(Instant.ofEpochMilli(item.timestamp)),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = AcuranzaTheme.colors.tertiaryText,
                                         )
                                     }
                                     Text(
-                                        Money.format(edit.amount ?: txn.amount),
+                                        Money.format(edit.amount ?: item.amount),
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = if (txn.type == TxnType.INCOME) AcuranzaTheme.colors.income else AcuranzaTheme.colors.expense,
+                                        color = if (item.type == TxnType.INCOME) AcuranzaTheme.colors.income else AcuranzaTheme.colors.expense,
                                     )
                                     Spacer(Modifier.width(12.dp))
                                     Switch(checked = !edit.excluded, onCheckedChange = { editState.value = editState.value.copy(excluded = !it) })
                                 }
-                                if (expanded == row.globalIndex) {
+                                if (expanded == item.id) {
                                     Spacer(Modifier.height(12.dp))
                                     OutlinedTextField(
-                                        value = edit.merchant ?: txn.merchant ?: "",
+                                        value = edit.merchant ?: item.merchant ?: "",
                                         onValueChange = { editState.value = editState.value.copy(merchant = it.ifBlank { null }) },
                                         label = { Text("Merchant") },
                                         singleLine = true,
@@ -366,7 +303,7 @@ private fun SmsReviewContent(
                                     )
                                     Spacer(Modifier.height(8.dp))
                                     OutlinedTextField(
-                                        value = ((edit.amount ?: txn.amount) / 100.0).toString(),
+                                        value = ((edit.amount ?: item.amount) / 100.0).toString(),
                                         onValueChange = { text ->
                                             editState.value = editState.value.copy(amount = Money.fromRupees(text.toDoubleOrNull() ?: 0.0))
                                         },
@@ -386,8 +323,16 @@ private fun SmsReviewContent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SecondaryButton("Cancel", onClick = onCancel, modifier = Modifier.weight(1f))
             PrimaryButton(
-                "Confirm import ($includedCount)",
-                onClick = { onConfirm(edits.map { it.value }.mapIndexed { i, e -> i to e }.toMap()) },
+                "Confirm import ($included)",
+                onClick = {
+                    val keep = pending.filter { !edits[it.id]!!.value.excluded }
+                    val editMap = pending.mapNotNull { item ->
+                        val e = edits[item.id]!!.value
+                        if (e.excluded) null
+                        else item.id to SmsImportRepository.PendingEdit(amount = e.amount, merchant = e.merchant)
+                    }.toMap()
+                    onConfirm(keep, editMap)
+                },
                 modifier = Modifier.weight(1.6f),
             )
         }
@@ -397,17 +342,17 @@ private fun SmsReviewContent(
 
 @Composable
 private fun SmsOverviewContent(
-    settings: Settings,
-    hasPermission: Boolean,
+    pending: List<SmsImportEntity>,
     refreshKey: Int,
-    modifier: Modifier,
-    onToggleAuto: (Boolean) -> Unit,
-    onRefresh: () -> Unit,
-    onFirstImport: () -> Unit,
+    paste: String,
+    onPasteChange: (String) -> Unit,
+    onAddPasted: () -> Unit,
+    onReview: () -> Unit,
     onDeleteImport: (Long) -> Unit,
     onUndo: (Long) -> Unit,
     onDeleteAll: () -> Unit,
     onWithdraw: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val c = LocalContainer.current
     var batches by remember { mutableStateOf<List<SmsImportBatchEntity>>(emptyList()) }
@@ -416,57 +361,45 @@ private fun SmsOverviewContent(
     var confirmDeleteAll by remember { mutableStateOf(false) }
 
     LaunchedEffect(refreshKey) {
-        batches = c.smsImports.latestBatches()
-        rows = c.smsImports.managementRows(100)
-        total = c.smsImports.totalImports()
+        batches = c.smsImports.latestBatches().filterNot { it.label == "Pending review" }
+        rows = c.smsImports.managementRows(100).filter { it.transactionId != null }
+        total = c.smsImports.totalImports() - c.smsImports.pendingCount()
     }
 
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Spacer(Modifier.height(4.dp)) }
 
+        // How messages arrive
         item {
-            Column {
-                SettingsToggle(
-                    title = "Automatic SMS scanning",
-                    subtitle = when {
-                        !hasPermission -> "Needs the SMS permission — grant it in system settings to resume"
-                        else -> "Scans for new bank messages about every 6 hours. Turning it off stops future scans; nothing already imported is deleted."
-                    },
-                    checked = settings.smsAutoScan && hasPermission,
-                    onChecked = onToggleAuto,
-                    icon = Icons.Outlined.Sms,
-                )
-                SettingsRow(
-                    title = "Refresh SMS now",
-                    subtitle = "Import new bank messages immediately",
-                    icon = Icons.Outlined.Autorenew,
-                    divider = false,
-                ) { onRefresh() }
+            AcuranzaCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Add bank messages", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "In your Messages app, long-press a bank message → Share → Acuranza. Or paste one below. " +
+                            "Acuranza reads only what you send it — no SMS permission, no inbox access.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AcuranzaTheme.colors.subtleText,
+                    )
+                    OutlinedTextField(
+                        value = paste,
+                        onValueChange = onPasteChange,
+                        label = { Text("Paste a bank message") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                    )
+                    PrimaryButton("Parse message", onClick = onAddPasted, enabled = paste.isNotBlank(), modifier = Modifier.fillMaxWidth())
+                }
             }
         }
 
-        item {
-            Text(
-                if (settings.smsLastScanAt == 0L) "Never scanned"
-                else "Last scan ${dateTimeFormat.format(Instant.ofEpochMilli(settings.smsLastScanAt))} — ${settings.smsLastScanStatus}",
-                style = MaterialTheme.typography.bodySmall,
-                color = AcuranzaTheme.colors.tertiaryText,
-            )
-        }
-
-        if (!settings.smsFirstImportDone) {
+        // Pending review
+        if (pending.isNotEmpty()) {
             item {
-                AcuranzaCard {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("First import", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "Scan your existing messages and pick what to import. You review every transaction before anything is saved.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AcuranzaTheme.colors.subtleText,
-                        )
-                        PrimaryButton("Scan and review", onClick = onFirstImport, modifier = Modifier.fillMaxWidth())
-                    }
-                }
+                SettingsRow(
+                    title = "Pending review — ${pending.size}",
+                    subtitle = "Bank messages waiting for your confirmation. Nothing is imported until you confirm.",
+                    icon = Icons.Outlined.Sms,
+                ) { onReview() }
             }
         }
 
@@ -478,11 +411,7 @@ private fun SmsOverviewContent(
                         Column(Modifier.weight(1f)) {
                             Text(row.merchant ?: row.bank, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                             val flagged = if (row.suspicious == true && row.reviewed == false) " · flagged for review" else ""
-                            Text(
-                                row.bank + flagged,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = AcuranzaTheme.colors.tertiaryText,
-                            )
+                            Text(row.bank + flagged, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.tertiaryText)
                         }
                         Text(
                             Money.format(row.amount),
@@ -506,38 +435,29 @@ private fun SmsOverviewContent(
             }
         }
 
+        // Danger zone
         item {
             Column {
-                if (total > 0) {
-                    SettingsRow(
-                        title = "Delete all SMS imports",
-                        subtitle = "Removes every transaction imported from SMS. Everything else stays.",
-                        icon = Icons.Outlined.Delete,
-                        tone = RowTone.DESTRUCTIVE,
-                    ) { confirmDeleteAll = true }
-                    SettingsRow(
-                        title = "Withdraw SMS consent",
-                        subtitle = "Stops all scanning. Imported transactions stay until deleted.",
-                        icon = Icons.Outlined.Block,
-                        divider = false,
-                        tone = RowTone.DESTRUCTIVE,
-                    ) { onWithdraw() }
-                } else {
-                    SettingsRow(
-                        title = "Withdraw SMS consent",
-                        subtitle = "Stops all scanning and forgets the agreement.",
-                        icon = Icons.Outlined.Block,
-                        divider = false,
-                        tone = RowTone.DESTRUCTIVE,
-                    ) { onWithdraw() }
-                }
+                SettingsRow(
+                    title = "Delete all SMS data",
+                    subtitle = "Removes every pending candidate and every imported SMS transaction. Everything else stays.",
+                    icon = Icons.Outlined.Delete,
+                    tone = RowTone.DESTRUCTIVE,
+                ) { confirmDeleteAll = true }
+                SettingsRow(
+                    title = "Withdraw consent",
+                    subtitle = "Stops all processing. Imported transactions stay until deleted.",
+                    icon = Icons.Outlined.Block,
+                    divider = false,
+                    tone = RowTone.DESTRUCTIVE,
+                ) { onWithdraw() }
             }
         }
 
         item {
             Text(
-                "Acuranza reads SMS only on this device, stores only the extracted transaction details, " +
-                    "and has no network permission at all.",
+                "Acuranza holds no SMS permission. Messages arrive only when you share or paste them; " +
+                    "the text is parsed and discarded, and the app has no network permission at all.",
                 style = MaterialTheme.typography.bodySmall,
                 color = AcuranzaTheme.colors.tertiaryText,
             )
@@ -548,8 +468,8 @@ private fun SmsOverviewContent(
     if (confirmDeleteAll) {
         AlertDialog(
             onDismissRequest = { confirmDeleteAll = false },
-            title = { Text("Delete all SMS imports?") },
-            text = { Text("Every transaction imported from SMS will be removed. Transactions you added yourself stay.") },
+            title = { Text("Delete all SMS data?") },
+            text = { Text("Every pending candidate and every transaction imported from SMS will be removed. Transactions you added yourself stay.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDeleteAll = false

@@ -123,7 +123,7 @@ fun ManagementSettingsPage(nav: NavController) {
 fun FinancialToolsPage(nav: NavController) {
     SettingsPage("Financial tools", "Everything beyond everyday tracking", nav) {
         SettingsSection(null) {
-            SettingsRow("SMS transaction tracking", "Import bank messages automatically, on-device only", Icons.Outlined.Sms) { nav.navigate(Routes.SMS_TRACKING) }
+            SettingsRow("SMS transaction tracking", "Bank messages by share or paste, on-device only", Icons.Outlined.Sms) { nav.navigate(Routes.SMS_TRACKING) }
             SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) { nav.navigate(Routes.RECURRING) }
             SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
             SettingsRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }

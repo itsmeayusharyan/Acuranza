@@ -199,6 +199,127 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
         return CategoryGuesser.guess(merchant, merchant ?: txn.merchant ?: "", txn.type, txn.channel)
     }
 
+    // ---- Permissionless capture: shared/pasted messages ----
+
+    /** Outcomes of one shared or pasted message. */
+    sealed interface PendingOutcome {
+        data class Added(val id: Long) : PendingOutcome
+        data class Duplicate(val id: Long) : PendingOutcome
+        data class Rejected(val reason: String) : PendingOutcome
+    }
+
+    /**
+     * Parses one shared message and parks it for review. Nothing reaches the transaction table
+     * before the user confirms; the message text itself is discarded the moment it is parsed.
+     */
+    suspend fun addPending(body: String, nowMillis: Long = System.currentTimeMillis()): PendingOutcome = db.withTransaction {
+        when (val result = com.acuranza.app.sms.SharedSmsPipeline.process(body, nowMillis)) {
+            is com.acuranza.app.sms.SharedSmsPipeline.Result.Rejected -> PendingOutcome.Rejected(result.reason)
+            is com.acuranza.app.sms.SharedSmsPipeline.Result.Candidate -> {
+                val txn = result.txn
+                if (db.smsImports().hasFingerprint(txn.fingerprint)) {
+                    return@withTransaction PendingOutcome.Duplicate(-1)
+                }
+                val batch = db.smsImports().pendingBatch()
+                    ?: db.smsImports().insertBatch(SmsImportBatchEntity(importedAt = 0, txnCount = 0, label = "Pending review"))
+                        .let { db.smsImports().batchById(it)!! }
+                val id = db.smsImports().insertIgnore(
+                    SmsImportEntity(
+                        batchId = batch.id,
+                        transactionId = null,
+                        fingerprint = txn.fingerprint,
+                        sender = "shared",
+                        bank = txn.bank.displayName,
+                        accountLast4 = txn.accountLast4,
+                        type = txn.type,
+                        amount = txn.amount,
+                        merchant = txn.merchant,
+                        timestamp = txn.timestampMillis,
+                        channel = txn.channel,
+                        confidence = result.confidence,
+                    ),
+                )
+                if (id == -1L) PendingOutcome.Duplicate(-1) else PendingOutcome.Added(id)
+            }
+        }
+    }
+
+    /** Candidates waiting for review, newest first. */
+    suspend fun pending(): List<SmsImportEntity> = db.smsImports().pending()
+
+    suspend fun pendingCount(): Int = db.smsImports().pendingCount()
+
+    /** Drops one pending candidate without importing anything. */
+    suspend fun removePending(id: Long) = db.withTransaction { db.smsImports().deleteRow(id) }
+
+    /** Clears every pending candidate. */
+    suspend fun clearPending() = db.withTransaction {
+        for (row in db.smsImports().pending()) db.smsImports().deleteRow(row.id)
+    }
+
+    /** The user's corrections to a pending candidate before it becomes a transaction. */
+    data class PendingEdit(val amount: Long? = null, val merchant: String? = null, val categoryKey: String? = null, val accountId: Long? = null)
+
+    /**
+     * The user confirmed the pending candidates: each becomes a real transaction in one new
+     * batch (deduped again by fingerprint) and is linked to its import row; rows the user
+     * excluded are dropped. Only the already-extracted fields were ever kept — no message text.
+     *
+     * @return how many transactions were created.
+     */
+    suspend fun confirmPending(keep: List<SmsImportEntity>, edits: Map<Long, PendingEdit> = emptyMap()): Int = db.withTransaction {
+        val batchId = db.smsImports().insertBatch(
+            SmsImportBatchEntity(importedAt = System.currentTimeMillis(), txnCount = 0, label = "Shared import"),
+        )
+        var created = 0
+        for (row in keep) {
+            val edit = edits[row.id]
+            val category = edit?.categoryKey ?: CategoryGuesser.guess(row.merchant, row.merchant ?: "", row.type, row.channel)
+            val accountId = edit?.accountId ?: resolveAccountFor(row)
+            val txnId = db.transactions().insertIgnore(
+                TransactionEntity(
+                    accountId = accountId,
+                    type = row.type,
+                    amount = edit?.amount ?: row.amount,
+                    categoryKey = category,
+                    merchant = (edit?.merchant ?: row.merchant)?.takeIf { it.isNotBlank() },
+                    note = row.merchant?.takeIf { it.isNotBlank() },
+                    timestamp = row.timestamp,
+                    channel = row.channel,
+                    source = TxnSource.SMS,
+                    fingerprint = row.fingerprint,
+                    reviewed = false,
+                    suspicious = row.confidence != SmsConfidence.HIGH,
+                ),
+            )
+            if (txnId == -1L) {
+                db.smsImports().deleteRow(row.id)
+                continue
+            }
+            db.smsImports().linkTransaction(row.id, txnId, batchId)
+            created++
+        }
+        db.smsImports().batchById(batchId)?.let { db.smsImports().updateBatch(it.copy(txnCount = created)) }
+        created
+    }
+
+    /** An account for a pending row: an existing digits/bank match, else a clearly-labelled new one. */
+    private suspend fun resolveAccountFor(row: SmsImportEntity): Long {
+        val accounts = db.accounts().all().filterNot { it.archived }
+        accounts.firstOrNull { a -> row.accountLast4?.let { it in a.allDigits } == true }?.let { return it.id }
+        val type = if (row.channel == com.acuranza.app.model.TxnChannel.CARD) AccountType.CREDIT_CARD else AccountType.BANK
+        accounts.firstOrNull { it.bank == row.bank && it.type == type }?.let { return it.id }
+        return db.accounts().insert(
+            AccountEntity(
+                name = row.bank + (row.accountLast4?.let { " $it" } ?: ""),
+                type = type,
+                bank = row.bank,
+                last4 = row.accountLast4,
+                autoCreated = true,
+            ),
+        )
+    }
+
     /** Fingerprints already imported; a scan skips those without touching the database again. */
     suspend fun importedFingerprints(): Set<String> = db.smsImports().allFingerprints().toSet()
 

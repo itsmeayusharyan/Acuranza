@@ -27,14 +27,16 @@ this data never leaves the phone.
 - **On the device:** optional biometric/device-credential app lock that re-locks after 60 seconds in the
   background, screenshot and recents-preview blocking, privacy mode, and lock-screen notifications that hide
   amounts and merchants.
-- **Messages:** SMS reading exists only behind the opt-in SMS transaction tracking feature
-  (Settings → Financial tools). It runs no scan before explicit consent AND the runtime READ_SMS
-  permission are both granted. Scans read bank/payment messages, keep only the extracted
-  transaction fields (amount, date, merchant, account, reference) plus a dedupe fingerprint and
-  the sender id — the message body itself is never written to storage — and never send anything
-  anywhere (the APK holds no network permission). Consent can be withdrawn and all imported
-  records deleted from the same screen; automatic scanning can be switched off without losing
-  imported data.
+- **Messages:** the APK holds no SMS permission — Play Protect hard-blocks sideloaded APKs that
+  request one (this is documented history for Acuranza itself). SMS transaction tracking works
+  permissionlessly: the user shares or pastes a bank message, which is parsed in memory and
+  discarded; only the extracted transaction fields (amount, date, merchant, account, reference)
+  plus a dedupe fingerprint are stored, and only after the user's explicit review. Authentication
+  messages (OTP/PIN/password), promotions, balance-only alerts and ambiguous text are rejected
+  before storage. Nothing is processed before consent, and nothing can leave the device (no
+  network permission exists). The exported share activity (SmsShareActivity) reads only the
+  Android share intent's text, writes only to the private encrypted database, and is a no-op
+  without consent. Consent can be withdrawn and all SMS data deleted from the same screen.
 
 **Out of scope**
 
