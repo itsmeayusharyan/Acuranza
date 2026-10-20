@@ -79,7 +79,7 @@ scripts/release.sh
 ```
 
 It stops at the first failed test or audit finding. Releasing does not touch GitHub: push the
-source when you choose, with `/sync` in chat or:
+source when you choose, with `!sync` in chat or:
 
 ```bash
 scripts/release-sync.sh app/build/outputs/apk/release/app-release.apk

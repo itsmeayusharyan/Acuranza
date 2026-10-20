@@ -9,7 +9,7 @@
 #   3. security audit of the signed APK    (scripts/security-audit.sh — 11 checks, non-zero on findings)
 #   4. artifact copy + hash                (/data/workspace/Acuranza-<version>.apk)
 #
-# Releasing does NOT touch GitHub — run /sync (or scripts/release-sync.sh) when you want the
+# Releasing does NOT touch GitHub — run !sync (or scripts/release-sync.sh) when you want the
 # source pushed. A release that fails anywhere reports and stops.
 
 set -euo pipefail
@@ -46,4 +46,4 @@ SHA="$(sha256sum "$ARTIFACT" | awk '{print $1}')"
 echo "artifact=$ARTIFACT sha256=$SHA"
 
 echo "RELEASE-OK: v$VERSION (code $VERSION_CODE) tested, signed, audited ($SHA)."
-echo "GitHub not touched — run /sync (or scripts/release-sync.sh) to push the source."
+echo "GitHub not touched — run !sync (or scripts/release-sync.sh) to push the source."
