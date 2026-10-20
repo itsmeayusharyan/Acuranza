@@ -69,3 +69,20 @@ Run against the signed artifact, not the source tree:
 
 CI (`.github/workflows/ci.yml`) runs the unit tests and the INTERNET-permission check on every
 push; `release.yml` builds and signs on a tag and runs the same checks before publishing.
+
+## Publishing the source
+
+Once a release has passed the checklist, publish the source with one command — no manual git
+work afterwards:
+
+```bash
+scripts/release-sync.sh app/build/outputs/apk/release/app-release.apk
+```
+
+It stages every tracked change (added, edited, renamed, deleted — `.gitignore` keeps build
+outputs, the keystore and local config out), commits with the release version, rebases onto the
+remote branch so remote commits are never overwritten, and pushes. Add `--tag` to also push the
+`vX.Y.Z` tag, which makes the GitHub Release workflow build and attach the APK. Every run appends
+the version, commit hash and result to `/data/workspace/release-sync.log`. It uses the machine's
+ambient git credentials (`gh auth login` once); tokens are never embedded, and an authentication
+failure, rebase conflict or refused artifact stops the run instead of force-pushing.
