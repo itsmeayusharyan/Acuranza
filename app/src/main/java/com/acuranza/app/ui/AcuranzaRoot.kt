@@ -71,7 +71,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -94,6 +93,7 @@ import com.acuranza.app.di.AppContainer
 import com.acuranza.app.designsystem.components.AcuranzaLogo
 import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.components.PrimaryButton
+import com.acuranza.app.designsystem.components.pressScale
 import com.acuranza.app.designsystem.theme.BrandPalette
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.designsystem.theme.rememberReducedMotion
@@ -392,10 +392,11 @@ private fun BottomBar(nav: NavHostController, current: String?) {
 }
 
 /**
- * Five evenly spaced, icon-only destinations in one consistent outline style. The active tab gets
- * a soft accent wash behind its icon, an ink-tinted icon and a small accent dot; everything
- * cross-fades with short springs so switching feels smooth rather than abrupt. Each slot is a
- * full-height touch target whose content description carries the label.
+ * Four evenly spaced, labelled destinations in one consistent outline style (v1.11.0). The
+ * selected destination sits in a prominent circular accent background that springs in — the one
+ * expressive gesture on the bar — while everything else stays restrained: tertiary icons, a small
+ * label beneath, no washes or dots. Each slot is a full-height touch target with subtle press
+ * feedback; the circle snaps in under reduced motion.
  */
 @Composable
 fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
@@ -406,39 +407,36 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.displayCutout)
                 .navigationBarsPadding()
-                .height(64.dp),
+                .height(72.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Tabs.forEach { tab ->
                 val selected = current == tab.route
                 val reduced = com.acuranza.app.designsystem.theme.LocalReducedMotion.current
-                val wash by animateColorAsState(
-                    targetValue = if (selected) AcuranzaTheme.colors.accentTint else Color.Transparent,
-                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(200),
-                    label = "tab-wash",
-                )
-                val tint by animateColorAsState(
-                    targetValue = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText,
-                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(200),
-                    label = "tab-tint",
-                )
-                val iconScale by animateFloatAsState(
-                    targetValue = if (selected) 1f else 0.94f,
-                    animationSpec = if (reduced) androidx.compose.animation.core.snap()
-                    else spring(stiffness = 380f, dampingRatio = 0.75f),
-                    label = "tab-scale",
-                )
-                val dot by animateFloatAsState(
+                val circle by animateFloatAsState(
                     targetValue = if (selected) 1f else 0f,
-                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(200),
-                    label = "tab-dot",
+                    animationSpec = if (reduced) androidx.compose.animation.core.snap()
+                    else spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioLowBouncy),
+                    label = "tab-circle",
                 )
+                val iconTint by animateColorAsState(
+                    targetValue = if (selected) AcuranzaTheme.colors.onInk else AcuranzaTheme.colors.tertiaryText,
+                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(220),
+                    label = "tab-icon",
+                )
+                val labelColor by animateColorAsState(
+                    targetValue = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText,
+                    animationSpec = com.acuranza.app.designsystem.theme.motionTween(220),
+                    label = "tab-label",
+                )
+                val interaction = remember { MutableInteractionSource() }
                 Box(
                     Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .pressScale(interaction, scaleDown = 0.97f)
                         .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
+                            interactionSource = interaction,
                             indication = null,
                             role = androidx.compose.ui.semantics.Role.Tab,
                         ) {
@@ -453,26 +451,31 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             Modifier
-                                .size(40.dp)
+                                .size(44.dp)
+                                .graphicsLayer {
+                                    alpha = circle
+                                    scaleX = circle.coerceAtLeast(0.01f)
+                                    scaleY = circle.coerceAtLeast(0.01f)
+                                }
                                 .clip(CircleShape)
-                                .background(wash),
+                                .background(AcuranzaTheme.colors.accent),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 tab.icon,
                                 contentDescription = null,
-                                tint = tint,
-                                modifier = Modifier.size(22.dp).scale(iconScale),
+                                tint = iconTint,
+                                modifier = Modifier.size(22.dp),
                             )
                         }
-                        // Reserved space keeps all five icons on one line whether or not the dot shows.
-                        Box(
-                            Modifier
-                                .padding(top = 3.dp)
-                                .size(4.dp)
-                                .graphicsLayer { alpha = dot; scaleX = dot; scaleY = dot }
-                                .clip(CircleShape)
-                                .background(AcuranzaTheme.colors.accent),
+                        Text(
+                            tab.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 10.sp,
+                            color = labelColor,
+                            maxLines = 1,
+                            modifier = Modifier.padding(top = 3.dp),
                         )
                     }
                 }

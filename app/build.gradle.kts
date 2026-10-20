@@ -14,8 +14,8 @@ android {
         applicationId = "com.acuranza.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 24
-        versionName = "1.10.1"
+        versionCode = 25
+        versionName = "1.11.0"
         vectorDrawables { useSupportLibrary = true }
     }
 

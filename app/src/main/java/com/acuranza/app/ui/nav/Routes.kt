@@ -1,15 +1,14 @@
 package com.acuranza.app.ui.nav
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.QueryStats
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.QueryStats
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.acuranza.app.model.TxnType
@@ -72,9 +71,9 @@ data class Tab(val route: String, val label: String, val icon: ImageVector, val 
 
 val Tabs = listOf(
     Tab(Routes.HOME, "Home", Icons.Outlined.Home, Icons.Filled.Home),
-    Tab(Routes.INSIGHTS, "Analytics", Icons.Outlined.QueryStats, Icons.Filled.QueryStats),
-    Tab(Routes.TRANSACTIONS, "Transactions", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong),
-    Tab(Routes.SETTINGS, "More", Icons.Outlined.Menu, Icons.Filled.Menu),
+    Tab(Routes.INSIGHTS, "Insights", Icons.Outlined.QueryStats, Icons.Filled.QueryStats),
+    Tab(Routes.TRANSACTIONS, "Activity", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Filled.ReceiptLong),
+    Tab(Routes.SETTINGS, "Settings", Icons.Outlined.Settings, Icons.Filled.Settings),
 )
 
 val TabRoutes = Tabs.map { it.route }.toSet()
