@@ -72,8 +72,14 @@ push; `release.yml` builds and signs on a tag and runs the same checks before pu
 
 ## Publishing the source
 
-Once a release has passed the checklist, publish the source with one command — no manual git
-work afterwards:
+The whole gate — tests, signed build, audit, artifact and GitHub sync — is one command:
+
+```bash
+scripts/release.sh
+```
+
+It stops at the first failed test, audit finding, or sync problem, and only syncs a release that
+passed everything. The sync step itself is `scripts/release-sync.sh` (also runnable alone):
 
 ```bash
 scripts/release-sync.sh app/build/outputs/apk/release/app-release.apk
