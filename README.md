@@ -116,24 +116,6 @@ Kotlin, Jetpack Compose with Material 3, Room with SQLCipher, WorkManager and Da
 No Google Play Services, no analytics, no crash-reporting SDKs.
 The engine modules are plain Kotlin with unit tests.
 
-## Building
-
-```bash
-./gradlew test                    # unit tests for every module
-./gradlew :app:assembleDebug      # debug APK
-./gradlew :app:assembleRelease    # release APK (signed when the keystore is present)
-```
-
-See [docs/BUILDING.md](docs/BUILDING.md) for the signing setup, the release checklist and the
-security checks that run against every release APK.
-
-## Contributing
-
-Contributions are welcome, especially **bank statement formats** and **merchant categories**. The merchant rules
-live in an open dataset, [`core/sms/src/main/resources/acuranza/merchants.json`](core/sms/src/main/resources/acuranza/merchants.json)
-(format in [docs/DATASET.md](docs/DATASET.md)). See [CONTRIBUTING.md](CONTRIBUTING.md), and always mask
-account numbers before sharing a statement. Security issues: see [SECURITY.md](SECURITY.md).
-
 ## License
 
 Acuranza is free software under the [GNU General Public License v3.0 or later](LICENSE), as is the
