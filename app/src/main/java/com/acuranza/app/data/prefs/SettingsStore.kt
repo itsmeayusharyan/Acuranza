@@ -58,6 +58,18 @@ data class Settings(
     val accentChoice: com.acuranza.app.model.AccentColor = com.acuranza.app.model.AccentColor.BLUE,
     /** User's explicit choice for blocking screenshots and the recents preview; null follows [blockScreenshots]. */
     val blockScreenshotsChoice: Boolean? = null,
+    /** The user explicitly agreed to SMS transaction tracking; nothing scans before this is true. */
+    val smsConsent: Boolean = false,
+    /** Whether automatic background scanning is on (only meaningful together with consent + permission). */
+    val smsAutoScan: Boolean = false,
+    /** When the last scan finished (any kind); 0 = never. */
+    val smsLastScanAt: Long = 0L,
+    /** Human-readable last-scan outcome: "ok", "no permission", "failed" or "" when never run. */
+    val smsLastScanStatus: String = "",
+    /** Set once the first reviewed import has been saved, so later scans are quiet catch-ups. */
+    val smsFirstImportDone: Boolean = false,
+    /** Transactions the last scan considered but did not import (ignored/duplicate/balance alert), for the status line. */
+    val smsLastScanSkipped: Int = 0,
 ) {
     /** When salary arrives, which sets where every budget period starts. */
     val payCycle: PayCycle by lazy {
@@ -114,6 +126,12 @@ class SettingsStore(
         val notifiedBills = stringSetPreferencesKey("notified_bills")
         val repairVersion = intPreferencesKey("repair_version")
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
+        val smsConsent = booleanPreferencesKey("sms_consent")
+        val smsAutoScan = booleanPreferencesKey("sms_auto_scan")
+        val smsLastScanAt = longPreferencesKey("sms_last_scan_at")
+        val smsLastScanStatus = stringPreferencesKey("sms_last_scan_status")
+        val smsFirstImportDone = booleanPreferencesKey("sms_first_import_done")
+        val smsLastScanSkipped = intPreferencesKey("sms_last_scan_skipped")
     }
 
     val settings: Flow<Settings> = store.data.catch { e ->
@@ -141,6 +159,12 @@ class SettingsStore(
                 com.acuranza.app.model.AccentColor.entries.firstOrNull { it.name == raw }
             } ?: com.acuranza.app.model.AccentColor.BLUE,
             blockScreenshotsChoice = p[Keys.blockScreenshots],
+            smsConsent = p[Keys.smsConsent] ?: false,
+            smsAutoScan = p[Keys.smsAutoScan] ?: false,
+            smsLastScanAt = p[Keys.smsLastScanAt] ?: 0L,
+            smsLastScanStatus = p[Keys.smsLastScanStatus] ?: "",
+            smsFirstImportDone = p[Keys.smsFirstImportDone] ?: false,
+            smsLastScanSkipped = p[Keys.smsLastScanSkipped] ?: 0,
         )
     }
         // Writes to keys outside Settings (claimed notifications, repair version) mustn't re-run every screen.
@@ -165,6 +189,28 @@ class SettingsStore(
     suspend fun setNotifyInsights(enabled: Boolean) = edit { it[Keys.notifyInsights] = enabled }
     suspend fun setHideAmounts(hidden: Boolean) = edit { it[Keys.hideAmounts] = hidden }
     suspend fun setBlockScreenshots(blocked: Boolean) = edit { it[Keys.blockScreenshots] = blocked }
+
+    // ---- SMS transaction tracking (Settings → Financial tools) ----
+    /** Records explicit consent; also the only place that can ever re-enable scanning after a revoke. */
+    suspend fun setSmsConsent(granted: Boolean) = edit { it[Keys.smsConsent] = granted }
+
+    /** Automatic scanning switch; off stops future scans and never deletes anything already imported. */
+    suspend fun setSmsAutoScan(enabled: Boolean) = edit { it[Keys.smsAutoScan] = enabled }
+
+    suspend fun recordSmsScan(status: String, skipped: Int = 0) = edit {
+        it[Keys.smsLastScanAt] = System.currentTimeMillis()
+        it[Keys.smsLastScanStatus] = status
+        it[Keys.smsLastScanSkipped] = skipped
+    }
+
+    suspend fun setSmsFirstImportDone() = edit { it[Keys.smsFirstImportDone] = true }
+
+    /** Withdraws consent and switches scanning off; imported data is untouched (there is a delete-all for that). */
+    suspend fun revokeSmsConsent() = edit {
+        it[Keys.smsConsent] = false
+        it[Keys.smsAutoScan] = false
+        it[Keys.smsLastScanStatus] = "consent withdrawn"
+    }
 
     /** Clears preferences left by the removed Gmail import. */
     suspend fun clearLegacyGmail() = edit { prefs -> Keys.legacyGmail.forEach { prefs.remove(it) } }

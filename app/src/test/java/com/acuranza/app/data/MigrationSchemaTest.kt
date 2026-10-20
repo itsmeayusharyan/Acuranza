@@ -191,6 +191,27 @@ class MigrationSchemaTest {
     }
 
     @Test
+    fun version12AddsOnlyTheSmsImportTables() {
+        val v11 = schema(11)
+        val v12 = schema(12)
+        // v12 adds exactly the two SMS bookkeeping tables; nothing existing changes shape.
+        assertEquals(tables(v12) - tables(v11), setOf("sms_import_batches", "sms_imports"))
+        tables(v11).forEach { table ->
+            assertEquals(table, columns(v11, table).keys, columns(v12, table).keys)
+            assertEquals(table, indexSql(v11, table), indexSql(v12, table))
+        }
+        // The import rows carry no message body: only the extracted fields plus a fingerprint.
+        assertEquals(
+            setOf(
+                "id", "batchId", "transactionId", "fingerprint", "sender", "bank", "accountLast4",
+                "type", "amount", "merchant", "timestamp", "channel", "confidence",
+            ),
+            columns(v12, "sms_imports").keys,
+        )
+        assertEquals(setOf("id", "importedAt", "txnCount", "label", "undone"), columns(v12, "sms_import_batches").keys)
+    }
+
+    @Test
     fun version9AddsOnlyTheTwoTransactionIndexes() {
         assertEquals(tables(schema(8)), tables(schema(9)))
         tables(schema(8)).forEach { table ->

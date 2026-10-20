@@ -24,8 +24,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RecurringRuleEntity::class,
         LoanEntity::class,
         AttachmentEntity::class,
+        SmsImportBatchEntity::class,
+        SmsImportEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class AcuranzaDatabase : RoomDatabase() {
@@ -45,6 +47,7 @@ abstract class AcuranzaDatabase : RoomDatabase() {
     abstract fun recurringRules(): RecurringRuleDao
     abstract fun loans(): LoanDao
     abstract fun attachments(): AttachmentDao
+    abstract fun smsImports(): SmsImportDao
 
     companion object {
         /** v2 adds `transactions.suspicious`; existing rows keep their data and start unflagged. */
@@ -152,6 +155,27 @@ abstract class AcuranzaDatabase : RoomDatabase() {
             }
         }
 
+        /** v12 adds SMS import bookkeeping: batches (the undo unit) and per-message rows (no message bodies). */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sms_import_batches` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`importedAt` INTEGER NOT NULL, `txnCount` INTEGER NOT NULL, `label` TEXT NOT NULL, `undone` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sms_imports` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `batchId` INTEGER NOT NULL, " +
+                        "`transactionId` INTEGER, `fingerprint` TEXT NOT NULL, `sender` TEXT NOT NULL, `bank` TEXT NOT NULL, " +
+                        "`accountLast4` TEXT, `type` TEXT NOT NULL, `amount` INTEGER NOT NULL, `merchant` TEXT, `timestamp` INTEGER NOT NULL, " +
+                        "`channel` TEXT NOT NULL, `confidence` TEXT NOT NULL, " +
+                        "FOREIGN KEY(`batchId`) REFERENCES `sms_import_batches`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                        "FOREIGN KEY(`transactionId`) REFERENCES `transactions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_sms_imports_fingerprint` ON `sms_imports` (`fingerprint`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sms_imports_batchId` ON `sms_imports` (`batchId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sms_imports_transactionId` ON `sms_imports` (`transactionId`)")
+            }
+        }
+
         /** v11 removes the warranty feature: the attachments table loses its `warrantyUntil` column. */
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -188,7 +212,7 @@ abstract class AcuranzaDatabase : RoomDatabase() {
 
         val ALL_MIGRATIONS = arrayOf(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-            MIGRATION_9_10, MIGRATION_10_11,
+            MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
         )
 
         /**

@@ -1,0 +1,218 @@
+package com.acuranza.app.repo
+
+import androidx.room.withTransaction
+import com.acuranza.app.data.AccountEntity
+import com.acuranza.app.data.AcuranzaDatabase
+import com.acuranza.app.data.SmsImportBatchEntity
+import com.acuranza.app.data.SmsImportEntity
+import com.acuranza.app.data.TransactionEntity
+import com.acuranza.app.model.AccountType
+import com.acuranza.app.model.TxnSource
+import com.acuranza.app.model.TxnType
+import com.acuranza.app.sms.CategoryGuesser
+import com.acuranza.app.sms.MerchantNormalizer
+import com.acuranza.app.sms.ParsedBalance
+import com.acuranza.app.sms.ParsedTransaction
+import com.acuranza.app.sms.SmsConfidence
+
+/**
+ * A transaction the user confirmed during the first-import review, after any edits.
+ * [parsed.fingerprint] stays the parser's key for the message it came from, so the same SMS is
+ * never imported twice even when the user corrected the amount or category.
+ */
+data class ApprovedSmsImport(
+    val parsed: ParsedTransaction,
+    /** The SMS sender id, kept as import metadata; the message body is never stored. */
+    val sender: String,
+    val amount: Long,
+    val categoryKey: String,
+    val merchant: String?,
+    val timestampMillis: Long,
+    val accountId: Long,
+    /** The scan's grading; below HIGH the transaction is saved `suspicious` until Review confirms it. */
+    val confidence: SmsConfidence,
+)
+
+/**
+ * Saves, lists, edits and reverses SMS-derived transactions. Everything is scoped to the batch
+ * bookkeeping in `sms_import_batches` / `sms_imports`; a pre-existing transaction can never be
+ * touched by an undo because every import row references only the transaction its own batch
+ * created.
+ */
+class SmsImportRepository(private val db: AcuranzaDatabase) {
+
+    /**
+     * The account a parsed transaction belongs to. Matching is by the digits the message showed
+     * (last four of the account or card) against accounts that already know those digits, then by
+     * bank + type. When nothing matches, a clearly-labelled account is created so the money lands
+     * somewhere honest instead of silently in the user's main account.
+     */
+    /** The account that already matches [txn], without creating anything; null = a new one at import. */
+    suspend fun matchAccount(txn: ParsedTransaction): Long? {
+        val accounts = db.accounts().all().filterNot { it.archived }
+        val digits = listOfNotNull(txn.accountLast4)
+        accounts.firstOrNull { a -> digits.isNotEmpty() && digits.any { it in a.allDigits } }?.let { return it.id }
+        val type = if (txn.isCreditCard) AccountType.CREDIT_CARD else AccountType.BANK
+        return db.accounts().byBankAndType(txn.bank.displayName, type).firstOrNull { !it.archived }?.id
+    }
+
+    suspend fun resolveAccount(txn: ParsedTransaction): Long {
+        val accounts = db.accounts().all().filterNot { it.archived }
+        val digits = listOfNotNull(txn.accountLast4)
+        val byDigits = accounts.firstOrNull { a -> digits.isNotEmpty() && digits.any { it in a.allDigits } }
+        if (byDigits != null) return byDigits.id
+
+        val type = if (txn.isCreditCard) AccountType.CREDIT_CARD else AccountType.BANK
+        val byBank = db.accounts().byBankAndType(txn.bank.displayName, type).firstOrNull { !it.archived }
+        if (byBank != null) {
+            // Teach the account the digits this bank uses for it, if new.
+            val learned = txn.accountLast4?.let { byBank.plusOtherDigits(it) } ?: byBank
+            if (learned != byBank) db.accounts().update(learned)
+            return byBank.id
+        }
+
+        return db.accounts().insert(
+            AccountEntity(
+                name = txn.bank.displayName + (txn.accountLast4?.let { " $it" } ?: ""),
+                type = type,
+                bank = txn.bank.displayName,
+                last4 = txn.accountLast4,
+                autoCreated = true,
+            ),
+        )
+    }
+
+    /**
+     * Saves one confirmed import batch inside a single database transaction: the batch row, each
+     * transaction (deduped by the unique fingerprint index) and its import row. Fingerprints that
+     * already exist are skipped, so re-scanning the same inbox adds nothing twice.
+     *
+     * Ambiguous (below HIGH confidence) rows are saved `suspicious` — visible in Review, but they
+     * never move balances or stats until the user confirms them.
+     *
+     * @return the batch id and how many transactions were actually created.
+     */
+    suspend fun importBatch(
+        label: String,
+        items: List<ApprovedSmsImport>,
+        applyBalances: List<ParsedBalance> = emptyList(),
+    ): Pair<Long, Int> = db.withTransaction {
+        var created = 0
+        val batchId = db.smsImports().insertBatch(
+            SmsImportBatchEntity(importedAt = System.currentTimeMillis(), txnCount = 0, label = label),
+        )
+        for (item in items) {
+            if (db.smsImports().hasFingerprint(item.parsed.fingerprint)) continue
+            val confidence = item.confidence
+            val txnId = db.transactions().insertIgnore(
+                TransactionEntity(
+                    accountId = item.accountId,
+                    type = item.parsed.type,
+                    amount = item.amount,
+                    categoryKey = item.categoryKey,
+                    merchant = item.merchant?.takeIf { it.isNotBlank() },
+                    note = noteFor(item),
+                    timestamp = item.timestampMillis,
+                    channel = item.parsed.channel,
+                    source = TxnSource.SMS,
+                    fingerprint = item.parsed.fingerprint,
+                    referenceNo = item.parsed.referenceNo,
+                    reviewed = false,
+                    suspicious = confidence != SmsConfidence.HIGH,
+                ),
+            )
+            if (txnId == -1L) continue // unique fingerprint already present
+            db.smsImports().insertIgnore(
+                SmsImportEntity(
+                    batchId = batchId,
+                    transactionId = txnId,
+                    fingerprint = item.parsed.fingerprint,
+                    sender = item.sender,
+                    bank = item.parsed.bank.displayName,
+                    accountLast4 = item.parsed.accountLast4,
+                    type = item.parsed.type,
+                    amount = item.amount,
+                    merchant = item.merchant?.takeIf { it.isNotBlank() },
+                    timestamp = item.timestampMillis,
+                    channel = item.parsed.channel,
+                    confidence = confidence,
+                ),
+            )
+            created++
+        }
+        for (balance in applyBalances) applyBalance(balance)
+        db.smsImports().batchById(batchId)?.let {
+            db.smsImports().updateBatch(it.copy(txnCount = created))
+        }
+        batchId to created
+    }
+
+    /**
+     * Reverses a batch: deletes exactly the transactions it created (each is referenced by this
+     * batch's import rows and nothing else), then the import rows and the batch record.
+     * Transactions that existed before the import — manual entries, CSV imports — are structurally
+     * out of reach.
+     *
+     * @return how many transactions were removed.
+     */
+    suspend fun undoBatch(batchId: Long): Int = db.withTransaction {
+        val rows = db.smsImports().byBatch(batchId)
+        db.smsImports().deleteTransactionsOf(batchId)
+        db.smsImports().deleteRowsOf(batchId)
+        db.smsImports().deleteBatch(batchId)
+        rows.count { it.transactionId != null }
+    }
+
+    /** Deletes one import and its transaction; the rest of the batch is untouched. */
+    suspend fun deleteImport(importId: Long) = db.withTransaction {
+        val row = db.smsImports().byId(importId) ?: return@withTransaction
+        db.smsImports().deleteTransactionOf(importId)
+        db.smsImports().deleteRow(importId)
+        row
+    }
+
+    /** Removes every SMS import, its transactions and the batch records. Manual data is untouched. */
+    suspend fun deleteAll(): Int = db.withTransaction {
+        var removed = 0
+        for (batch in db.smsImports().latestBatches(limit = 10_000)) removed += undoBatch(batch.id)
+        removed
+    }
+
+    /** The bank's own balance report: reconciles the matched account without inventing transactions. */
+    suspend fun applyBalance(balance: ParsedBalance): Boolean {
+        val available = balance.availableBalance ?: return false
+        val accounts = db.accounts().all()
+        val match = accounts.firstOrNull { a -> balance.accountLast4?.let { it in a.allDigits } == true && !a.archived }
+            ?: accounts.firstOrNull { it.bank == balance.bank.displayName && it.type == AccountType.BANK && !it.archived }
+            ?: return false
+        db.accounts().update(match.copy(reportedBalance = available, reportedAt = balance.timestampMillis))
+        return true
+    }
+
+    /** Category for a parsed txn: rules the user taught first, then the dataset's guess. */
+    suspend fun suggestCategory(txn: ParsedTransaction, merchant: String?): String {
+        val key = merchant?.takeIf { it.isNotBlank() } ?: txn.merchant
+        val normalised = key?.let { runCatching { MerchantNormalizer.normalize(it) }.getOrNull() } ?: key
+        if (normalised != null) {
+            db.merchantRules().categoryFor(normalised)?.let { return it }
+        }
+        return CategoryGuesser.guess(merchant, merchant ?: txn.merchant ?: "", txn.type, txn.channel)
+    }
+
+    /** Fingerprints already imported; a scan skips those without touching the database again. */
+    suspend fun importedFingerprints(): Set<String> = db.smsImports().allFingerprints().toSet()
+
+    suspend fun latestBatches(limit: Int = 10) = db.smsImports().latestBatches(limit)
+
+    suspend fun managementRows(limit: Int = 200) = db.smsImports().managementRows(limit)
+
+    suspend fun totalImports() = db.smsImports().count()
+
+    private fun noteFor(item: ApprovedSmsImport): String? {
+        val bits = buildList {
+            item.merchant?.takeIf { it.isNotBlank() }?.let { add(it) }
+            item.parsed.referenceNo?.let { add("ref $it") }
+        }
+        return bits.joinToString(" · ").takeIf { it.isNotBlank() }
+    }
+}

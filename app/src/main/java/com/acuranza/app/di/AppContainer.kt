@@ -50,6 +50,15 @@ class AppContainer(context: Context, sandbox: com.acuranza.app.security.DecoySan
     val debts = com.acuranza.app.repo.DebtRepository(db)
     val attachments = com.acuranza.app.repo.AttachmentRepository(db, attachmentStore)
     val statementImporter = com.acuranza.app.repo.StatementImporter(db)
+    // SMS transaction tracking: the decoy profile gets the bookkeeping but never an inbox reader.
+    val smsImports = com.acuranza.app.repo.SmsImportRepository(db)
+    val smsScanRunner = if (sandbox == null) {
+        com.acuranza.app.data.sms.SmsScanRunner(app, smsImports, settings)
+    } else {
+        null
+    }
+    /** True when this container is the decoy profile, which must never touch real data. */
+    val decoy = sandbox != null
     val reports = com.acuranza.app.repo.ReportRepository(db, settings, transactions, recurring)
     val demoData = DemoData(db)
 

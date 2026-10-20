@@ -26,6 +26,12 @@ class AcuranzaApp : Application() {
             runCatching {
                 com.acuranza.app.repo.DataRepairs.run(container.db, container.settings, container.netWorth)
             }
+            // SMS scanning follows the saved consent + toggle: re-scheduled after reboot or update,
+            // cancelled on start when the user (or the system, by revoking) turned it off.
+            runCatching {
+                val s = container.settings.current()
+                com.acuranza.app.work.WorkScheduler.setSmsScanEnabled(this@AcuranzaApp, s.smsConsent && s.smsAutoScan)
+            }
             runCatching { com.acuranza.app.repo.AutoCategoriser.run(container.db) }
             runCatching { container.settings.clearLegacyGmail() }
         }

@@ -79,7 +79,12 @@ sample data (the Paparazzi tests in `app/src/test` regenerate them on every run)
 
 - **No network, by construction.** The APK does not request the INTERNET permission (or any other
   network permission), so no code in it — ours or a dependency's — can open a socket.
-- **No message access.** Acuranza holds no SMS permission — it reads no SMS, ever. History comes
+- **Opt-in SMS tracking, on-device.** In Settings → Financial tools you can enable SMS transaction
+  tracking: Acuranza then reads bank and payment messages on the phone, extracts amount, date,
+  merchant and account, and turns them into transactions you confirm. Message bodies are never
+  stored — only the extracted details — and the app still holds no network permission, so nothing
+  can leave the device. Consent and permission can be withdrawn at any time; imported records can
+  be deleted individually, as a batch undo, or all at once.
   from bank-statement CSV files you pick yourself, or from manual entry.
 - **Encrypted database:** SQLCipher (AES-256), with the key kept in the Android Keystore.
 - **Biometric lock, app PIN with a decoy PIN** (opens an empty profile), privacy mode and
@@ -93,7 +98,9 @@ Acuranza asks for exactly one permission before the app opens on first launch:
 **notifications**. They are how reminders reach you — card-bill due dates, unusual spending and
 payments you scheduled — and the app is gated until they are allowed
 (with a clear path through system settings; it never crashes or loops when denied).
-It asks for nothing else — no SMS, no contacts, no location, no network.
+Beyond that, SMS transaction tracking asks for the SMS permission when — and only when — you
+explicitly consent to it in Settings → Financial tools. It asks for nothing else: no contacts, no
+location, no network.
 
 ## Architecture
 

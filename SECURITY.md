@@ -27,7 +27,14 @@ this data never leaves the phone.
 - **On the device:** optional biometric/device-credential app lock that re-locks after 60 seconds in the
   background, screenshot and recents-preview blocking, privacy mode, and lock-screen notifications that hide
   amounts and merchants.
-- **Messages:** Acuranza holds no SMS permission at all — it cannot read SMS or MMS, on any screen.
+- **Messages:** SMS reading exists only behind the opt-in SMS transaction tracking feature
+  (Settings → Financial tools). It runs no scan before explicit consent AND the runtime READ_SMS
+  permission are both granted. Scans read bank/payment messages, keep only the extracted
+  transaction fields (amount, date, merchant, account, reference) plus a dedupe fingerprint and
+  the sender id — the message body itself is never written to storage — and never send anything
+  anywhere (the APK holds no network permission). Consent can be withdrawn and all imported
+  records deleted from the same screen; automatic scanning can be switched off without losing
+  imported data.
 
 **Out of scope**
 

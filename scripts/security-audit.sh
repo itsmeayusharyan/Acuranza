@@ -96,7 +96,10 @@ pass "all supported ABIs packaged (universal APK)"
 
 echo
 echo "== 5/6. DEX contents: network code, trackers =="
-WORK=$(mktemp -d)
+# Decompile scratch must not live in a pruned tmp dir (the session scratch pruner races long
+# jadx runs); use the workspace and clean up on exit.
+WORK=$(mktemp -d "/data/workspace/.audit-work.XXXXXX")
+trap 'rm -rf "$WORK"' EXIT
 # R8 output decompiles with some method-level errors (normal for obfuscated code);
 # class listing is complete, which is what these checks read.
 JAVA_OPTS="-Xmx3g" "$JADX" --no-res -j 2 -d "$WORK/src" "$APK" >/dev/null 2>&1 || true

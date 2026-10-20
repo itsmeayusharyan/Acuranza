@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Sms
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Autorenew
@@ -122,6 +123,7 @@ fun ManagementSettingsPage(nav: NavController) {
 fun FinancialToolsPage(nav: NavController) {
     SettingsPage("Financial tools", "Everything beyond everyday tracking", nav) {
         SettingsSection(null) {
+            SettingsRow("SMS transaction tracking", "Import bank messages automatically, on-device only", Icons.Outlined.Sms) { nav.navigate(Routes.SMS_TRACKING) }
             SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) { nav.navigate(Routes.RECURRING) }
             SettingsRow("Loans & EMIs", "What's left, prepayment savings, tax split", Icons.Outlined.RealEstateAgent) { nav.navigate(Routes.LOANS) }
             SettingsRow("Lending", "Money between you and friends or family", Icons.Outlined.Handshake) { nav.navigate(Routes.DEBTS) }

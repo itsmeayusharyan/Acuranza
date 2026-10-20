@@ -84,6 +84,21 @@ class DailyRefreshWorker(appContext: Context, params: WorkerParameters) : Corout
     }
 }
 
+/**
+ * Background SMS scan. Runs the same runner as the UI's Refresh button; if consent, permission or
+ * the automatic-scanning switch is gone (revoked in system settings, toggled off, cleared), the gate
+ * inside the runner turns the run into a no-op and records why — no data is ever deleted by that.
+ */
+class SmsScanWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
+    override suspend fun doWork(): Result {
+        val c = (applicationContext as AcuranzaApp).container
+        val runner = c.smsScanRunner ?: return Result.success() // the decoy profile never reads the real inbox
+        runCatching { runner.run(auto = true) }
+            .onFailure { runCatching { c.settings.recordSmsScan("failed") } }
+        return Result.success()
+    }
+}
+
 /** Card bill reminders 3 days and 1 day before the due date, on the due date, and when overdue. */
 class BillReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
 
@@ -119,6 +134,8 @@ object WorkScheduler {
     private const val DAILY = "acuranza-daily-refresh"
     private const val BILLS = "acuranza-bill-reminders"
     private const val SYNC_NOW = "acuranza-sync-now"
+    private const val SMS_SCAN = "acuranza-sms-scan"
+    private const val SMS_SCAN_NOW = "acuranza-sms-scan-now"
 
     fun schedule(context: Context) {
         val wm = WorkManager.getInstance(context)
@@ -135,6 +152,33 @@ object WorkScheduler {
             PeriodicWorkRequestBuilder<BillReminderWorker>(Duration.ofDays(1))
                 .setInitialDelay(delayUntil(LocalTime.of(9, 0)))
                 .build(),
+        )
+    }
+
+    /**
+     * Starts or stops automatic SMS scanning. The periodic request survives reboot and force-stop
+     * (WorkManager reschedules it); turning it off cancels future scans and deletes nothing.
+     */
+    fun setSmsScanEnabled(context: Context, enabled: Boolean) {
+        val wm = WorkManager.getInstance(context)
+        if (!enabled) {
+            wm.cancelUniqueWork(SMS_SCAN)
+            wm.cancelUniqueWork(SMS_SCAN_NOW)
+            return
+        }
+        wm.enqueueUniquePeriodicWork(
+            SMS_SCAN,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<SmsScanWorker>(Duration.ofHours(6)).build(),
+        )
+    }
+
+    /** One scan right now, inside the same gating as the periodic ones. */
+    fun smsScanNow(context: Context) {
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            SMS_SCAN_NOW,
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<SmsScanWorker>().build(),
         )
     }
 

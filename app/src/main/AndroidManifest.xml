@@ -7,6 +7,10 @@
          work, and reading network state is still an information leak, so it is removed at merge. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- SMS transaction tracking (Settings → Financial tools): opt-in, consent-gated, on-device only.
+         Reads the inbox to detect bank transactions; message bodies are never stored or sent anywhere
+         (the app has no INTERNET permission). Sideloaded installs may see Play Protect warn about it. -->
+    <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
