@@ -60,10 +60,11 @@ else
     commit -m "v$VERSION: release source sync (versionCode $VERSION_CODE)"
 fi
 
-# Reconcile first: fetch and rebase on top of the remote branch so we never overwrite remote
-# commits. A conflict stops the sync for a human to resolve.
-git fetch "$REMOTE"
-if git rev-parse --verify "$REMOTE/acuranza" >/dev/null 2>&1; then
+# Reconcile first: rebase on top of the remote branch so we never overwrite remote commits.
+# A branch that doesn't exist remotely yet (first sync) has nothing to reconcile; a conflict
+# stops the sync for a human to resolve.
+if GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads "$REMOTE" acuranza >/dev/null 2>&1; then
+  git fetch "$REMOTE" acuranza
   if ! git rebase "$REMOTE/acuranza"; then
     echo "SYNC-FAIL: rebase onto $REMOTE/acuranza hit a conflict — resolve it and rerun"
     git rebase --abort 2>/dev/null || true
