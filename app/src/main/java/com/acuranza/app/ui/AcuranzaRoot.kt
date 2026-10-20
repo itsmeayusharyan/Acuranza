@@ -554,6 +554,14 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.BILLS) { BillsScreen(nav) }
         composable(Routes.NOTIFICATIONS) { com.acuranza.app.ui.notifications.NotificationsScreen(nav) }
         composable(Routes.EDIT_HOME) { com.acuranza.app.ui.home.EditHomeScreen(nav) }
+        composable(Routes.SETTINGS_MANAGEMENT) { com.acuranza.app.ui.settings.ManagementSettingsPage(nav) }
+        composable(Routes.SETTINGS_FINANCIAL) { com.acuranza.app.ui.settings.FinancialToolsPage(nav) }
+        composable(Routes.SETTINGS_BUDGET) { com.acuranza.app.ui.settings.BudgetMonthPage(nav) }
+        composable(Routes.SETTINGS_PRIVACY) { com.acuranza.app.ui.settings.PrivacySecurityPage(nav) }
+        composable(Routes.SETTINGS_NOTIFICATIONS) { com.acuranza.app.ui.settings.NotificationsPage(nav) }
+        composable(Routes.SETTINGS_APPEARANCE) { com.acuranza.app.ui.settings.AppearancePage(nav) }
+        composable(Routes.SETTINGS_TOOLS) { com.acuranza.app.ui.settings.ToolsPage(nav) }
+        composable(Routes.SETTINGS_DATA) { com.acuranza.app.ui.settings.DataManagementPage(nav) }
         composable(Routes.INSIGHTS) { InsightsScreen(nav) }
         composable(Routes.CATEGORIES) { CategoriesScreen(nav) }
         composable(Routes.PENDING_ACCOUNTS) { com.acuranza.app.ui.accounts.PendingAccountsScreen(nav) }

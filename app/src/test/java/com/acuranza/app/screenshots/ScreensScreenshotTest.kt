@@ -25,6 +25,9 @@ import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material.icons.outlined.Fingerprint
@@ -43,6 +46,7 @@ import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import com.acuranza.app.data.BudgetEntity
 import com.acuranza.app.data.GoalEntity
+import com.acuranza.app.designsystem.components.AcuranzaCard
 import com.acuranza.app.designsystem.components.AcuranzaLogo
 import com.acuranza.app.designsystem.components.SegmentedTabs
 import com.acuranza.app.designsystem.components.LogoShape
@@ -237,40 +241,16 @@ class ScreensScreenshotTest {
                     Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
-            SettingsSection("Management") {
-                SettingsRow("Accounts & cards", "Balances, limits and reconciliation", Icons.Outlined.AccountBalance) {}
-                SettingsRow("Categories", "Your spending and income categories", Icons.Outlined.Category, divider = false) {}
-            }
-            SettingsSection("Financial tools") {
-                SettingsRow("Recurring payments", "Upcoming payments, AutoPay mandates, price changes", Icons.Outlined.Autorenew) {}
-                SettingsRow("Budgets & goals", "Budgets, savings goals and your salary plan", Icons.Outlined.TrackChanges, divider = false) {}
-            }
-            SettingsSection("Notifications") {
-                SettingsToggle("Bill reminders", "3 days and 1 day before the due date", true, {}, Icons.Outlined.Alarm)
-                SettingsToggle("Important insights", "Overspending and unusual spends", false, {}, Icons.Outlined.Bolt, divider = false)
-            }
-            SettingsSection("Appearance") {
-                SettingsRow("Theme", "System default · follows your phone's setting", Icons.Outlined.Palette, value = "Dark") {}
-                SettingsRow("Accent colour", "Tints buttons, badges and the nav dot", Icons.Outlined.ColorLens, value = "Blue") {}
-                SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", false, {}, Icons.Outlined.VisibilityOff, divider = false)
-            }
-            SettingsSection("Privacy & security") {
-                SettingsToggle("App lock", "Fingerprint, face or screen lock when opening Acuranza", true, {}, Icons.Outlined.Fingerprint)
-                SettingsToggle("Block screenshots", "Hide Acuranza in the recents preview and block screenshots", true, {}, Icons.Outlined.ScreenLockPortrait)
-                SettingsRow(
-                    "Database encryption",
-                    "AES-256 (SQLCipher), key kept in the phone's secure hardware keystore",
-                    Icons.Outlined.Lock,
-                    trailing = { Pill("On", AcuranzaTheme.colors.good) },
-                )
-                SettingsRow("App PIN", "On", Icons.Outlined.Password) {}
-                SettingsRow("Decoy PIN", "Off · a second PIN that opens a sample profile", Icons.Outlined.TheaterComedy) {}
-                SettingsRow("Recovery options", "What still works if a PIN is forgotten or the phone is lost", Icons.Outlined.Shield, divider = false) {}
-            }
-            SettingsSection("Data management") {
-                SettingsRow("Back up", "Encrypted file protected by a password", Icons.Outlined.Backup) {}
-                SettingsRow("Automatic backups", "Daily or weekly, to a folder you choose", Icons.Outlined.Sync) {}
-                SettingsRow("Erase all data", "Deletes accounts, transactions and bills", Icons.Outlined.DeleteForever, tone = RowTone.DESTRUCTIVE, divider = false) {}
+            AcuranzaCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                SettingsRow("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance) {}
+                SettingsRow("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.Outlined.Category) {}
+                SettingsRow("Budget month", "Where every budget period starts, payday rules", Icons.Outlined.CalendarMonth) {}
+                SettingsRow("Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield) {}
+                SettingsRow("Notifications", "Bill reminders and important insights", Icons.Outlined.Alarm) {}
+                SettingsRow("Appearance", "Theme, accent colour, hide amounts, edit home", Icons.Outlined.Palette) {}
+                SettingsRow("Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune) {}
+                SettingsRow("Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup) {}
+                SettingsRow("About", "Version, privacy policy and licence", Icons.Outlined.Info, divider = false) {}
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -290,6 +270,19 @@ class ScreensScreenshotTest {
                 onPrivacy = {},
                 onTerms = {},
                 onLicence = {},
+            )
+        }
+    }
+
+    @Test
+    fun categories() = paparazzi.snapshot {
+        AcuranzaTheme(darkTheme = true) {
+            com.acuranza.app.ui.settings.CategoriesContent(
+                cats = listOf(
+                    com.acuranza.app.data.CategoryEntity(key = "food", name = "Food & Dining", type = TxnType.EXPENSE, icon = "restaurant", colorArgb = 0xFFFF7A59),
+                    com.acuranza.app.data.CategoryEntity(key = "custom_goa", name = "Goa trip", type = TxnType.EXPENSE, icon = "flight", colorArgb = 0xFF3BC9DB, isDefault = false),
+                    com.acuranza.app.data.CategoryEntity(key = "salary", name = "Salary", type = TxnType.INCOME, icon = "payments", colorArgb = 0xFF2F9E44),
+                ),
             )
         }
     }

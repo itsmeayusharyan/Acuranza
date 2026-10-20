@@ -65,6 +65,30 @@ interface CategoryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(categories: List<CategoryEntity>)
 
+    /** How many transactions would need reassignment before this category can be deleted. */
+    @Query("SELECT COUNT(*) FROM transactions WHERE categoryKey = :key")
+    suspend fun countTransactions(key: String): Int
+
+    @Query("UPDATE transactions SET categoryKey = :to WHERE categoryKey = :from")
+    suspend fun reassignTransactions(from: String, to: String)
+
+    @Query("UPDATE txn_splits SET categoryKey = :to WHERE categoryKey = :from")
+    suspend fun reassignSplits(from: String, to: String)
+
+    @Query("UPDATE recurring_rules SET categoryKey = :to WHERE categoryKey = :from")
+    suspend fun reassignRecurring(from: String, to: String)
+
+    @Query("UPDATE merchant_rules SET categoryKey = :to WHERE categoryKey = :from")
+    suspend fun reassignMerchantRules(from: String, to: String)
+
+    /** A deleted category's budget has nothing left to track; the replacement may already have one. */
+    @Query("DELETE FROM budgets WHERE categoryKey = :key")
+    suspend fun deleteBudgetsFor(key: String)
+
+    /** Only custom categories can be deleted; the built-in keys are load-bearing for imports and stats. */
+    @Query("DELETE FROM categories WHERE `key` = :key AND isDefault = 0")
+    suspend fun deleteCustom(key: String)
+
     /** Renames a built-in category, unless the user already renamed it. */
     @Query("UPDATE categories SET name = :name WHERE `key` = :key AND name = :oldName")
     suspend fun renameDefault(key: String, oldName: String, name: String)
