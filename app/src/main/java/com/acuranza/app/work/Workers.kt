@@ -84,6 +84,21 @@ class DailyRefreshWorker(appContext: Context, params: WorkerParameters) : Corout
     }
 }
 
+/**
+ * Full variant: the periodic inbox scanner. In the standard build this exists only as a
+ * compile-time stub — it returns immediately, nothing schedules it, and R8 strips it.
+ */
+class SmsScanWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
+    override suspend fun doWork(): Result {
+        if (!com.acuranza.app.BuildConfig.SMS_FULL) return Result.success()
+        val c = (applicationContext as AcuranzaApp).container
+        val runner = c.smsScanRunner ?: return Result.success()
+        runCatching { runner.run(auto = true) }
+            .onFailure { runCatching { c.settings.recordSmsScan("failed") } }
+        return Result.success()
+    }
+}
+
 /** Card bill reminders 3 days and 1 day before the due date, on the due date, and when overdue. */
 class BillReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
 
@@ -119,6 +134,7 @@ object WorkScheduler {
     private const val DAILY = "acuranza-daily-refresh"
     private const val BILLS = "acuranza-bill-reminders"
     private const val SYNC_NOW = "acuranza-sync-now"
+    private const val SMS_SCAN = "acuranza-sms-scan"
 
     fun schedule(context: Context) {
         val wm = WorkManager.getInstance(context)
@@ -135,6 +151,21 @@ object WorkScheduler {
             PeriodicWorkRequestBuilder<BillReminderWorker>(Duration.ofDays(1))
                 .setInitialDelay(delayUntil(LocalTime.of(9, 0)))
                 .build(),
+        )
+    }
+
+    /** Full variant: starts/stops the periodic inbox scan; a no-op in the standard build. */
+    fun setSmsScanEnabled(context: Context, enabled: Boolean) {
+        if (!com.acuranza.app.BuildConfig.SMS_FULL) return
+        val wm = WorkManager.getInstance(context)
+        if (!enabled) {
+            wm.cancelUniqueWork(SMS_SCAN)
+            return
+        }
+        wm.enqueueUniquePeriodicWork(
+            SMS_SCAN,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<SmsScanWorker>(Duration.ofHours(6)).build(),
         )
     }
 

@@ -4,8 +4,11 @@
 #   scripts/release.sh
 #
 # Runs the whole gate in order and stops at the first failure:
-#   1. unit tests                          (./gradlew :app:testDebugUnitTest)
-#   2. signed release build                (:app:assembleRelease with the configured keystore)
+#   1. unit tests                          (./gradlew :app:testStandardDebugUnitTest)
+#   2. signed release build                (:app:assembleStandardRelease with the configured keystore)
+#   The build has two capability flavors: "standard" (the sideloaded release — no SMS permission,
+#   no listener) and "full" (automatic SMS capture restored; for Play distribution or a knowing
+#   sideload that accepts Play Protect's warning). This script ships STANDARD.
 #   3. security audit of the signed APK    (scripts/security-audit.sh — 11 checks, non-zero on findings)
 #   4. artifact copy + hash                (/data/workspace/Acuranza-<version>.apk)
 #
@@ -27,10 +30,10 @@ VERSION_CODE="$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kt
 echo "== Release v$VERSION (code $VERSION_CODE) =="
 
 echo "== 1/5 unit tests =="
-./gradlew --no-daemon :app:testDebugUnitTest --console=plain
+./gradlew --no-daemon :app:testStandardDebugUnitTest --console=plain
 
 echo "== 2/5 signed release build =="
-./gradlew --no-daemon :app:assembleRelease --console=plain
+./gradlew --no-daemon :app:assembleStandardRelease --console=plain
 APK="app/build/outputs/apk/release/app-release.apk"
 [ -f "$APK" ] || { echo "RELEASE-FAIL: no APK at $APK"; exit 1; }
 

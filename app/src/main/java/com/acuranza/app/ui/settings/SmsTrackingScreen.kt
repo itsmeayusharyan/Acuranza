@@ -144,6 +144,7 @@ fun SmsTrackingScreen(nav: NavController) {
                 },
             )
             else -> SmsOverviewContent(
+                settings = s,
                 pending = pending,
                 clipboardHit = clipboardHit,
                 onParseClipboard = { hit ->
@@ -165,6 +166,8 @@ fun SmsTrackingScreen(nav: NavController) {
                     }
                 },
                 onDismissClipboard = { clipboardHit = null },
+                onMessage = { message = it },
+                onChanged = { refresh++ },
                 refreshKey = refresh,
                 paste = paste,
                 onPasteChange = { paste = it },
@@ -437,10 +440,13 @@ private fun SmsPendingReviewContent(
 
 @Composable
 private fun SmsOverviewContent(
+    settings: com.acuranza.app.data.prefs.Settings,
     pending: List<SmsImportEntity>,
     clipboardHit: String?,
     onParseClipboard: (String) -> Unit,
     onDismissClipboard: () -> Unit,
+    onMessage: (String) -> Unit,
+    onChanged: () -> Unit,
     refreshKey: Int,
     paste: String,
     onPasteChange: (String) -> Unit,
@@ -489,6 +495,116 @@ private fun SmsOverviewContent(
                                 "Not now",
                                 onClick = onDismissClipboard,
                                 modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Full variant only: automatic sources (compile-time guarded; standard builds ship
+        //    none of this and R8 strips it) ──────────────────────────────────────────────
+        if (com.acuranza.app.BuildConfig.SMS_FULL) {
+            item {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val scope = rememberCoroutineScope()
+                var scanning by remember { mutableStateOf(false) }
+                val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                ) { granted ->
+                    if (!granted) onMessage("Without the SMS permission the inbox can't be scanned; share/paste still works")
+                }
+                val listenerEnabled = androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context)
+                    .contains(context.packageName)
+                val hasSms = androidx.core.content.ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.READ_SMS,
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                AcuranzaCard {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Automatic sources", style = MaterialTheme.typography.titleMedium)
+
+                        if (!hasSms) {
+                            Text(
+                                "Inbox import needs the SMS permission. It reads bank messages on this phone only — nothing is ever uploaded.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AcuranzaTheme.colors.subtleText,
+                            )
+                            SecondaryButton(
+                                "Grant SMS permission",
+                                onClick = { permissionLauncher.launch(android.Manifest.permission.READ_SMS) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+
+                        if (hasSms) {
+                            PrimaryButton(
+                                if (scanning) "Scanning…" else "Scan inbox (last 12 months)",
+                                enabled = !scanning,
+                                onClick = {
+                                    scope.launch {
+                                        val runner = c.smsScanRunner ?: return@launch
+                                        scanning = true
+                                        val (result, found) = runner.run(auto = false, dryRun = true)
+                                        var added = 0
+                                        for (candidate in found) {
+                                            val outcome = c.smsImports.addPendingParsed(candidate.graded.txn, candidate.graded.confidence)
+                                            if (outcome is com.acuranza.app.repo.SmsImportRepository.PendingOutcome.Added) added++
+                                        }
+                                        if (added > 0) c.settings.setSmsFirstImportDone()
+                                        scanning = false
+                                        onMessage(
+                                            when {
+                                                result.status != "ok" -> "Scan: ${result.status}"
+                                                added > 0 -> "$added bank transactions waiting for review"
+                                                else -> "No new bank transactions found"
+                                            },
+                                        )
+                                        onChanged()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Text(
+                                if (settings.smsLastScanAt == 0L) "Never scanned"
+                                else "Last scan ${java.time.Instant.ofEpochMilli(settings.smsLastScanAt)} — ${settings.smsLastScanStatus}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AcuranzaTheme.colors.tertiaryText,
+                            )
+                        }
+
+                        run {
+                            SettingsToggle(
+                                title = "Scan inbox automatically",
+                                subtitle = "Every ~6 hours, if the SMS permission stays granted. Off stops future scans; nothing imported is deleted.",
+                                checked = settings.smsAutoScan && hasSms,
+                                onChecked = { on ->
+                                    scope.launch {
+                                        c.settings.setSmsAutoScan(on)
+                                        com.acuranza.app.work.WorkScheduler.setSmsScanEnabled(
+                                            context, on && hasSms,
+                                        )
+                                        onChanged()
+                                    }
+                                },
+                                divider = false,
+                            )
+                            SettingsToggle(
+                                title = "Capture from notifications",
+                                subtitle = when {
+                                    !listenerEnabled -> "Needs Notification Access — tap to open system settings, then enable Acuranza there."
+                                    else -> "New bank SMS in the Messages app's notifications park here for review. Off stops capture immediately."
+                                },
+                                checked = settings.smsAutoCapture && listenerEnabled,
+                                onChecked = { on ->
+                                    scope.launch { c.settings.setSmsAutoCapture(on) }
+                                    if (on && !listenerEnabled) {
+                                        context.startActivity(
+                                            android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
+                                        )
+                                    }
+                                },
+                                divider = false,
                             )
                         }
                     }

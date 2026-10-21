@@ -26,6 +26,12 @@ class AcuranzaApp : Application() {
             runCatching {
                 com.acuranza.app.repo.DataRepairs.run(container.db, container.settings, container.netWorth)
             }
+            if (com.acuranza.app.BuildConfig.SMS_FULL) {
+                runCatching {
+                    val s = container.settings.current()
+                    com.acuranza.app.work.WorkScheduler.setSmsScanEnabled(this@AcuranzaApp, s.smsConsent && s.smsAutoScan)
+                }
+            }
             runCatching { com.acuranza.app.repo.AutoCategoriser.run(container.db) }
             runCatching { container.settings.clearLegacyGmail() }
         }

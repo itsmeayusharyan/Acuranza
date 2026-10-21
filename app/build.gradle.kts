@@ -44,6 +44,23 @@ android {
     // Acuranza is offline-only by design: the app has no INTERNET permission, so Android itself
     // guarantees that nothing can leave the phone. There is a single edition.
 
+    // Two capability variants of the same app. "standard" is the sideloaded release: no SMS
+    // permission, no notification listener — Play Protect installs it like any app. "full"
+    // restores automatic SMS capture (historical inbox import + notification tracking) for
+    // Play-distribution with the declared SMS-based money-management exception; sideloading
+    // the full APK will very likely trip Play Protect's install-time warning — that is
+    // understood and accepted by the user (choice made 2026-10-20).
+    flavorDimensions += "capabilities"
+    productFlavors {
+        create("standard") {
+            buildConfigField("boolean", "SMS_FULL", "false")
+        }
+        create("full") {
+            buildConfigField("boolean", "SMS_FULL", "true")
+            versionNameSuffix = "-full"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true

@@ -245,6 +245,35 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
         }
     }
 
+    /**
+     * Full variant: parks an already-parsed inbox candidate for review, exactly like a shared
+     * message. Nothing imports before the user confirms. Deduplicated by fingerprint.
+     */
+    suspend fun addPendingParsed(txn: ParsedTransaction, confidence: SmsConfidence): PendingOutcome = db.withTransaction {
+        if (db.smsImports().hasFingerprint(txn.fingerprint)) return@withTransaction PendingOutcome.Duplicate(-1)
+        val batch = db.smsImports().pendingBatch()
+            ?: db.smsImports().insertBatch(SmsImportBatchEntity(importedAt = 0, txnCount = 0, label = "Pending review"))
+                .let { db.smsImports().batchById(it)!! }
+        val id = db.smsImports().insertIgnore(
+            SmsImportEntity(
+                batchId = batch.id,
+                transactionId = null,
+                fingerprint = txn.fingerprint,
+                sender = "inbox",
+                bank = txn.bank.displayName,
+                accountLast4 = txn.accountLast4,
+                type = txn.type,
+                amount = txn.amount,
+                merchant = txn.merchant,
+                timestamp = txn.timestampMillis,
+                channel = txn.channel,
+                confidence = confidence,
+                suggestedCategory = txn.suggestedCategory,
+            ),
+        )
+        if (id == -1L) PendingOutcome.Duplicate(-1) else PendingOutcome.Added(id)
+    }
+
     /** Candidates waiting for review, newest first. */
     suspend fun pending(): List<SmsImportEntity> = db.smsImports().pending()
 

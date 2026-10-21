@@ -72,7 +72,11 @@ push; `release.yml` builds and signs on a tag and runs the same checks before pu
 
 ## Publishing the source
 
-The whole gate — tests, signed build, audit and artifact — is one command:
+The build has two capability variants. **standard** is the sideloaded release: no SMS
+permission, no notification listener — Play Protect installs it like any app. **full** restores
+automatic SMS capture (historical inbox import + notification tracking) for Play distribution
+with the declared money-management exception, or a knowing sideload that accepts Play Protect's
+warning; see docs/PLAY-SUBMISSION.md. The gate ships standard:
 
 ```bash
 scripts/release.sh
