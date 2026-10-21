@@ -156,7 +156,12 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
         onDispose {}
     }
 
-    AcuranzaTheme(darkTheme = dark, accent = settings?.accentChoice ?: com.acuranza.app.model.AccentColor.BLUE) {
+    AcuranzaTheme(
+        darkTheme = dark,
+        accent = settings?.accentChoice ?: com.acuranza.app.model.AccentColor.BLUE,
+        colorTheme = settings?.colorTheme ?: com.acuranza.app.designsystem.theme.ColorTheme.DEFAULT,
+        amoled = settings?.amoled ?: false,
+    ) {
         CompositionLocalProvider(
             LocalContainer provides container,
             LocalSettings provides (settings ?: Settings()),

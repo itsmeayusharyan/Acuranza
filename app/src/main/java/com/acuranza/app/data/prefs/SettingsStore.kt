@@ -34,6 +34,9 @@ data class Settings(
     val onboardingDone: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
+    val colorTheme: com.acuranza.app.designsystem.theme.ColorTheme =
+        com.acuranza.app.designsystem.theme.ColorTheme.DEFAULT,
+    val amoled: Boolean = false,
     /** When the user dismissed the Home notice about SMS going to ignored accounts; only newer ones show. */
     val ignoredNoticeAt: Long = 0L,
     val monthStartDay: Int = 1,
@@ -103,6 +106,8 @@ class SettingsStore(
         val onboardingDone = booleanPreferencesKey("onboarding_done")
         val biometricLock = booleanPreferencesKey("biometric_lock")
         val themeMode = stringPreferencesKey("theme_mode")
+        val colorTheme = stringPreferencesKey("color_theme")
+        val amoled = booleanPreferencesKey("amoled_black")
         val ignoredNoticeAt = longPreferencesKey("ignored_notice_at")
         // Left by the removed Gmail import; cleared on start.
         val legacyGmail = listOf(
@@ -142,6 +147,10 @@ class SettingsStore(
             onboardingDone = p[Keys.onboardingDone] ?: false,
             biometricLockEnabled = p[Keys.biometricLock] ?: false,
             themeMode = p[Keys.themeMode]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.DARK,
+            colorTheme = p[Keys.colorTheme]?.let {
+                runCatching { com.acuranza.app.designsystem.theme.ColorTheme.valueOf(it) }.getOrNull()
+            } ?: com.acuranza.app.designsystem.theme.ColorTheme.DEFAULT,
+            amoled = p[Keys.amoled] ?: false,
             ignoredNoticeAt = p[Keys.ignoredNoticeAt] ?: 0L,
             monthStartDay = p[Keys.monthStartDay] ?: 1,
             paydayToWorkingDay = p[Keys.paydayToWorkingDay] ?: true,
@@ -175,6 +184,11 @@ class SettingsStore(
     suspend fun setOnboardingDone(done: Boolean = true) = edit { it[Keys.onboardingDone] = done }
     suspend fun setBiometricLock(enabled: Boolean) = edit { it[Keys.biometricLock] = enabled }
     suspend fun setThemeMode(mode: ThemeMode) = edit { it[Keys.themeMode] = mode.name }
+
+    suspend fun setColorTheme(theme: com.acuranza.app.designsystem.theme.ColorTheme) =
+        edit { it[Keys.colorTheme] = theme.name }
+
+    suspend fun setAmoled(on: Boolean) = edit { it[Keys.amoled] = on }
     suspend fun dismissIgnoredNotice(at: Long = System.currentTimeMillis()) = edit { it[Keys.ignoredNoticeAt] = at }
     suspend fun setMonthStartDay(day: Int) = edit { it[Keys.monthStartDay] = day.coerceIn(1, 28) }
     suspend fun setPaydayToWorkingDay(on: Boolean) = edit { it[Keys.paydayToWorkingDay] = on }

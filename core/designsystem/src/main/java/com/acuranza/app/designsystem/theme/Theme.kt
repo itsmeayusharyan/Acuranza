@@ -142,18 +142,41 @@ fun AcuranzaTheme(
     darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     accent: AccentColor = AccentColor.BLUE,
+    colorTheme: ColorTheme = ColorTheme.DEFAULT,
+    amoled: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val acuranza = (if (darkTheme) DarkAcuranzaColors else LightAcuranzaColors)
-        .copy(accent = accent.accentColor(darkTheme), accentTint = accent.accentTint(darkTheme))
-    val scheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+    val useDynamic = (colorTheme == ColorTheme.DYNAMIC || dynamicColor) &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val resolved = when {
+        useDynamic -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            val dyn = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            ResolvedPalette(
+                dynamicAcuranzaColors(dyn, darkTheme).copy(
+                    accent = accent.accentColor(darkTheme),
+                    accentTint = accent.accentTint(darkTheme),
+                ),
+                dyn.copy(primary = accent.accentColor(darkTheme)),
+                dyn.background,
+            )
         }
-        darkTheme -> DarkScheme.copy(primary = acuranza.accent)
-        else -> LightScheme.copy(primary = acuranza.accent)
+        colorTheme != ColorTheme.DEFAULT -> builtInPalette(colorTheme, darkTheme)
+        else -> {
+            val tokens = (if (darkTheme) DarkAcuranzaColors else LightAcuranzaColors)
+                .copy(accent = accent.accentColor(darkTheme), accentTint = accent.accentTint(darkTheme))
+            ResolvedPalette(
+                tokens,
+                (if (darkTheme) DarkScheme else LightScheme).copy(primary = tokens.accent),
+                if (darkTheme) BrandPalette.Night else BrandPalette.Paper,
+            )
+        }
     }
+    // AMOLED black: pure-black canvas with near-black layers, dark mode only. In light mode the
+    // preference is preserved but inactive (the UI says so) — no washed-out pseudo-dark.
+    val applyAmoled = amoled && darkTheme && colorTheme != ColorTheme.DYNAMIC
+    val acuranza = if (applyAmoled) resolved.tokens.amoled() else resolved.tokens
+    val scheme = if (applyAmoled) resolved.scheme.amoled() else resolved.scheme
     CompositionLocalProvider(
         LocalAcuranzaColors provides acuranza,
         LocalSpacing provides Spacing(),

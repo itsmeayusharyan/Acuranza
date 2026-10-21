@@ -7,6 +7,18 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import com.acuranza.app.designsystem.theme.AcuranzaTheme
+import com.acuranza.app.designsystem.theme.isSupported
+import androidx.compose.material.icons.outlined.Contrast
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -45,6 +57,7 @@ import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
@@ -191,6 +204,16 @@ fun AppearancePage(nav: NavController) {
                 { when (it) { ThemeMode.SYSTEM -> "System default"; ThemeMode.DARK -> "Dark"; ThemeMode.LIGHT -> "Light" } },
                 Icons.Outlined.Palette,
             ) { mode -> scope.launch { c.settings.setThemeMode(mode) } }
+            ColorThemeGallery(s.colorTheme) { theme -> scope.launch { c.settings.setColorTheme(theme) } }
+            SettingsToggle(
+                "AMOLED black",
+                if (s.themeMode == ThemeMode.LIGHT) "Saved — active when dark mode is on"
+                else "Pure-black surfaces in dark mode",
+                s.amoled && s.themeMode != ThemeMode.LIGHT,
+                onChecked = { v -> scope.launch { c.settings.setAmoled(v) } },
+                icon = Icons.Outlined.Contrast,
+                enabled = s.themeMode != ThemeMode.LIGHT,
+            )
             SettingsPickerRow(
                 "Accent colour",
                 AccentColor.entries,
@@ -204,6 +227,115 @@ fun AppearancePage(nav: NavController) {
                 nav.navigate(Routes.EDIT_HOME)
             }
         }
+    }
+}
+
+/**
+ * Horizontally scrollable palette gallery: each card is a live preview (background, card and
+ * accent of the palette in the current mode) with a ring on the selected one. Dynamic is
+ * disabled with a one-line explanation below Android 12 — never a dead-looking control.
+ */
+@Composable
+private fun ColorThemeGallery(selected: com.acuranza.app.designsystem.theme.ColorTheme, onPick: (com.acuranza.app.designsystem.theme.ColorTheme) -> Unit) {
+    val sdk = android.os.Build.VERSION.SDK_INT
+    Column {
+        Text("Color theme", style = MaterialTheme.typography.titleSmall, color = AcuranzaTheme.colors.ink)
+        Spacer(Modifier.height(8.dp))
+        LazyRow(
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+        ) {
+            items(com.acuranza.app.designsystem.theme.ColorTheme.entries) { theme ->
+                val supported = theme.isSupported(sdk)
+                val chosen = theme == selected
+                Column(
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                    modifier = Modifier.width(84.dp),
+                ) {
+                    androidx.compose.foundation.layout.Box(
+                        Modifier
+                            .size(64.dp)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                            .background(previewBackground(theme))
+                            .border(
+                                width = if (chosen) 2.dp else 1.dp,
+                                color = if (chosen) AcuranzaTheme.colors.accent else AcuranzaTheme.colors.hairline,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            )
+                            .alpha(if (supported) 1f else 0.38f)
+                            .clickable(enabled = supported) { onPick(theme) },
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                    ) {
+                        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(5.dp)) {
+                            previewSwatches(theme).forEach { color ->
+                                Box(
+                                    Modifier
+                                        .size(14.dp)
+                                        .clip(CircleShape)
+                                        .background(color),
+                                )
+                            }
+                        }
+                        if (chosen) {
+                            Box(
+                                Modifier
+                                    .align(androidx.compose.ui.Alignment.TopEnd)
+                                    .padding(5.dp)
+                                    .size(16.dp)
+                                    .clip(CircleShape)
+                                    .background(AcuranzaTheme.colors.accent),
+                                contentAlignment = androidx.compose.ui.Alignment.Center,
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    tint = AcuranzaTheme.colors.onInk,
+                                    modifier = Modifier.size(11.dp),
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        theme.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (supported) AcuranzaTheme.colors.subtleText else AcuranzaTheme.colors.tertiaryText,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        if (!com.acuranza.app.designsystem.theme.ColorTheme.DYNAMIC.isSupported(sdk)) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Dynamic needs Android 12+ to read your wallpaper colours — other themes work everywhere.",
+                style = MaterialTheme.typography.bodySmall,
+                color = AcuranzaTheme.colors.tertiaryText,
+            )
+        }
+    }
+}
+
+/** Three representative swatches per palette, honouring the current dark/light mode. */
+@Composable
+private fun previewSwatches(theme: com.acuranza.app.designsystem.theme.ColorTheme): List<androidx.compose.ui.graphics.Color> {
+    val dark = AcuranzaTheme.colors.isDark
+    return when (theme) {
+        com.acuranza.app.designsystem.theme.ColorTheme.DYNAMIC ->
+            listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.primary)
+        else -> {
+            val resolved = com.acuranza.app.designsystem.theme.builtInPalette(theme, dark)
+            listOf(resolved.background, resolved.tokens.cardSurface, resolved.tokens.accent)
+        }
+    }
+}
+
+@Composable
+private fun previewBackground(theme: com.acuranza.app.designsystem.theme.ColorTheme): androidx.compose.ui.graphics.Color {
+    val dark = AcuranzaTheme.colors.isDark
+    return if (theme == com.acuranza.app.designsystem.theme.ColorTheme.DYNAMIC) {
+        MaterialTheme.colorScheme.background
+    } else {
+        com.acuranza.app.designsystem.theme.builtInPalette(theme, dark).background
     }
 }
 
