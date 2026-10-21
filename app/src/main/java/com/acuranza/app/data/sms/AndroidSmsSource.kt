@@ -18,29 +18,51 @@ import com.acuranza.app.sms.SmsConfidence
  * are projected; the body is used to parse and then dropped — it is never written anywhere.
  */
 class AndroidSmsInboxSource(private val resolver: ContentResolver) : SmsInboxSource {
+    /** Page size for inbox scans; a very large inbox streams through in batches. */
+    private val page = 500
+
     override suspend fun query(sinceMillis: Long): List<InboxSms> {
         val out = mutableListOf<InboxSms>()
-        resolver.query(
-            Telephony.Sms.Inbox.CONTENT_URI,
-            arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.DATE_SENT),
-            "${Telephony.Sms.DATE} > ?",
-            arrayOf(sinceMillis.toString()),
-            "${Telephony.Sms.DATE} DESC",
-        )?.use { cursor ->
-            val address = cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
-            val body = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
-            val date = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
-            val dateSent = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE_SENT)
-            while (cursor.moveToNext()) {
-                val sender = cursor.getString(address) ?: continue
-                val text = cursor.getString(body) ?: continue
-                val received = cursor.getLong(date)
-                val sent = cursor.getLong(dateSent).takeIf { it > 0 } ?: received
-                out += InboxSms(sender = sender, body = text, sentMillis = sent, receivedMillis = received)
-            }
+        var offset = 0
+        val seenFirsts = HashSet<Triple<Long, String, String>>()
+        // DESC order + date > since: walk in pages until a short page signals the end.
+        while (true) {
+            val got = resolver.query(
+                Telephony.Sms.Inbox.CONTENT_URI.buildUpon().encodedQuery(
+                    "limit=$offset,$page",
+                ).build(),
+                arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.DATE_SENT),
+                "${Telephony.Sms.DATE} > ?",
+                arrayOf(sinceMillis.toString()),
+                "${Telephony.Sms.DATE} DESC",
+            )?.use { cursor ->
+                val address = cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
+                val body = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
+                val date = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
+                val dateSent = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE_SENT)
+                val pageRows = mutableListOf<InboxSms>()
+                while (cursor.moveToNext()) {
+                    val sender = cursor.getString(address) ?: continue
+                    val text = cursor.getString(body) ?: continue
+                    val received = cursor.getLong(date)
+                    val sent = cursor.getLong(dateSent).takeIf { it > 0 } ?: received
+                    pageRows += InboxSms(sender = sender, body = text, sentMillis = sent, receivedMillis = received)
+                }
+                pageRows
+            } ?: emptyList()
+            out += got
+            // A page came up short: end of results. A page came up LONG: this provider ignores
+            // the limit parameter and already returned everything — stop rather than re-read.
+            if (got.size != page) break
+            // Each page must start further down the result than the one before; an identical
+            // page-first row means this provider repeats page one for every offset — stop.
+            val pageFirst = Triple(got.first().receivedMillis, got.first().sender, got.first().body)
+            if (!seenFirsts.add(pageFirst)) break
+            offset += page
         }
         return out
     }
+
 }
 
 /** Whether the SMS permission is currently granted; a revoke flips this and every scan stops. */
@@ -65,6 +87,9 @@ class SmsScanRunner(
     private val repo: SmsImportRepository,
     private val settings: com.acuranza.app.data.prefs.SettingsStore,
 ) {
+    /** How far back each background scan re-reads so interrupted runs never skip messages. */
+    private val OVERLAP_MILLIS = 24L * 60 * 60 * 1000
+
     private val source = AndroidSmsInboxSource(context.contentResolver)
 
     data class Result(
@@ -98,7 +123,13 @@ class SmsScanRunner(
             return Result(decision, 0, 0, 0, decision.reason) to emptyList()
         }
 
-        val since = if (dryRun || current.smsLastScanAt == 0L) System.currentTimeMillis() - windowMillis else current.smsLastScanAt
+        // Overlap the window: a scan interrupted mid-run never loses messages to a moved
+        // watermark, because the next scan re-reads the last day and fingerprints dedup it.
+        val since = if (dryRun || current.smsLastScanAt == 0L) {
+            System.currentTimeMillis() - windowMillis
+        } else {
+            current.smsLastScanAt - OVERLAP_MILLIS
+        }
         val outcome = SmsScanOrchestrator.scan(source, since, repo.importedFingerprints())
 
         if (dryRun) {
@@ -120,9 +151,13 @@ class SmsScanRunner(
         val importable = outcome.candidates.filter { !auto || it.confidence != SmsConfidence.LOW }
         var imported = 0
         if (importable.isNotEmpty()) {
-            val items = importable.map { graded ->
+            val items = importable.mapNotNull { graded ->
                 val txn = graded.txn
                 val merchant = txn.merchant?.let { runCatching { MerchantNormalizer.normalize(it) }.getOrNull() } ?: txn.merchant
+                val accountId = repo.resolveAccount(txn)
+                // Cross-source dedup for messages whose fingerprint can vary (no reference, no
+                // in-body date): the same payment captured by the listener and by the scan.
+                if (repo.hasNearDuplicateSms(accountId, txn.amount, txn.type, txn.timestampMillis)) return@mapNotNull null
                 ApprovedSmsImport(
                     parsed = txn,
                     sender = graded.sender,
@@ -130,7 +165,7 @@ class SmsScanRunner(
                     categoryKey = repo.suggestCategory(txn, merchant),
                     merchant = merchant,
                     timestampMillis = txn.timestampMillis,
-                    accountId = repo.resolveAccount(txn),
+                    accountId = accountId,
                     confidence = graded.confidence,
                 )
             }

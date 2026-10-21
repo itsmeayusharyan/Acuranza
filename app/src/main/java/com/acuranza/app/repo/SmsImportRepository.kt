@@ -298,6 +298,7 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
      * @return how many transactions were created.
      */
     suspend fun confirmPending(keep: List<SmsImportEntity>, edits: Map<Long, PendingEdit> = emptyMap()): Int = db.withTransaction {
+        if (keep.isEmpty()) return@withTransaction 0 // nothing to confirm: no empty batch rows
         val batchId = db.smsImports().insertBatch(
             SmsImportBatchEntity(importedAt = System.currentTimeMillis(), txnCount = 0, label = "Shared import"),
         )
@@ -373,6 +374,21 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
                     autoCreated = true,
                 ),
             )
+        }
+    }
+
+    /**
+     * Near-duplicate guard: an SMS-sourced transaction with the same account, amount and type
+     * within [windowMillis] is the same real payment read twice (fingerprint keys diverge only
+     * for messages with neither a reference number nor an in-body date — inbox and notification
+     * capture then disagree on the delivery minute). The check is coarse on purpose: five
+     * minutes of slack, and only SMS-sourced rows participate.
+     */
+    suspend fun hasNearDuplicateSms(accountId: Long, amount: Long, type: TxnType, timestampMillis: Long, windowMillis: Long = 5 * 60_000): Boolean {
+        val from = timestampMillis - windowMillis
+        val to = timestampMillis + windowMillis
+        return db.transactions().between(from, to).any {
+            it.source == TxnSource.SMS && it.accountId == accountId && it.amount == amount && it.type == type
         }
     }
 

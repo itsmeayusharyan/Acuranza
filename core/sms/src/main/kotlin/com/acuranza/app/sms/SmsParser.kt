@@ -148,18 +148,22 @@ object SmsParser {
             availableBalance = if (isCreditCard) null else Extract.balance(body),
             availableCreditLimit = Extract.creditLimit(body),
             suggestedCategory = category,
-            fingerprint = Fingerprint.transaction(bank, last4, amount, type, ref, msg),
+            // The fingerprint keys on the resolved transaction time, not the delivery time, so the
+            // same message yields the same fingerprint whether it is read from the inbox (whose
+            // timestamps are storage times) or captured from a notification (post time) — dedup
+            // then holds across both capture sources.
+            fingerprint = Fingerprint.transaction(bank, last4, amount, type, ref, msg, time),
         )
     }
 }
 
 internal object Fingerprint {
-    fun transaction(bank: Bank, last4: String?, amount: Paise, type: TxnType, ref: String?, msg: SmsMessage): String {
+    fun transaction(bank: Bank, last4: String?, amount: Paise, type: TxnType, ref: String?, msg: SmsMessage, resolvedMillis: Long = msg.timestampMillis): String {
         val b = BankDetector.fingerprintBank(bank, msg.body.replace(spaces, " "))
         val key = if (ref != null) {
             "T|$b|${last4.orEmpty()}|$amount|$type|$ref"
         } else {
-            val minute = msg.timestampMillis / 60_000
+            val minute = resolvedMillis / 60_000
             val normalized = msg.body.lowercase().replace(spaces, " ").trim()
             "T|$b|${last4.orEmpty()}|$amount|$type|$minute|${normalized.hashCode()}"
         }

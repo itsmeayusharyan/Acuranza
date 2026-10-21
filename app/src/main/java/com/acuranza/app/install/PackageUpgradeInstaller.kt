@@ -63,24 +63,30 @@ class PackageUpgradeInstaller(private val context: Context) {
      * the system's install confirmation, where the user — and any security check — has the
      * final word.
      */
-    fun install(apkFile: File): Boolean = runCatching {
-        val installer = context.packageManager.packageInstaller
-        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-        val sessionId = installer.createSession(params)
-        val session = installer.openSession(sessionId)
-        session.openWrite("acuranza-update", 0, apkFile.length()).use { out ->
-            apkFile.inputStream().use { it.copyTo(out) }
-        }
-        // Not cancelling here; committed sessions leak benignly if the flow dies mid-confirm.
-        val confirm = PendingIntent.getBroadcast(
-            context,
-            sessionId,
-            Intent(context, InstallResultReceiver::class.java).putExtra(EXTRA_SESSION, sessionId),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
-        )
-        session.commit(confirm.intentSender)
-        true
-    }.getOrDefault(false)
+    fun install(apkFile: File): Boolean {
+        var sessionId = -1
+        val ok = runCatching {
+            val installer = context.packageManager.packageInstaller
+            val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+            sessionId = installer.createSession(params)
+            val session = installer.openSession(sessionId)
+            session.openWrite("acuranza-update", 0, apkFile.length()).use { out ->
+                apkFile.inputStream().use { it.copyTo(out) }
+            }
+            val confirm = PendingIntent.getBroadcast(
+                context,
+                sessionId,
+                Intent(context, InstallResultReceiver::class.java).putExtra(EXTRA_SESSION, sessionId),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+            )
+            session.commit(confirm.intentSender)
+            true
+        }.getOrDefault(false)
+        // The session owns its bytes after commit; the picked copy is dead weight either way.
+        runCatching { apkFile.delete() }
+        if (!ok && sessionId != -1) runCatching { context.packageManager.packageInstaller.abandonSession(sessionId) }
+        return ok
+    }
 
     companion object {
         const val EXTRA_SESSION = "acuranza.session"

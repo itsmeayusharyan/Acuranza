@@ -63,12 +63,24 @@ class AuditRegressionTest {
     }
 
     @Test
-    fun fingerprintUsesSendTimeNotReceivedTime() {
+    fun fingerprintUsesResolvedTimeNotDeliveryTime() {
+        // A message that carries its own date anchors on the body time: re-deliveries and the
+        // same alert read from the inbox (send time) or a notification (post time) all produce
+        // ONE fingerprint, so capture sources cannot duplicate it.
         val body = "Spent Rs.500 On HDFC Bank Card 5678 At AMAZON on 2025-01-05:10:10:10"
         val sent = SmsParser.parse(SmsMessage("AD-HDFCBK", body, SMS_TIME)) as SmsParseResult.Transaction
         val withReceived = SmsParser.parse(SmsMessage("AD-HDFCBK", body, SMS_TIME, receivedMillis = SMS_TIME + 61_000)) as SmsParseResult.Transaction
         assertEquals(sent.txn.fingerprint, withReceived.txn.fingerprint)
-        val other = SmsParser.parse(SmsMessage("AD-HDFCBK", body, SMS_TIME + 61_000)) as SmsParseResult.Transaction
-        assertTrue("a different send minute changes the reference-less fingerprint", other.txn.fingerprint != sent.txn.fingerprint)
+        val capturedLater = SmsParser.parse(SmsMessage("AD-HDFCBK", body, SMS_TIME + 61_000)) as SmsParseResult.Transaction
+        assertEquals("body-dated messages dedup across capture sources", sent.txn.fingerprint, capturedLater.txn.fingerprint)
+
+        // Without a reference or an in-body date, the send minute remains the only anchor:
+        // two separate undated messages a minute apart are two transactions.
+        val undated = "Rs.250.00 debited from a/c **1234"
+        val first = SmsParser.parse(SmsMessage("AD-HDFCBK", undated, SMS_TIME)) as SmsParseResult.Transaction
+        val second = SmsParser.parse(SmsMessage("AD-HDFCBK", undated, SMS_TIME + 61_000)) as SmsParseResult.Transaction
+        assertTrue("an undated reference-less message anchors on the send minute", first.txn.fingerprint != second.txn.fingerprint)
+        val secondRedelivered = SmsParser.parse(SmsMessage("AD-HDFCBK", undated, SMS_TIME + 61_000, receivedMillis = SMS_TIME + 120_000)) as SmsParseResult.Transaction
+        assertEquals(second.txn.fingerprint, secondRedelivered.txn.fingerprint)
     }
 }

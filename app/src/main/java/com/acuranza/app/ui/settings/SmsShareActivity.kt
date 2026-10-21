@@ -25,9 +25,13 @@ class SmsShareActivity : Activity() {
             text.isNullOrBlank() -> toast("Nothing to add")
             container.decoy -> toast("Not available in this profile")
             else -> {
+                // Share targets must not touch storage on the main thread; the read+parse is
+                // tiny, so we wait for it (accurate toast), but the I/O runs on the IO dispatcher.
                 val outcome = kotlinx.coroutines.runBlocking {
-                    runCatching { container.settings.current().smsConsent }.getOrDefault(false).let { consent ->
-                        if (!consent) null else container.smsImports.addPending(text)
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        runCatching { container.settings.current().smsConsent }.getOrDefault(false).let { consent ->
+                            if (!consent) null else container.smsImports.addPending(text)
+                        }
                     }
                 }
                 when (outcome) {
