@@ -17,6 +17,11 @@ this data never leaves the phone.
 **Protections**
 
 - **No servers or accounts:** Acuranza has no backend, no analytics and no third-party SDKs.
+- **Self-update (opt-in):** the standard build holds `REQUEST_INSTALL_PACKAGES`, used only when
+  the user picks "Install Full build from APK" under Settings → Financial tools. The picked file
+  is verified to be Acuranza, signed with Acuranza's key, and not older than the installed build;
+  the install then runs through Android's own confirmation dialog with all system security checks
+  intact. The permission is inert until the user initiates the flow.
 - **Network:** none. The APK requests no network permission, so no code path can reach the
   internet; this is verified against every release artifact.
 - **Encryption at rest:** the database is encrypted with SQLCipher (AES-256). Its key is random, generated on

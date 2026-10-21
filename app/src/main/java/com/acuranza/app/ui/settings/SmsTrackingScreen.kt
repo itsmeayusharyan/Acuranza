@@ -94,6 +94,55 @@ fun SmsTrackingScreen(nav: NavController) {
         pending = if (s.smsConsent && !c.decoy) c.smsImports.pending() else emptyList()
     }
 
+    // In-app upgrade to the Full build (standard build only): the user picks an Acuranza APK
+    // from storage; the app verifies package + signature + version and stages Android's own
+    // install confirmation. The OS security check runs as usual; nothing is disabled.
+    var upgrading by remember { mutableStateOf(false) }
+    val apkPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                upgrading = true
+                val installer = com.acuranza.app.install.PackageUpgradeInstaller(context)
+                val staged = runCatching {
+                    val cache = java.io.File(context.cacheDir, "picked-update.apk")
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        cache.outputStream().use { input!!.copyTo(it) }
+                    } ?: return@runCatching false
+                    when (val verified = installer.verify(cache)) {
+                        is com.acuranza.app.install.PackageUpgradeInstaller.Verified.Ok -> {
+                            com.acuranza.app.install.PackageUpgradeInstaller.onResult = { status, statusMessage ->
+                                scope.launch {
+                                    message = when (status) {
+                                        android.content.pm.PackageInstaller.STATUS_SUCCESS -> "Full build installed"
+                                        else -> "Install stopped (${statusMessage ?: "status $status"})"
+                                    }
+                                    upgrading = false
+                                    com.acuranza.app.install.PackageUpgradeInstaller.onResult = null
+                                }
+                            }
+                            installer.install(cache)
+                        }
+                        is com.acuranza.app.install.PackageUpgradeInstaller.Verified.Rejected -> {
+                            message = when (verified.reason) {
+                                com.acuranza.app.install.PackageUpgradeValidator.Decision.SignatureMismatch ->
+                                    "That APK isn't signed with Acuranza's key — refusing"
+                                com.acuranza.app.install.PackageUpgradeValidator.Decision.WrongPackage ->
+                                    "That APK isn't Acuranza"
+                                com.acuranza.app.install.PackageUpgradeValidator.Decision.Downgrade ->
+                                    "That build is older than the installed one"
+                                else -> "Couldn't read that file as an APK"
+                            }
+                            false
+                        }
+                    }
+                }.getOrDefault(false)
+                if (!staged) upgrading = false
+            }
+        }
+    }
+
     // One-tap capture: with consent and this screen open, a bank message sitting in the
     // clipboard is offered for parsing. The clipboard is read only here (foreground, user-initiated
     // screen), checked with the same pure pipeline, and never stored unless the user taps Parse.
@@ -168,6 +217,8 @@ fun SmsTrackingScreen(nav: NavController) {
                 onDismissClipboard = { clipboardHit = null },
                 onMessage = { message = it },
                 onChanged = { refresh++ },
+                onPickFullApk = { apkPicker.launch(arrayOf("application/vnd.android.package-archive")) },
+                upgrading = upgrading,
                 refreshKey = refresh,
                 paste = paste,
                 onPasteChange = { paste = it },
@@ -447,6 +498,8 @@ private fun SmsOverviewContent(
     onDismissClipboard: () -> Unit,
     onMessage: (String) -> Unit,
     onChanged: () -> Unit,
+    onPickFullApk: () -> Unit,
+    upgrading: Boolean,
     refreshKey: Int,
     paste: String,
     onPasteChange: (String) -> Unit,
@@ -607,6 +660,31 @@ private fun SmsOverviewContent(
                                 divider = false,
                             )
                         }
+                    }
+                }
+            }
+        }
+
+        // Standard build only: switch to the Full build from an APK file on this device.
+        if (!com.acuranza.app.BuildConfig.SMS_FULL) {
+            item {
+                AcuranzaCard {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Full build with automatic SMS", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Acuranza also ships a Full build that reads bank SMS automatically (historical inbox import, " +
+                                "background scanning, notification capture). Pick its APK from your storage and this app verifies it " +
+                                "(package + signature) and starts Android's own install confirmation — Google's security check " +
+                                "still runs, and any prompt it raises is yours to answer.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AcuranzaTheme.colors.subtleText,
+                        )
+                        SecondaryButton(
+                            if (upgrading) "Install in progress…" else "Install Full build from APK",
+                            enabled = !upgrading,
+                            onClick = onPickFullApk,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }

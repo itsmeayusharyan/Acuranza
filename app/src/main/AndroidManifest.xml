@@ -7,6 +7,11 @@
          work, and reading network state is still an information leak, so it is removed at merge. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Opt-in self-upgrade: Settings → Financial tools offers installing the Full build from an
+         APK file on this device. The file is verified (package + signature) and Android's own
+         install confirmation and security checks run as usual. The permission is inert until
+         the user initiates that flow. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
@@ -29,6 +34,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".install.InstallResultReceiver"
+            android:exported="false" />
 
         <!-- SMS transaction tracking, permissionless: the user shares a bank message from their
              Messages app to Acuranza. No SMS permission is requested (Play Protect blocks
