@@ -173,8 +173,9 @@ fun AcuranzaTheme(
         }
     }
     // AMOLED black: pure-black canvas with near-black layers, dark mode only. In light mode the
-    // preference is preserved but inactive (the UI says so) — no washed-out pseudo-dark.
-    val applyAmoled = amoled && darkTheme && colorTheme != ColorTheme.DYNAMIC
+    // preference is preserved but inactive (the UI says so) — no washed-out pseudo-dark. Works
+    // over every palette including Dynamic (it re-tints surfaces, accents stay).
+    val applyAmoled = amoled && darkTheme
     val acuranza = if (applyAmoled) resolved.tokens.amoled() else resolved.tokens
     val scheme = if (applyAmoled) resolved.scheme.amoled() else resolved.scheme
     CompositionLocalProvider(

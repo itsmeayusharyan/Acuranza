@@ -1,0 +1,1 @@
+Stability and accessibility pass: AMOLED black now also applies with the Dynamic theme (it was silently ignored there), and the light variants of the Cloud/Amber, Ocean, Forest and Rose palettes got darker secondary text so every palette passes WCAG contrast thresholds.
