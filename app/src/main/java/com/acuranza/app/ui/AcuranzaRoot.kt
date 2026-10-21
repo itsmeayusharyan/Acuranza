@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +39,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -338,12 +341,15 @@ private fun LockScreen(onUnlocked: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route
-    val showBar = current in TabRoutes
+    // The pill tucks away while the keyboard is up so text fields keep the space.
+    val imeVisible = WindowInsets.isImeVisible
+    val showBar = current in TabRoutes && !imeVisible
 
     LaunchedEffect(initialRoute) {
         val target = when (initialRoute) {
@@ -392,40 +398,65 @@ private fun BottomBar(nav: NavHostController, current: String?) {
 }
 
 /**
- * Four evenly spaced, labelled destinations in one consistent outline style (v1.11.0). The
- * selected destination sits in a prominent circular accent background that springs in — the one
- * expressive gesture on the bar — while everything else stays restrained: tertiary icons, a small
- * label beneath, no washes or dots. Each slot is a full-height touch target with subtle press
- * feedback; the circle snaps in under reduced motion.
+ * A floating navigation pill (v1.13.11): a rounded, elevated, translucent surface that hovers
+ * above the gesture area with side margins, instead of a full-width bar. Destinations, icons and
+ * order are unchanged. The selected destination gets a large rounded accent-tinted background that
+ * springs in behind icon and label — the one expressive gesture on the bar — everything else stays
+ * muted. Haptics fire only when the selection actually changes; every animation collapses to
+ * instant under reduced motion; colors come from the theme only (no hardcoded values), so Dark,
+ * Light, System and AMOLED palettes all flow through.
  */
 @Composable
 fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
-    Column(Modifier.fillMaxWidth().background(AcuranzaTheme.colors.cardSurface)) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(AcuranzaTheme.colors.hairline))
+    val colors = AcuranzaTheme.colors
+    val haptic = com.acuranza.app.ui.common.rememberHaptic()
+    val pillShape = RoundedCornerShape(30.dp)
+    // Translucent-style surface derived from the theme token itself — see-through enough to feel
+    // floating, opaque enough to stay readable over scrolling content on every palette.
+    val pillSurface = colors.glass.copy(alpha = if (colors.isDark) 0.94f else 0.96f)
+
+    Box(
+        Modifier
+            .fillMaxWidth()
+            // Float above the gesture area: side margins + nav-bar inset + a breathing gap.
+            .padding(horizontal = 16.dp)
+            .navigationBarsPadding()
+            .padding(top = 2.dp, bottom = 10.dp)
+            .windowInsetsPadding(WindowInsets.displayCutout)
+            .shadow(
+                elevation = 14.dp,
+                shape = pillShape,
+                ambientColor = colors.ink.copy(alpha = 0.14f),
+                spotColor = colors.ink.copy(alpha = 0.18f),
+            )
+            .clip(pillShape)
+            .background(pillSurface)
+            .border(1.dp, colors.glassBorder, pillShape)
+            .height(68.dp),
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.displayCutout)
-                .navigationBarsPadding()
-                .height(72.dp),
+                .padding(horizontal = 6.dp)
+                .fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Tabs.forEach { tab ->
                 val selected = current == tab.route
                 val reduced = com.acuranza.app.designsystem.theme.LocalReducedMotion.current
-                val circle by animateFloatAsState(
+                val pill by animateFloatAsState(
                     targetValue = if (selected) 1f else 0f,
                     animationSpec = if (reduced) androidx.compose.animation.core.snap()
                     else spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioLowBouncy),
-                    label = "tab-circle",
+                    label = "tab-pill",
                 )
                 val iconTint by animateColorAsState(
-                    targetValue = if (selected) AcuranzaTheme.colors.onInk else AcuranzaTheme.colors.tertiaryText,
+                    targetValue = if (selected) colors.accent else colors.tertiaryText,
                     animationSpec = com.acuranza.app.designsystem.theme.motionTween(220),
                     label = "tab-icon",
                 )
                 val labelColor by animateColorAsState(
-                    targetValue = if (selected) AcuranzaTheme.colors.ink else AcuranzaTheme.colors.tertiaryText,
+                    targetValue = if (selected) colors.ink else colors.tertiaryText,
                     animationSpec = com.acuranza.app.designsystem.theme.motionTween(220),
                     label = "tab-label",
                 )
@@ -434,13 +465,17 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                     Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .padding(vertical = 6.dp)
                         .pressScale(interaction, scaleDown = 0.97f)
                         .clickable(
                             interactionSource = interaction,
                             indication = null,
                             role = androidx.compose.ui.semantics.Role.Tab,
                         ) {
-                            if (!selected) onTab(tab.route)
+                            if (!selected) {
+                                haptic()
+                                onTab(tab.route)
+                            }
                         }
                         .semantics {
                             this.selected = selected
@@ -448,29 +483,26 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                         },
                     contentAlignment = Alignment.Center,
                 ) {
+                    // The large rounded indicator is its own layer so the transition only ever
+                    // fades/scales the decoration — the icon and label stay visible in every state.
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .graphicsLayer {
+                                alpha = pill
+                                scaleX = 0.72f + 0.28f * pill
+                                scaleY = 0.72f + 0.28f * pill
+                            }
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(colors.accentTint),
+                    )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                            // The accent circle is its own layer so the appear/disappear animation
-                            // only ever fades the decoration — the icon sibling stays visible in
-                            // every state (selected, unselected, mid-transition, theme change).
-                            Box(
-                                Modifier
-                                    .matchParentSize()
-                                    .graphicsLayer {
-                                        alpha = circle
-                                        scaleX = circle.coerceAtLeast(0.01f)
-                                        scaleY = circle.coerceAtLeast(0.01f)
-                                    }
-                                    .clip(CircleShape)
-                                    .background(AcuranzaTheme.colors.accent),
-                            )
-                            Icon(
-                                tab.icon,
-                                contentDescription = null,
-                                tint = iconTint,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        }
+                        Icon(
+                            tab.icon,
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(22.dp),
+                        )
                         Text(
                             tab.label,
                             style = MaterialTheme.typography.labelSmall,
