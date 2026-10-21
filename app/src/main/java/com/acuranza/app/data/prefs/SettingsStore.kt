@@ -194,7 +194,8 @@ class SettingsStore(
     /** Records explicit consent; nothing is processed — shared, pasted or otherwise — before this. */
     suspend fun setSmsConsent(granted: Boolean) = edit { it[Keys.smsConsent] = granted }
 
-    /** Withdraws consent; imported data is untouched (delete-all is separate and explicit). */
+    /** Withdraws consent and switches every capture off. Deleting the feature's data is a
+     *  separate, explicit step performed by the withdrawal flow in the UI. */
     suspend fun revokeSmsConsent() = edit {
         it[Keys.smsConsent] = false
         it[Keys.smsAutoScan] = false

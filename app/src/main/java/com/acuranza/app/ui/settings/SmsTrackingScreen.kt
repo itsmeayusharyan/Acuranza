@@ -82,7 +82,18 @@ fun SmsTrackingScreen(nav: NavController) {
     var reviewing by remember { mutableStateOf(false) }
     var paste by remember { mutableStateOf("") }
     var clipboardHit by remember { mutableStateOf<String?>(null) }
+    var showWithdrawDialog by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    // Full build: the SMS permission is requested the moment the user agrees — the consent
+    // dialog and the runtime prompt follow each other, before anything is processed.
+    val smsPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (!granted) {
+            message = "SMS permission denied. Tracking stays off until you grant it: App info → Permissions → SMS."
+        }
+    }
 
     LaunchedEffect(message) {
         message?.let {
@@ -165,6 +176,38 @@ fun SmsTrackingScreen(nav: NavController) {
         onBack = { nav.popBackSafely() },
         snackbar = snackbar,
     ) { padding ->
+        if (showWithdrawDialog) {
+            AlertDialog(
+                onDismissRequest = { showWithdrawDialog = false },
+                title = { Text("Withdraw SMS tracking?") },
+                text = {
+                    Text(
+                        "All processing stops immediately. This deletes every pending bank message and every " +
+                            "transaction imported from SMS (${pending.size} pending, plus imported ones). Transactions you " +
+                            "entered yourself, CSV imports, budgets and every other record are untouched; balances are " +
+                            "recomputed from what remains. Android does not let an app revoke its own SMS permission — " +
+                            "to remove that too, revoke it in App info → Permissions → SMS.",
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showWithdrawDialog = false
+                        scope.launch {
+                            // Stop first: worker off, flags off — nothing may process while we delete.
+                            com.acuranza.app.work.WorkScheduler.setSmsScanEnabled(context, false)
+                            c.settings.revokeSmsConsent()
+                            val removed = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                c.smsImports.deleteAll()
+                            }
+                            message = "SMS tracking withdrawn. Removed $removed imported transactions."
+                            refresh++
+                        }
+                    }) { Text("Withdraw and delete", color = AcuranzaTheme.colors.alert) }
+                },
+                dismissButton = { TextButton(onClick = { showWithdrawDialog = false }) { Text("Keep tracking") } },
+            )
+        }
+
         when {
             c.decoy -> Column(Modifier.padding(padding).padding(horizontal = 20.dp)) {
                 Spacer(Modifier.height(24.dp))
@@ -174,7 +217,15 @@ fun SmsTrackingScreen(nav: NavController) {
             }
             !s.smsConsent -> SmsConsentContent(
                 modifier = Modifier.padding(padding),
-                onAgree = { scope.launch { c.settings.setSmsConsent(true) } },
+                onAgree = {
+                    scope.launch {
+                        c.settings.setSmsConsent(true)
+                        // Full build only: the runtime prompt follows the consent immediately.
+                        if (com.acuranza.app.BuildConfig.SMS_FULL) {
+                            smsPermissionLauncher.launch(android.Manifest.permission.READ_SMS)
+                        }
+                    }
+                },
             )
             reviewing -> SmsPendingReviewContent(
                 pending = pending,
@@ -256,13 +307,7 @@ fun SmsTrackingScreen(nav: NavController) {
                         refresh++
                     }
                 },
-                onWithdraw = {
-                    scope.launch {
-                        c.settings.revokeSmsConsent()
-                        message = "Consent withdrawn. Imported transactions stay until you delete them."
-                        refresh++
-                    }
-                },
+                onWithdraw = { showWithdrawDialog = true },
                 modifier = Modifier.padding(padding),
             )
         }
