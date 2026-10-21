@@ -23,6 +23,10 @@ every insight is computed on the phone.
 - **Review inbox**: confirm or fix imported transactions — individually, or all at once with
   "Confirm all" (flagged large amounts included); recategorising a merchant remembers that
   category for future imports.
+- **Themes**: Dark, Light and System modes with six color themes — Default, Dynamic (Material You
+  wallpaper colours on Android 12+), Catppuccin, Cloud/Amber, Ocean, Forest and Rose — plus AMOLED
+  black, accent colours and reduced-motion support; every palette meets WCAG contrast thresholds.
+- **Searchable settings**: every destination is one query away, grouped the way you think about it.
 - **Accounts and cards**: balances that reconcile with what you know, card outstanding and
   utilisation, and "mark paid" recording the transfer from your bank account.
 - **Card bills**: due dates, amounts and payment status, with due-date reminders.
@@ -70,6 +74,9 @@ every insight is computed on the phone.
   screenshot blocking.
 - **Encrypted backups:** AES-256-GCM with a password-derived key (PBKDF2, 600k iterations), to a
   folder you pick, on a schedule you choose.
+- **Theme colours stay honest:** all palettes — including the Material You Dynamic theme and the
+  pure-black AMOLED mode — are checked against WCAG contrast thresholds, and financial direction is
+  never conveyed by colour alone (rows carry arrows and signs).
 - **Local-only data:** everything stays on the device and is excluded from cloud backups
   (`allowBackup="false"`).
 
