@@ -1,5 +1,7 @@
 package com.acuranza.app.ui.about
 
+import android.content.ActivityNotFoundException
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,92 +20,93 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Gavel
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.outlined.SmartButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.acuranza.app.BuildConfig
 import com.acuranza.app.designsystem.components.AcuranzaLogo
 import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
+import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.settings.SettingsRow
 import com.acuranza.app.ui.settings.SettingsSection
+import kotlinx.coroutines.launch
 
-/** The About Acuranza screen: branding, version and legal sheets. Reached from Settings. */
-@Composable
-fun AboutScreen(nav: androidx.navigation.NavController) {
-    var sheet by remember { mutableStateOf<AboutSheet?>(null) }
-    AboutContent(
-        versionLabel = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-        onBack = { nav.popBackStack() },
-        onPrivacy = { sheet = AboutSheet.PRIVACY },
-        onTerms = { sheet = AboutSheet.TERMS },
-        onLicence = { sheet = AboutSheet.LICENCE },
-    )
-    when (sheet) {
-        AboutSheet.PRIVACY -> InfoSheet(
-            title = "Privacy policy",
-            onDismiss = { sheet = null },
-        ) {
-            InfoParagraph("Everything Acuranza knows lives on this phone.")
-            InfoParagraph(
-                "Acuranza requests no internet permission, so Android itself cannot send your " +
-                    "transactions, accounts or reminders anywhere. There are no analytics, no ads, " +
-                    "no accounts and no tracking.",
+/** Where the source and the releases actually live. */
+const val REPO_URL = "https://github.com/itsmeayusharyan/Acuranza"
+
+private fun openUrl(context: android.content.Context, url: String): Boolean = try {
+    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+    true
+} catch (_: ActivityNotFoundException) {
+    false
+} catch (_: Exception) {
+    false
+}
+
+/** Device and build facts shown on the About screen; injectable so tests render deterministically. */
+data class AboutDeviceInfo(
+    val androidRelease: String,
+    val apiLevel: Int,
+    val manufacturer: String,
+    val model: String,
+    val appVersion: String,
+    val versionCode: String,
+) {
+    companion object {
+        fun fromSystem(versionName: String = BuildConfig.VERSION_NAME, versionCode: Int = BuildConfig.VERSION_CODE) =
+            AboutDeviceInfo(
+                androidRelease = Build.VERSION.RELEASE,
+                apiLevel = Build.VERSION.SDK_INT,
+                manufacturer = Build.MANUFACTURER.replaceFirstChar { it.uppercase() },
+                model = Build.MODEL,
+                appVersion = versionName,
+                versionCode = versionCode.toString(),
             )
-            InfoParagraph(
-                "Your database is encrypted on the device, and backups are encrypted with a " +
-                    "password only you know.",
-            )
-            InfoParagraph("Deleting your data or uninstalling the app removes it from the phone completely.")
-        }
-        AboutSheet.TERMS -> InfoSheet(
-            title = "Terms of service",
-            onDismiss = { sheet = null },
-        ) {
-            InfoParagraph("Acuranza is provided as-is, free of charge, for personal use.")
-            InfoParagraph(
-                "It keeps books and draws charts; nothing in it is financial advice. Decisions you " +
-                    "make with its numbers are your own.",
-            )
-            InfoParagraph(
-                "Your data is your responsibility: keep backups, and keep a backup's password safe — " +
-                    "it cannot be recovered.",
-            )
-            InfoParagraph("Use of the app is governed by its licence; see Licence.")
-        }
-        AboutSheet.LICENCE -> InfoSheet(
-            title = "Licence",
-            onDismiss = { sheet = null },
-        ) {
-            InfoParagraph(
-                "Acuranza is free and open-source software under the GNU General Public License " +
-                    "v3.0. You may use, study, share and modify it; there is no warranty. The full " +
-                    "licence text accompanies the app's source distribution.",
-            )
-        }
-        null -> Unit
     }
 }
 
-private enum class AboutSheet { PRIVACY, TERMS, LICENCE }
+/** The About Acuranza screen: branding, version and release info, device info, legal pages. Reached from Settings. */
+@Composable
+fun AboutScreen(nav: androidx.navigation.NavController) {
+    val context = LocalContext.current
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    AboutContent(
+        versionLabel = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+        onBack = { nav.popBackStack() },
+        onPrivacy = { nav.navigate(Routes.ABOUT_PRIVACY) },
+        onTerms = { nav.navigate(Routes.ABOUT_TERMS) },
+        onLicence = { nav.navigate(Routes.ABOUT_GPL) },
+        onLicenses = { nav.navigate(Routes.ABOUT_LICENSES) },
+        onGithub = {
+            if (!openUrl(context, REPO_URL)) {
+                scope.launch { snackbar.showSnackbar("No browser found on this device") }
+            }
+        },
+        snackbar = snackbar,
+    )
+}
 
 /**
- * Stateless body of the About screen, so tests can render it without BuildConfig: a branding
- * block, then the legal sheets in the same row kit Settings uses.
+ * Stateless body of the About screen, so tests can render it without BuildConfig: branding with
+ * version and release information, repository and license actions, device/build facts, and the
+ * dedicated legal sections in the same row kit Settings uses.
  */
 @Composable
 fun AboutContent(
@@ -112,6 +115,10 @@ fun AboutContent(
     onPrivacy: () -> Unit,
     onTerms: () -> Unit = {},
     onLicence: () -> Unit,
+    onLicenses: () -> Unit = {},
+    onGithub: () -> Unit = {},
+    snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    device: AboutDeviceInfo = AboutDeviceInfo.fromSystem(),
 ) {
     val c = AcuranzaTheme.colors
     Column(
@@ -155,7 +162,7 @@ fun AboutContent(
                 .padding(top = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            AcuranzaLogo(size = 76.dp, shape = LogoShape.RoundedSquare)
+            AcuranzaLogo(size = 88.dp, shape = LogoShape.RoundedSquare)
             Spacer(Modifier.height(14.dp))
             Text("Acuranza", style = MaterialTheme.typography.headlineSmall, color = c.ink)
             Spacer(Modifier.height(2.dp))
@@ -170,14 +177,41 @@ fun AboutContent(
                     .background(c.fill)
                     .padding(horizontal = 14.dp, vertical = 6.dp),
             )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Free and open source under GPL-3.0",
+                style = MaterialTheme.typography.labelSmall,
+                color = c.tertiaryText,
+            )
         }
 
         // The section kit expects its parent to own the horizontal padding (as Settings' list does).
         Column(Modifier.padding(horizontal = 20.dp)) {
+            SettingsSection("Project") {
+                SettingsRow(
+                    "GitHub repository",
+                    "Source, issues and releases · github.com/itsmeayusharyan/Acuranza",
+                    Icons.Outlined.Description,
+                ) { onGithub() }
+                SettingsRow(
+                    "Open-source licenses",
+                    "Legal notices for every dependency this app is built on",
+                    Icons.Outlined.SmartButton,
+                    divider = false,
+                ) { onLicenses() }
+            }
+
+            SettingsSection("Device and build") {
+                SettingsRow("Android version", "Android ${device.androidRelease} (API ${device.apiLevel})", onClick = null)
+                SettingsRow("Device", "${device.manufacturer} ${device.model}", onClick = null)
+                SettingsRow("App version", device.appVersion, onClick = null)
+                SettingsRow("Version code", device.versionCode, onClick = null, divider = false)
+            }
+
             SettingsSection("Legal") {
                 SettingsRow("Privacy policy", "What Acuranza stores, and what it never sends", Icons.Outlined.Shield) { onPrivacy() }
                 SettingsRow("Terms of service", "The plain terms of using the app", Icons.Outlined.Gavel) { onTerms() }
-                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Description, divider = false) { onLicence() }
+                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Info, divider = false) { onLicence() }
             }
         }
 
@@ -193,34 +227,12 @@ fun AboutContent(
                 style = MaterialTheme.typography.labelSmall,
                 color = c.tertiaryText,
             )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "A derivative of the Kosh project, used under GPL-3.0",
+                style = MaterialTheme.typography.labelSmall,
+                color = c.tertiaryText,
+            )
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun InfoSheet(title: String, onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .navigationBarsPadding()
-                .padding(bottom = 24.dp),
-        ) {
-            Text(title, style = MaterialTheme.typography.titleLarge, color = AcuranzaTheme.colors.ink)
-            Spacer(Modifier.height(12.dp))
-            content()
-        }
-    }
-}
-
-@Composable
-private fun InfoParagraph(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = AcuranzaTheme.colors.subtleText,
-        modifier = Modifier.padding(bottom = 10.dp),
-    )
 }
