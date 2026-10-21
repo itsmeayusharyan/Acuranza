@@ -230,7 +230,8 @@ class TransactionRepository(private val db: AcuranzaDatabase) {
         dao.byId(txnId)?.let { dao.update(it.copy(reviewed = true, suspicious = false)) }
     }
 
-    suspend fun markAllReviewed() = dao.markAllReviewed()
+    /** Bulk "Looks right": confirms and unflags every unreviewed import; returns the count. */
+    suspend fun markAllReviewed(): Int = dao.markAllReviewed()
 
     private fun withRefs(source: Flow<List<TransactionEntity>>): Flow<List<TransactionItem>> =
         combine(source, db.categories().observeAll(), db.accounts().observeActive()) { txns, cats, accounts ->

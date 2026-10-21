@@ -112,6 +112,7 @@ class SmsScanRunner(
         dryRun: Boolean = false,
         windowMillis: Long = SmsScanOrchestrator.FIRST_IMPORT_WINDOW_MILLIS,
     ): Pair<Result, List<ScanCandidate>> {
+        val startedAt = System.currentTimeMillis()
         val current = settings.current()
         val decision = if (auto) {
             SmsScanGate.check(current.smsConsent, context.hasSmsPermission(), current.smsAutoScan)
@@ -140,6 +141,14 @@ class SmsScanRunner(
                     suggestedCategory = repo.suggestCategory(it.txn, it.txn.merchant),
                 )
             }
+            // Record the scan so the next one reads only new messages plus the overlap window —
+            // a dry run is a real scan for bookkeeping purposes, or every tap would re-walk
+            // the entire 12-month inbox.
+            settings.recordSmsScan("ok")
+            android.util.Log.d(
+                "AcuranzaSms",
+                "scan dry=true since=$since skipped=${outcome.skipped} candidates=${candidates.size} balances=${outcome.balances.size} millis=${System.currentTimeMillis() - startedAt}",
+            )
             return Result(decision, 0, outcome.skipped, candidates.size, "ok") to candidates
         }
 
@@ -176,6 +185,10 @@ class SmsScanRunner(
 
         if (!current.smsFirstImportDone && imported > 0) settings.setSmsFirstImportDone()
         settings.recordSmsScan("ok", outcome.skipped)
+        android.util.Log.d(
+            "AcuranzaSms",
+            "scan dry=false auto=$auto since=$since skipped=${outcome.skipped} candidates=${importable.size} imported=$imported millis=${System.currentTimeMillis() - startedAt}",
+        )
         return Result(decision, imported, outcome.skipped, importable.size, "ok") to emptyList()
     }
 }

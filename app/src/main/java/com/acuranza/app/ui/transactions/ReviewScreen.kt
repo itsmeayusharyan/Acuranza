@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +69,11 @@ class ReviewViewModel(private val c: AppContainer) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReviewState())
 
     fun confirm(id: Long) = viewModelScope.launch { c.transactions.markReviewed(id) }
-    fun confirmAll() = viewModelScope.launch { c.transactions.markAllReviewed() }
+
+    /** Reports how many rows the single atomic UPDATE actually approved. */
+    fun confirmAll(onResult: (Int) -> Unit) = viewModelScope.launch {
+        onResult(c.transactions.markAllReviewed())
+    }
     fun delete(id: Long) = viewModelScope.launch { c.tombstones.deleteTransaction(id) }
     fun recategorise(id: Long, key: String, all: Boolean) = viewModelScope.launch { c.transactions.recategorise(id, key, all) }
     fun markTransfer(id: Long, otherAccountId: Long?) = viewModelScope.launch { c.transactions.markSelfTransfer(id, otherAccountId) }
@@ -80,6 +85,8 @@ fun ReviewScreen(nav: NavController) {
     val state by vm.state.collectAsStateWithLifecycle()
     val hidden = LocalHideAmounts.current
     val haptic = rememberHaptic()
+    val snackbar = remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var editing by remember { mutableStateOf<TransactionItem?>(null) }
     var transferring by remember { mutableStateOf<TransactionItem?>(null) }
 
@@ -87,11 +94,19 @@ fun ReviewScreen(nav: NavController) {
         title = "Review",
         subtitle = if (state.items.isEmpty()) null else "${state.items.size} imported from SMS & email",
         onBack = { nav.popBackSafely() },
+        snackbar = snackbar,
         actions = {
             if (state.items.isNotEmpty()) {
                 TextButton(onClick = {
                     haptic()
-                    vm.confirmAll()
+                    vm.confirmAll { approved ->
+                        scope.launch {
+                            snackbar.showSnackbar(
+                                if (approved > 0) "Confirmed $approved transaction" + (if (approved > 1) "s" else "")
+                                else "Nothing left to confirm",
+                            )
+                        }
+                    }
                 }) {
                     Icon(Icons.Outlined.DoneAll, contentDescription = null)
                     Spacer(Modifier.size(6.dp))
@@ -120,7 +135,7 @@ fun ReviewScreen(nav: NavController) {
                         if (t.txn.suspicious) {
                             Text(
                                 "This amount looks unusually large, maybe a reference number read as an amount. It isn't " +
-                                    "counted in balances or totals until you confirm it. \"Confirm all\" skips it.",
+                                    "counted in balances or totals until you confirm it — \"Looks right\" or \"Confirm all\" clears the flag.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = AcuranzaTheme.colors.warning,
                                 modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp),

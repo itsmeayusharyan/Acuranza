@@ -184,9 +184,16 @@ interface TransactionDao {
     )
     suspend fun recategoriseMerchant(merchant: String, categoryKey: String, type: String)
 
-    /** Confirms every unreviewed import except suspicious ones, which need an individual look. */
-    @Query("UPDATE transactions SET reviewed = 1 WHERE reviewed = 0 AND suspicious = 0")
-    suspend fun markAllReviewed()
+    /**
+     * Bulk approval with exactly the per-item "Looks right" semantics: every unreviewed import
+     * is confirmed AND unflagged in one atomic, idempotent statement — including suspicious
+     * (unusually large) rows, which the user vouches for by choosing "Confirm all". Rows
+     * already reviewed or deleted can't match, so nothing is reprocessed or duplicated.
+     *
+     * @return how many rows were approved.
+     */
+    @Query("UPDATE transactions SET reviewed = 1, suspicious = 0 WHERE reviewed = 0")
+    suspend fun markAllReviewed(): Int
 
     @Query("UPDATE transactions SET suspicious = :suspicious WHERE id = :id")
     suspend fun setSuspicious(id: Long, suspicious: Boolean)

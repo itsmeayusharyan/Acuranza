@@ -562,16 +562,31 @@ private fun SmsOverviewContent(
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val scope = rememberCoroutineScope()
                 var scanning by remember { mutableStateOf(false) }
+                fun smsPermissionNow(): Boolean = androidx.core.content.ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.READ_SMS,
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                // Observable permission state — the UI reacts the moment the grant lands, with
+                // no refresh or screen reopen. Re-checked on every resume so grants made in system
+                // settings and revocations are both reflected immediately.
+                var smsGranted by remember { mutableStateOf(smsPermissionNow()) }
+                val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                androidx.compose.runtime.DisposableEffect(owner) {
+                    val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                        if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) smsGranted = smsPermissionNow()
+                    }
+                    owner.lifecycle.addObserver(observer)
+                    onDispose { owner.lifecycle.removeObserver(observer) }
+                }
                 val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                     androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
                 ) { granted ->
+                    smsGranted = granted || smsPermissionNow()
                     if (!granted) onMessage("Without the SMS permission the inbox can't be scanned; share/paste still works")
                 }
                 val listenerEnabled = androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context)
                     .contains(context.packageName)
-                val hasSms = androidx.core.content.ContextCompat.checkSelfPermission(
-                    context, android.Manifest.permission.READ_SMS,
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                val hasSms = smsGranted
 
                 AcuranzaCard {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -592,13 +607,19 @@ private fun SmsOverviewContent(
 
                         if (hasSms) {
                             PrimaryButton(
-                                if (scanning) "Scanning…" else "Scan inbox (last 12 months)",
+                                if (scanning) "Scanning…"
+                                else if (settings.smsLastScanAt == 0L) "Scan inbox (last 12 months)"
+                                else "Scan inbox (new messages)",
                                 enabled = !scanning,
                                 onClick = {
                                     scope.launch {
                                         val runner = c.smsScanRunner ?: return@launch
                                         scanning = true
-                                        val (result, found) = runner.run(auto = false, dryRun = true)
+                                        // The whole walk — cursor I/O, parsing, dedup checks —
+                                        // stays off the main thread; the UI stays responsive.
+                                        val (result, found) = kotlinx.coroutines.withContext(
+                                            kotlinx.coroutines.Dispatchers.IO,
+                                        ) { runner.run(auto = false, dryRun = true) }
                                         var added = 0
                                         for (candidate in found) {
                                             val outcome = c.smsImports.addPendingParsed(candidate.graded.txn, candidate.graded.confidence)
