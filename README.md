@@ -4,8 +4,6 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-2563EB" alt="GPL-3.0"></a>
   <img src="https://img.shields.io/badge/price-free-111111" alt="Free">
-  <img src="https://img.shields.io/badge/trackers-none-111111" alt="No trackers">
-  <img src="https://img.shields.io/badge/network-none-192134" alt="No network">
   <img src="https://img.shields.io/badge/Android-8.0%2B-111111" alt="Android 8.0+">
 </p>
 
