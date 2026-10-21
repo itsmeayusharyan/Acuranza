@@ -84,20 +84,6 @@ payments you scheduled — and the app is gated until they are allowed
 SMS transaction tracking needs no permission at all — messages arrive only when you share or
 paste them. It asks for nothing else: no SMS, no contacts, no location, no network.
 
-## Architecture
-
-| Module | Contents |
-| :-- | :-- |
-| `core:model` | Money (paise, Indian formatting), shared types |
-| `core:sms` | Statement/CSV parsers, merchant normalisation, category guessing |
-| `core:finance` | Budgets, goals and Monte-Carlo outlook, insight engine, loans, recurring payments |
-| `core:designsystem` | Compose theme, charts, components, logo |
-| `app` | Room database, repositories, statement import, WorkManager jobs, UI screens |
-
-Kotlin, Jetpack Compose with Material 3, Room with SQLCipher, WorkManager and DataStore.
-No Google Play Services, no analytics, no crash-reporting SDKs.
-The engine modules are plain Kotlin with unit tests.
-
 ## License
 
 Acuranza is free software under the [GNU General Public License v3.0 or later](LICENSE), as is the
