@@ -80,7 +80,6 @@ fun SmsTrackingScreen(nav: NavController) {
     var refresh by remember { mutableStateOf(0) }
     var pending by remember { mutableStateOf<List<SmsImportEntity>>(emptyList()) }
     var reviewing by remember { mutableStateOf(false) }
-    var paste by remember { mutableStateOf("") }
     var clipboardHit by remember { mutableStateOf<String?>(null) }
     var showWithdrawDialog by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -163,7 +162,7 @@ fun SmsTrackingScreen(nav: NavController) {
             val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                 as? android.content.ClipboardManager
             val text = cm?.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
-            if (!text.isNullOrBlank() && text != paste) {
+            if (!text.isNullOrBlank()) {
                 val result = com.acuranza.app.sms.SharedSmsPipeline.process(text, System.currentTimeMillis())
                 if (result is com.acuranza.app.sms.SharedSmsPipeline.Result.Candidate) clipboardHit = text
             }
@@ -271,35 +270,7 @@ fun SmsTrackingScreen(nav: NavController) {
                 onPickFullApk = { apkPicker.launch(arrayOf("application/vnd.android.package-archive")) },
                 upgrading = upgrading,
                 refreshKey = refresh,
-                paste = paste,
-                onPasteChange = { paste = it },
-                onAddPasted = {
-                    scope.launch {
-                        when (val outcome = c.smsImports.addPending(paste)) {
-                            is SmsImportRepository.PendingOutcome.Added -> {
-                                paste = ""
-                                message = "Saved for review"
-                            }
-                            is SmsImportRepository.PendingOutcome.Duplicate -> message = "Already added"
-                            is SmsImportRepository.PendingOutcome.Rejected -> message = "Not imported: ${outcome.reason}"
-                        }
-                        refresh++
-                    }
-                },
                 onReview = { reviewing = true },
-                onDeleteImport = { importId ->
-                    scope.launch {
-                        c.smsImports.deleteImport(importId)
-                        refresh++
-                    }
-                },
-                onUndo = { batchId ->
-                    scope.launch {
-                        val removed = c.smsImports.undoBatch(batchId)
-                        message = "Removed $removed imported transactions"
-                        refresh++
-                    }
-                },
                 onDeleteAll = {
                     scope.launch {
                         val removed = c.smsImports.deleteAll()
@@ -546,28 +517,14 @@ private fun SmsOverviewContent(
     onPickFullApk: () -> Unit,
     upgrading: Boolean,
     refreshKey: Int,
-    paste: String,
-    onPasteChange: (String) -> Unit,
-    onAddPasted: () -> Unit,
     onReview: () -> Unit,
-    onDeleteImport: (Long) -> Unit,
-    onUndo: (Long) -> Unit,
     onDeleteAll: () -> Unit,
     onWithdraw: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = LocalContainer.current
     val scope = rememberCoroutineScope()
-    var batches by remember { mutableStateOf<List<SmsImportBatchEntity>>(emptyList()) }
-    var rows by remember { mutableStateOf<List<SmsImportDao.ManagementRow>>(emptyList()) }
-    var total by remember { mutableStateOf(0) }
     var confirmDeleteAll by remember { mutableStateOf(false) }
-
-    LaunchedEffect(refreshKey) {
-        batches = c.smsImports.latestBatches().filterNot { it.label == "Pending review" }
-        rows = c.smsImports.managementRows(100).filter { it.transactionId != null }
-        total = c.smsImports.totalImports() - c.smsImports.pendingCount()
-    }
 
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Spacer(Modifier.height(4.dp)) }
@@ -756,28 +713,6 @@ private fun SmsOverviewContent(
             }
         }
 
-        // How messages arrive
-        item {
-            AcuranzaCard {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Add bank messages", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "In your Messages app, long-press a bank message → Share → Acuranza. Or paste one below. " +
-                            "Acuranza reads only what you send it — no SMS permission, no inbox access.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AcuranzaTheme.colors.subtleText,
-                    )
-                    OutlinedTextField(
-                        value = paste,
-                        onValueChange = onPasteChange,
-                        label = { Text("Paste a bank message") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2,
-                    )
-                    PrimaryButton("Parse message", onClick = onAddPasted, enabled = paste.isNotBlank(), modifier = Modifier.fillMaxWidth())
-                }
-            }
-        }
 
         // Pending review
         if (pending.isNotEmpty()) {
@@ -790,37 +725,6 @@ private fun SmsOverviewContent(
             }
         }
 
-        if (total > 0) {
-            item { Text("IMPORTED — $total", style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText) }
-            items(rows) { row ->
-                AcuranzaCard {
-                    Row(Modifier.padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(row.merchant ?: row.bank, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                            val flagged = if (row.suspicious == true && row.reviewed == false) " · flagged for review" else ""
-                            Text(row.bank + flagged, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.tertiaryText)
-                        }
-                        Text(
-                            Money.format(row.amount),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = if (row.type == TxnType.INCOME) AcuranzaTheme.colors.income else AcuranzaTheme.colors.expense,
-                        )
-                        IconButton(onClick = { onDeleteImport(row.importId) }) {
-                            Icon(Icons.Outlined.Delete, contentDescription = "Delete import", tint = AcuranzaTheme.colors.tertiaryText)
-                        }
-                    }
-                }
-            }
-            batches.firstOrNull()?.let { last ->
-                item {
-                    SecondaryButton(
-                        "Undo last import batch (${last.txnCount})",
-                        onClick = { onUndo(last.id) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        }
 
         // Danger zone
         item {

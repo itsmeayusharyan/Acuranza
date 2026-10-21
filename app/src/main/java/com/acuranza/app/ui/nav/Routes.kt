@@ -38,6 +38,7 @@ object Routes {
     const val SETTINGS_APPEARANCE = "settings/appearance"
     const val SETTINGS_TOOLS = "settings/tools"
     const val SETTINGS_DATA = "settings/data"
+    const val SETTINGS_SMS_IMPORTS = "settings/sms-imports"
     const val INSIGHTS = "insights"
     const val CATEGORIES = "categories"
     const val PENDING_ACCOUNTS = "accounts/pending"

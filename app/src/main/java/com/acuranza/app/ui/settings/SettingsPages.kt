@@ -236,6 +236,12 @@ fun DataManagementPage(nav: NavController) {
 
     fun show(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
     LaunchedEffect(Unit) { sampleLoaded = runCatching { c.demoData.isLoaded() }.getOrDefault(false) }
+    var smsImportCount by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        smsImportCount = runCatching {
+            c.smsImports.totalImports() - c.smsImports.pendingCount()
+        }.getOrDefault(0)
+    }
     val backupFlow = remember { com.acuranza.app.security.BackupFlow(context.applicationContext as com.acuranza.app.AcuranzaApp) }
     val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         if (uri != null) backupUri = uri
@@ -265,6 +271,11 @@ fun DataManagementPage(nav: NavController) {
             SettingsRow("Import statements", "CSV from net banking to bring in past transactions", Icons.Outlined.UploadFile) {
                 nav.navigate(Routes.STATEMENT_IMPORT)
             }
+            SettingsRow(
+                "Imported transactions",
+                if (smsImportCount > 0) "$smsImportCount from bank messages — review, search or delete" else "Transactions confirmed from bank messages appear here",
+                Icons.Outlined.Sms,
+            ) { nav.navigate(Routes.SETTINGS_SMS_IMPORTS) }
             if (sampleLoaded) {
                 SettingsRow("Remove sample data", "Deletes only the demo accounts, transactions and investments", Icons.Outlined.Science, enabled = busy == null) {
                     confirmRemoveSample = true
