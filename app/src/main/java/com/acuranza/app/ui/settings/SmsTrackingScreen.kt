@@ -127,17 +127,9 @@ fun SmsTrackingScreen(nav: NavController) {
             )
             else -> SmsOverviewContent(
                 pending = pending,
-                autoCapture = s.smsAutoCapture,
                 refreshKey = refresh,
                 paste = paste,
                 onPasteChange = { paste = it },
-                onToggleAutoCapture = { on ->
-                    scope.launch {
-                        c.settings.setSmsAutoCapture(on)
-                        message = if (on) "Automatic capture on — new bank SMS will appear here for review" else "Automatic capture off"
-                        refresh++
-                    }
-                },
                 onAddPasted = {
                     scope.launch {
                         when (val outcome = c.smsImports.addPending(paste)) {
@@ -408,12 +400,10 @@ private fun SmsPendingReviewContent(
 @Composable
 private fun SmsOverviewContent(
     pending: List<SmsImportEntity>,
-    autoCapture: Boolean,
     refreshKey: Int,
     paste: String,
     onPasteChange: (String) -> Unit,
     onAddPasted: () -> Unit,
-    onToggleAutoCapture: (Boolean) -> Unit,
     onReview: () -> Unit,
     onDeleteImport: (Long) -> Unit,
     onUndo: (Long) -> Unit,
@@ -456,39 +446,6 @@ private fun SmsOverviewContent(
                     )
                     PrimaryButton("Parse message", onClick = onAddPasted, enabled = paste.isNotBlank(), modifier = Modifier.fillMaxWidth())
                 }
-            }
-        }
-
-        // Automatic capture (notification access; consent + system grant required)
-        item {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val listenerEnabled = androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context)
-                .contains(context.packageName)
-            Column {
-                SettingsToggle(
-                    title = "Automatic capture",
-                    subtitle = when {
-                        !listenerEnabled -> "Reads new bank SMS from the Messages app's notifications. Needs Notification Access — tap to open system settings, then enable Acuranza there."
-                        else -> "New bank SMS from the Messages app's notifications are added here for review as they arrive. Turning it off stops capture immediately."
-                    },
-                    checked = autoCapture && listenerEnabled,
-                    onChecked = { on ->
-                        onToggleAutoCapture(on)
-                        if (on && !listenerEnabled) {
-                            context.startActivity(
-                                android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
-                            )
-                        }
-                    },
-                    icon = Icons.Outlined.Sms,
-                )
-                Text(
-                    if (listenerEnabled) "Notification access: granted"
-                    else "Notification access: not granted — Android 13+ sideloaded installs need App info ⋮ → Allow restricted settings first",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AcuranzaTheme.colors.tertiaryText,
-                    modifier = Modifier.padding(start = 20.dp, top = 6.dp),
-                )
             }
         }
 

@@ -60,8 +60,6 @@ data class Settings(
     val blockScreenshotsChoice: Boolean? = null,
     /** The user explicitly agreed to SMS transaction tracking; nothing is processed before this. */
     val smsConsent: Boolean = false,
-    /** Automatic capture of new bank SMS from the SMS app's notifications (consent + system Notification Access required). */
-    val smsAutoCapture: Boolean = false,
 ) {
     /** When salary arrives, which sets where every budget period starts. */
     val payCycle: PayCycle by lazy {
@@ -119,7 +117,6 @@ class SettingsStore(
         val repairVersion = intPreferencesKey("repair_version")
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
         val smsConsent = booleanPreferencesKey("sms_consent")
-        val smsAutoCapture = booleanPreferencesKey("sms_auto_capture")
     }
 
     val settings: Flow<Settings> = store.data.catch { e ->
@@ -148,7 +145,6 @@ class SettingsStore(
             } ?: com.acuranza.app.model.AccentColor.BLUE,
             blockScreenshotsChoice = p[Keys.blockScreenshots],
             smsConsent = p[Keys.smsConsent] ?: false,
-            smsAutoCapture = p[Keys.smsAutoCapture] ?: false,
         )
     }
         // Writes to keys outside Settings (claimed notifications, repair version) mustn't re-run every screen.
@@ -179,13 +175,7 @@ class SettingsStore(
     suspend fun setSmsConsent(granted: Boolean) = edit { it[Keys.smsConsent] = granted }
 
     /** Withdraws consent; imported data is untouched (delete-all is separate and explicit). */
-    suspend fun revokeSmsConsent() = edit {
-        it[Keys.smsConsent] = false
-        it[Keys.smsAutoCapture] = false
-    }
-
-    /** Automatic capture switch; off stops all processing immediately (the service no-ops). */
-    suspend fun setSmsAutoCapture(enabled: Boolean) = edit { it[Keys.smsAutoCapture] = enabled }
+    suspend fun revokeSmsConsent() = edit { it[Keys.smsConsent] = false }
 
     /** Clears preferences left by the removed Gmail import. */
     suspend fun clearLegacyGmail() = edit { prefs -> Keys.legacyGmail.forEach { prefs.remove(it) } }
