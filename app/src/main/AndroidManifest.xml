@@ -46,6 +46,19 @@
             </intent-filter>
         </activity>
 
+        <!-- Automatic SMS capture: reads only the SMS app's notifications, only while the user
+             has consented in-app AND granted Notification Access in system settings. Guarded by
+             BIND_NOTIFICATION_LISTENER_SERVICE, so only the system can bind it. No SMS permission. -->
+        <service
+            android:name=".notify.SmsNotificationListenerService"
+            android:exported="true"
+            android:label="Acuranza SMS capture"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".tools.MonthWidgetProvider"
             android:exported="true"
