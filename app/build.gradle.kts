@@ -66,8 +66,10 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the Acuranza key when it is present locally. F-Droid builds without it and, because the build
-            // is reproducible, publishes the APK from the GitHub release with its Acuranza signature.
+            // Signed with the Acuranza key when it is present locally. F-Droid builds without it
+            // and signs with its own key. Note: the build is NOT byte-reproducible (AGP embeds
+            // build timestamps), so hash equality across machines cannot be used for verification;
+            // use the recorded SHA-256 of each published release artifact instead.
             if (rootProject.file("keystore/acuranza-release.jks").exists()) signingConfig = signingConfigs.getByName("release")
         }
         // Debug builds use the standard debug key, so a debuggable APK can never install over the real app.
