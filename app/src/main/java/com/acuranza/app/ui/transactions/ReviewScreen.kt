@@ -1,8 +1,11 @@
 package com.acuranza.app.ui.transactions
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -79,6 +83,7 @@ class ReviewViewModel(private val c: AppContainer) : ViewModel() {
     fun markTransfer(id: Long, otherAccountId: Long?) = viewModelScope.launch { c.transactions.markSelfTransfer(id, otherAccountId) }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ReviewScreen(nav: NavController) {
     val vm = acuranzaViewModel { ReviewViewModel(it) }
@@ -138,21 +143,32 @@ fun ReviewScreen(nav: NavController) {
                                     "counted in balances or totals until you confirm it — \"Looks right\" or \"Confirm all\" clears the flag.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = AcuranzaTheme.colors.warning,
-                                modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(AcuranzaTheme.colors.warning.copy(alpha = 0.10f))
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
                             )
                         }
                         TxnRow(t, hidden) { nav.navigate(Routes.txn(t.txn.id)) }
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             SourceBadge(t.txn.source)
                             Spacer(Modifier.size(8.dp))
                             Text(
                                 "${Fmt.dayLabel(t.date)} · ${t.category?.name ?: t.txn.categoryKey}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AcuranzaTheme.colors.subtleText,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
                             )
                         }
-                        Spacer(Modifier.height(8.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Spacer(Modifier.height(4.dp))
+                        FlowRow(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp),
+                        ) {
                             ReviewAction(if (t.txn.suspicious) "Looks right" else "Confirm", Icons.Outlined.Check, AcuranzaTheme.colors.good) {
                                 haptic()
                                 vm.confirm(t.txn.id)
@@ -195,10 +211,19 @@ fun ReviewScreen(nav: NavController) {
 
 @Composable
 private fun ReviewAction(label: String, icon: ImageVector, color: Color, onClick: () -> Unit) {
-    TextButton(onClick = onClick) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+    ) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
         Spacer(Modifier.size(4.dp))
-        Text(label, color = color, style = MaterialTheme.typography.labelMedium)
+        Text(
+            label,
+            color = color,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
     }
 }
 
