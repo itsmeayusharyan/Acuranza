@@ -12,14 +12,6 @@ Acuranza tracks income, expenses, credit cards, bills, budgets and goals. You ad
 hand, import bank-statement CSVs, or let Acuranza read the bank messages you share with it — and
 every insight is computed on the phone.
 
-> Acuranza is a derivative of the upstream Kosh project by Amit Kumar Jha and contributors, used
-> under the terms of the GNU General Public License v3.0 or later (this attribution is retained for
-> licence compliance). The complete upstream history is preserved in this repository's git log, and
-> every source file keeps the copyright notice it carried. Acuranza adds its own interface, a
-> stricter offline build, a notification gate on first launch, and a narrower, spending-focused
-> feature set (the Tax planner and the FD/EPF/NPS wealth sections were removed).
-
-
 ## What it does
 
 - **Bank-message tracking**: share a bank SMS from your Messages app (or paste it) and Acuranza
