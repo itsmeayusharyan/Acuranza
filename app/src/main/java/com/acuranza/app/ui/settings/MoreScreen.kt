@@ -9,21 +9,32 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Backup
-import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,30 +53,41 @@ private fun Context.versionName(): String = runCatching {
     packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0"
 }.getOrDefault("1.0")
 
-private data class SettingsCategory(
+/** One destination on the Settings hub, with the group it belongs to. */
+private data class SettingsEntry(
+    val group: String,
     val title: String,
     val description: String,
     val icon: ImageVector,
     val route: String,
 )
 
-private val SettingsCategories = listOf(
-    SettingsCategory("Appearance", "Theme, accent colour, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
-    SettingsCategory("Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
-    SettingsCategory("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
-    SettingsCategory("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
-    SettingsCategory("Notifications", "Reminders, and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
-    SettingsCategory("Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
-    SettingsCategory("Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune, Routes.SETTINGS_TOOLS),
-    SettingsCategory("About", "Version, privacy policy and licence", Icons.Outlined.Info, Routes.ABOUT),
+/** Every destination, in the spec's group structure — nothing removed, nothing hidden. */
+private val SettingsEntries = listOf(
+    SettingsEntry("Account", "Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
+    SettingsEntry("General", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
+    SettingsEntry("Appearance", "Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
+    SettingsEntry("Privacy & Security", "Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
+    SettingsEntry("Data Management", "Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
+    SettingsEntry("Notifications", "Notifications", "Reminders, and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
+    SettingsEntry("Advanced", "Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune, Routes.SETTINGS_TOOLS),
+    SettingsEntry("About", "About", "Version, privacy policy and licence", Icons.Outlined.Info, Routes.ABOUT),
 )
 
 /**
- * The Settings hub: one short list of categories, each opening its own subpage with a back
- * button — so Settings stays scannable while every control lives one screen deeper, unchanged.
+ * The Settings hub (v1.13.14): a prominent header, a search field that filters every destination
+ * by name and description, and the destinations grouped into labeled rounded containers. Search
+ * shows a flat filtered list with a graceful empty state; with an empty query the groups render
+ * in full. All colors come from the theme, so Dark, Light, System and AMOLED flow through.
  */
 @Composable
 fun MoreScreen(nav: NavController) {
+    var query by remember { mutableStateOf("") }
+    val q = query.trim()
+    val matches = if (q.isEmpty()) SettingsEntries else SettingsEntries.filter {
+        it.title.contains(q, ignoreCase = true) || it.description.contains(q, ignoreCase = true)
+    }
+
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 110.dp),
@@ -80,16 +102,84 @@ fun MoreScreen(nav: NavController) {
                 }
             }
         }
-        item(key = "categories") {
-            StaggeredEntrance(0) {
-                AcuranzaCard(contentPadding = PaddingValues(0.dp)) {
-                    SettingsCategories.forEachIndexed { index, category ->
-                        SettingsRow(
-                            category.title,
-                            category.description,
-                            category.icon,
-                            divider = index < SettingsCategories.lastIndex,
-                        ) { nav.navigate(category.route) }
+        item(key = "search") {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text("Search settings", style = MaterialTheme.typography.bodyMedium) },
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = AcuranzaTheme.colors.tertiaryText) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { query = "" }, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.Outlined.Close, contentDescription = "Clear search", tint = AcuranzaTheme.colors.tertiaryText)
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = AcuranzaTheme.colors.cardSurface,
+                    focusedContainerColor = AcuranzaTheme.colors.cardSurface,
+                    unfocusedBorderColor = AcuranzaTheme.colors.hairline,
+                    focusedBorderColor = AcuranzaTheme.colors.accent,
+                ),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+            )
+        }
+        if (q.isNotEmpty() && matches.isEmpty()) {
+            item(key = "empty") {
+                Column(Modifier.fillMaxWidth().padding(vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("No settings match “${query.trim()}”", style = MaterialTheme.typography.titleSmall, color = AcuranzaTheme.colors.ink)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Try a shorter word — everything is also one tap away in the groups below.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AcuranzaTheme.colors.subtleText,
+                    )
+                }
+            }
+        } else if (q.isNotEmpty()) {
+            item(key = "results-label") {
+                Text(
+                    "${matches.size} result" + if (matches.size == 1) "" else "s",
+                    style = AcuranzaText.sectionLabel,
+                    color = AcuranzaTheme.colors.subtleText,
+                    modifier = Modifier.padding(top = 10.dp, bottom = 8.dp),
+                )
+            }
+            item(key = "results") {
+                StaggeredEntrance(0) {
+                    AcuranzaCard(contentPadding = PaddingValues(0.dp)) {
+                        matches.forEachIndexed { index, entry ->
+                            SettingsRow(
+                                entry.title,
+                                entry.description,
+                                entry.icon,
+                                divider = index < matches.lastIndex,
+                            ) { nav.navigate(entry.route) }
+                        }
+                    }
+                }
+            }
+        } else {
+            val groups = SettingsEntries.groupBy { it.group }.entries.toList()
+            groups.forEachIndexed { groupIndex, (group, entries) ->
+                item(key = "group-$group") {
+                    StaggeredEntrance(groupIndex) {
+                        Column(Modifier.padding(top = 10.dp)) {
+                            Text(group.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
+                            Spacer(Modifier.height(8.dp))
+                            AcuranzaCard(contentPadding = PaddingValues(0.dp)) {
+                                entries.forEachIndexed { index, entry ->
+                                    SettingsRow(
+                                        entry.title,
+                                        entry.description,
+                                        entry.icon,
+                                        divider = index < entries.lastIndex,
+                                    ) { nav.navigate(entry.route) }
+                                }
+                            }
+                        }
                     }
                 }
             }
