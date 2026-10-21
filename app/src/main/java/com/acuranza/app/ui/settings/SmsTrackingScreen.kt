@@ -81,6 +81,8 @@ fun SmsTrackingScreen(nav: NavController) {
     var pending by remember { mutableStateOf<List<SmsImportEntity>>(emptyList()) }
     var reviewing by remember { mutableStateOf(false) }
     var paste by remember { mutableStateOf("") }
+    var clipboardHit by remember { mutableStateOf<String?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(message) {
         message?.let {
@@ -90,6 +92,22 @@ fun SmsTrackingScreen(nav: NavController) {
     }
     LaunchedEffect(refresh, s.smsConsent) {
         pending = if (s.smsConsent && !c.decoy) c.smsImports.pending() else emptyList()
+    }
+
+    // One-tap capture: with consent and this screen open, a bank message sitting in the
+    // clipboard is offered for parsing. The clipboard is read only here (foreground, user-initiated
+    // screen), checked with the same pure pipeline, and never stored unless the user taps Parse.
+    LaunchedEffect(refresh, s.smsConsent, reviewing) {
+        clipboardHit = null
+        if (s.smsConsent && !c.decoy && !reviewing) {
+            val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                as? android.content.ClipboardManager
+            val text = cm?.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
+            if (!text.isNullOrBlank() && text != paste) {
+                val result = com.acuranza.app.sms.SharedSmsPipeline.process(text, System.currentTimeMillis())
+                if (result is com.acuranza.app.sms.SharedSmsPipeline.Result.Candidate) clipboardHit = text
+            }
+        }
     }
 
     AcuranzaScreen(
@@ -127,6 +145,26 @@ fun SmsTrackingScreen(nav: NavController) {
             )
             else -> SmsOverviewContent(
                 pending = pending,
+                clipboardHit = clipboardHit,
+                onParseClipboard = { hit ->
+                    scope.launch {
+                        when (val outcome = c.smsImports.addPending(hit)) {
+                            is com.acuranza.app.repo.SmsImportRepository.PendingOutcome.Added ->
+                                message = "Saved for review"
+                            is com.acuranza.app.repo.SmsImportRepository.PendingOutcome.Duplicate ->
+                                message = "Already added"
+                            is com.acuranza.app.repo.SmsImportRepository.PendingOutcome.Rejected ->
+                                message = "Not imported: ${outcome.reason}"
+                        }
+                        (context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                            as? android.content.ClipboardManager)?.setPrimaryClip(
+                            android.content.ClipData.newPlainText("acuranza", ""),
+                        )
+                        clipboardHit = null
+                        refresh++
+                    }
+                },
+                onDismissClipboard = { clipboardHit = null },
                 refreshKey = refresh,
                 paste = paste,
                 onPasteChange = { paste = it },
@@ -400,6 +438,9 @@ private fun SmsPendingReviewContent(
 @Composable
 private fun SmsOverviewContent(
     pending: List<SmsImportEntity>,
+    clipboardHit: String?,
+    onParseClipboard: (String) -> Unit,
+    onDismissClipboard: () -> Unit,
     refreshKey: Int,
     paste: String,
     onPasteChange: (String) -> Unit,
@@ -412,6 +453,7 @@ private fun SmsOverviewContent(
     modifier: Modifier = Modifier,
 ) {
     val c = LocalContainer.current
+    val scope = rememberCoroutineScope()
     var batches by remember { mutableStateOf<List<SmsImportBatchEntity>>(emptyList()) }
     var rows by remember { mutableStateOf<List<SmsImportDao.ManagementRow>>(emptyList()) }
     var total by remember { mutableStateOf(0) }
@@ -425,6 +467,34 @@ private fun SmsOverviewContent(
 
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Spacer(Modifier.height(4.dp)) }
+
+        // One-tap: a bank message copied in the Messages app is offered for parsing
+        clipboardHit?.let { hit ->
+            item {
+                AcuranzaCard {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Bank message detected", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "You copied a bank message. Parse it now? The clipboard is cleared after.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AcuranzaTheme.colors.subtleText,
+                        )
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            PrimaryButton(
+                                "Parse",
+                                onClick = { onParseClipboard(hit) },
+                                modifier = Modifier.weight(1f),
+                            )
+                            SecondaryButton(
+                                "Not now",
+                                onClick = onDismissClipboard,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
         // How messages arrive
         item {
