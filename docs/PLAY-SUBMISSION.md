@@ -46,9 +46,9 @@ and manage budget"** as a permitted use for `READ_SMS` (and companions). Acuranz
 
 ## Blocking prerequisites (must be done by the developer)
 
-1. **Privacy policy URL** — Play requires a publicly hosted privacy policy for apps using the
-   SMS permission group. Acuranza's policy text exists in-app (About → Privacy policy); it must
-   be published at a public URL and referenced in the listing. Acuranza has no website today.
+1. **Privacy policy URL** — DONE: https://itsmeayusharyan.github.io/acuranza-privacy/
+   (public repo `itsmeayusharyan/acuranza-privacy`, GitHub Pages, verified HTTP 200; source of
+   truth is docs/PRIVACY.md in the main repo — keep them in sync).
 2. **Play Console account + listing** — store listing (fastlane metadata in
    `fastlane/metadata/android/en-US/` is the draft), content rating, target-audience answers.
 3. **Permissions declaration form** — declare READ_SMS with the exception category above;
