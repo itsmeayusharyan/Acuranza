@@ -651,7 +651,6 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         }
         composable(Routes.CALENDAR) { com.acuranza.app.ui.features.CalendarScreen(nav) }
         composable(Routes.ABOUT) { com.acuranza.app.ui.about.AboutScreen(nav) }
-        composable(Routes.ABOUT_LICENSES) { com.acuranza.app.ui.about.LicensesScreen(nav) }
         composable(Routes.ABOUT_PRIVACY) { com.acuranza.app.ui.about.PrivacyPolicyScreen(nav) }
         composable(Routes.ABOUT_TERMS) { com.acuranza.app.ui.about.TermsScreen(nav) }
         composable(Routes.ABOUT_GPL) { com.acuranza.app.ui.about.GplScreen(nav) }

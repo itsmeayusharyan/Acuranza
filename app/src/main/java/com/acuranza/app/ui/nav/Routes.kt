@@ -55,7 +55,6 @@ object Routes {
     const val YEAR_REVIEW = "reports/year/{year}"
     const val CALENDAR = "calendar"
     const val ABOUT = "about"
-    const val ABOUT_LICENSES = "about/licenses"
     const val ABOUT_PRIVACY = "about/privacy"
     const val ABOUT_TERMS = "about/terms"
     const val ABOUT_GPL = "about/gpl"

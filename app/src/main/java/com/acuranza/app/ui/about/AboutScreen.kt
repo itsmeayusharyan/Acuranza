@@ -65,17 +65,15 @@ data class AboutDeviceInfo(
     val manufacturer: String,
     val model: String,
     val appVersion: String,
-    val versionCode: String,
 ) {
     companion object {
-        fun fromSystem(versionName: String = BuildConfig.VERSION_NAME, versionCode: Int = BuildConfig.VERSION_CODE) =
+        fun fromSystem(versionName: String = BuildConfig.VERSION_NAME) =
             AboutDeviceInfo(
                 androidRelease = Build.VERSION.RELEASE,
                 apiLevel = Build.VERSION.SDK_INT,
                 manufacturer = Build.MANUFACTURER.replaceFirstChar { it.uppercase() },
                 model = Build.MODEL,
                 appVersion = versionName,
-                versionCode = versionCode.toString(),
             )
     }
 }
@@ -88,12 +86,10 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
     val scope = rememberCoroutineScope()
 
     AboutContent(
-        versionLabel = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
         onBack = { nav.popBackStack() },
         onPrivacy = { nav.navigate(Routes.ABOUT_PRIVACY) },
         onTerms = { nav.navigate(Routes.ABOUT_TERMS) },
         onLicence = { nav.navigate(Routes.ABOUT_GPL) },
-        onLicenses = { nav.navigate(Routes.ABOUT_LICENSES) },
         onGithub = {
             if (!openUrl(context, REPO_URL)) {
                 scope.launch { snackbar.showSnackbar("No browser found on this device") }
@@ -110,12 +106,10 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
  */
 @Composable
 fun AboutContent(
-    versionLabel: String,
     onBack: () -> Unit,
     onPrivacy: () -> Unit,
     onTerms: () -> Unit = {},
     onLicence: () -> Unit,
-    onLicenses: () -> Unit = {},
     onGithub: () -> Unit = {},
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     device: AboutDeviceInfo = AboutDeviceInfo.fromSystem(),
@@ -167,22 +161,7 @@ fun AboutContent(
             Text("Acuranza", style = MaterialTheme.typography.headlineSmall, color = c.ink)
             Spacer(Modifier.height(2.dp))
             Text("Your money, on your phone", style = MaterialTheme.typography.bodyMedium, color = c.subtleText)
-            Spacer(Modifier.height(10.dp))
-            Text(
-                versionLabel,
-                style = MaterialTheme.typography.labelLarge,
-                color = c.subtleText,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(c.fill)
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Free and open source under GPL-3.0",
-                style = MaterialTheme.typography.labelSmall,
-                color = c.tertiaryText,
-            )
+            Spacer(Modifier.height(24.dp))
         }
 
         // The section kit expects its parent to own the horizontal padding (as Settings' list does).
@@ -192,20 +171,14 @@ fun AboutContent(
                     "GitHub repository",
                     "Source, issues and releases · github.com/itsmeayusharyan/Acuranza",
                     Icons.Outlined.Description,
-                ) { onGithub() }
-                SettingsRow(
-                    "Open-source licenses",
-                    "Legal notices for every dependency this app is built on",
-                    Icons.Outlined.SmartButton,
                     divider = false,
-                ) { onLicenses() }
+                ) { onGithub() }
             }
 
             SettingsSection("Device and build") {
                 SettingsRow("Android version", "Android ${device.androidRelease} (API ${device.apiLevel})", onClick = null)
                 SettingsRow("Device", "${device.manufacturer} ${device.model}", onClick = null)
-                SettingsRow("App version", device.appVersion, onClick = null)
-                SettingsRow("Version code", device.versionCode, onClick = null, divider = false)
+                SettingsRow("App version", device.appVersion, onClick = null, divider = false)
             }
 
             SettingsSection("Legal") {

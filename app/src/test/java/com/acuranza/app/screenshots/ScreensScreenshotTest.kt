@@ -264,7 +264,6 @@ class ScreensScreenshotTest {
     fun about() = paparazzi.snapshot {
         AcuranzaTheme(darkTheme = true) {
             AboutContent(
-                versionLabel = "Version 1.3.0 (4)",
                 onBack = {},
                 onPrivacy = {},
                 onTerms = {},
