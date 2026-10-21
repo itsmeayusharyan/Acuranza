@@ -13,7 +13,8 @@
 all, so Android itself guarantees that your money data never leaves the phone.
 
 Acuranza tracks income, expenses, credit cards, bills, budgets and goals. You add transactions by
-hand or import bank-statement CSVs, and every insight is computed on the phone.
+hand, import bank-statement CSVs, or let Acuranza read the bank messages you share with it — and
+every insight is computed on the phone.
 
 > Acuranza is a derivative of the upstream Kosh project by Amit Kumar Jha and contributors, used
 > under the terms of the GNU General Public License v3.0 or later (this attribution is retained for
@@ -25,9 +26,14 @@ hand or import bank-statement CSVs, and every insight is computed on the phone.
 
 ## What it does
 
+- **Bank-message tracking**: share a bank SMS from your Messages app (or paste it) and Acuranza
+  extracts amount, date, merchant and account into a transaction you confirm. The **Full build**
+  adds a historical inbox scan (with the SMS permission) and an opt-in notification listener, with
+  de-duplication across every source. See *Privacy and security* for the trade-offs.
 - **Bank statement import (CSV)**: statements from net banking (HDFC, ICICI, SBI, Axis, Kotak and
   others), de-duplicated and sorted into categories — no message reading of any kind.
-- **Review inbox**: confirm or fix imported transactions; recategorising a merchant remembers that
+- **Review inbox**: confirm or fix imported transactions — individually, or all at once with
+  "Confirm all" (flagged large amounts included); recategorising a merchant remembers that
   category for future imports.
 - **Accounts and cards**: balances that reconcile with what you know, card outstanding and
   utilisation, and "mark paid" recording the transfer from your bank account.
@@ -48,8 +54,6 @@ hand or import bank-statement CSVs, and every insight is computed on the phone.
 - **Receipts**: attach a bill photo or PDF to a transaction, encrypted on the phone.
 - **Reports**: monthly and yearly PDF reports, a year-in-review, and a calendar of daily spending
   and upcoming payments.
-- **Bank statement import**: CSV statements from net banking (HDFC, ICICI, SBI, Axis, Kotak and
-  others), de-duplicated so re-imports add nothing new.
 - **Insights**: offline rules including budget pace, spending spikes, savings rate, subscriptions,
   card utilisation, emergency-fund cover and unusual spends.
 - **Export**: CSV (opens in Excel), Beancount and Ledger, so your data is never locked in.
@@ -61,14 +65,18 @@ hand or import bank-statement CSVs, and every insight is computed on the phone.
 
 - **No network, by construction.** The APK does not request the INTERNET permission (or any other
   network permission), so no code in it — ours or a dependency's — can open a socket.
-- **Opt-in SMS tracking, on-device, permissionless.** In Settings → Financial tools you can enable
-  SMS transaction tracking: you share bank messages to Acuranza from your Messages app (or paste
-  them), and Acuranza extracts amount, date, merchant and account into transactions you confirm.
-  OTP/PIN/password messages, promotions and ambiguous text are never processed; message bodies are
-  parsed and discarded, never stored. The app requests no SMS permission — sideloaded APKs that do
-  get blocked by Play Protect — and holds no network permission, so nothing can leave the device.
-  Consent can be withdrawn and all SMS data deleted at any time.
-  from bank-statement CSV files you pick yourself, or from manual entry.
+- **Opt-in SMS tracking, on-device.** In Settings → Financial tools you can enable bank-message
+  tracking, with a consent screen that explains every access before anything is turned on. The
+  **standard build** is permissionless: you share bank messages to Acuranza from your Messages app
+  (or paste them), and Acuranza extracts amount, date, merchant and account into transactions you
+  confirm. The **Full build** additionally scans your inbox history and can read incoming bank
+  notifications: it requests the SMS permission and uses Android's notification-listener access,
+  both explicitly granted, both revocable, and it asks again before scanning. OTP/PIN/password
+  messages, promotions and ambiguous text are never processed; message bodies are parsed and
+  discarded, never stored; the same message can never create two transactions. Withdrawing consent
+  stops all processing immediately, deletes every pending candidate and SMS-imported transaction
+  (your own entries and every other record are untouched), and points you to system settings to
+  revoke the SMS permission — Android does not let an app revoke it itself.
 - **Encrypted database:** SQLCipher (AES-256), with the key kept in the Android Keystore.
 - **Biometric lock, app PIN with a decoy PIN** (opens an empty profile), privacy mode and
   screenshot blocking.
@@ -81,8 +89,10 @@ Acuranza asks for exactly one permission before the app opens on first launch:
 **notifications**. They are how reminders reach you — card-bill due dates, unusual spending and
 payments you scheduled — and the app is gated until they are allowed
 (with a clear path through system settings; it never crashes or loops when denied).
-SMS transaction tracking needs no permission at all — messages arrive only when you share or
-paste them. It asks for nothing else: no SMS, no contacts, no location, no network.
+The standard build's bank-message tracking needs no permission at all — messages arrive only when
+you share or paste them. The Full build's inbox scan and notification listener need the SMS
+permission and notification access, granted explicitly and used only for bank messages. Neither
+build asks for anything else: no contacts, no location, no network.
 
 ## License
 
