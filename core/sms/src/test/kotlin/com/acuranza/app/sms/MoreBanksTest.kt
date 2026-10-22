@@ -420,7 +420,8 @@ class MoreBanksTest {
 
     @Test
     fun unmodelledBanksStayOther() {
-        val t = t("AD-RBLBNK", "Rs.2,500.00 debited from your A/c XX9876 on 12-10-2026 for UPI txn to cred.club@axisbank. Avl Bal Rs.12,000.00")
+        // RBL was modelled in v1.13.24; IOB remains unmodelled and must stay Other.
+        val t = t("AD-IOBCHN", "Rs.2,500.00 debited from your A/c XX9876 on 12-10-2026 for UPI txn to cred.club@axisbank. Avl Bal Rs.12,000.00")
         assertEquals(Bank.OTHER, t.bank)
     }
 

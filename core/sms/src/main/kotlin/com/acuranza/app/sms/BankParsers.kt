@@ -116,6 +116,10 @@ internal object GenericParser : BankParser {
         Bank.AXIS -> AxisParser
         // Identified by sender only; their phrasing is covered by the generic patterns.
         Bank.PNB, Bank.BOB, Bank.CANARA, Bank.UNION, Bank.IDFC, Bank.INDUSIND, Bank.YES, Bank.AU, Bank.FEDERAL,
+        Bank.IDBI, Bank.BANDHAN, Bank.RBL, Bank.KARNATAKA, Bank.J_AND_K, Bank.KARUR_VYSYA,
+        Bank.HSBC, Bank.CITIBANK, Bank.STANDARD_CHARTERED, Bank.AMERICAN_EXPRESS,
+        Bank.BANK_OF_INDIA, Bank.CENTRAL_BANK, Bank.UCO, Bank.BANK_OF_MAHARASHTRA,
+        Bank.PAYTM_BANK, Bank.AIRTEL_BANK, Bank.JIO_BANK, Bank.INDIA_POST_BANK,
         Bank.OTHER,
         -> GenericParser
     }

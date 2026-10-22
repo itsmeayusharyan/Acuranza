@@ -24,12 +24,30 @@ private val BANK_HEADERS: Map<String, Bank> = mapOf(
     "YESBNK" to Bank.YES, "YESBK" to Bank.YES,
     "AUBANK" to Bank.AU, "AUBNKS" to Bank.AU,
     "FEDBNK" to Bank.FEDERAL, "FEDFIB" to Bank.FEDERAL,
+    "IDBIBK" to Bank.IDBI,
+    "BDBLBK" to Bank.BANDHAN,
+    "RBLBNK" to Bank.RBL,
+    "KTKBNK" to Bank.KARNATAKA,
+    "JKBANK" to Bank.J_AND_K,
+    "KVBKB" to Bank.KARUR_VYSYA,
+    "HSBCIN" to Bank.HSBC,
+    "CITIBK" to Bank.CITIBANK,
+    "SCBANK" to Bank.STANDARD_CHARTERED,
+    "AMEXIN" to Bank.AMERICAN_EXPRESS,
+    "BOIIND" to Bank.BANK_OF_INDIA,
+    "CENTBK" to Bank.CENTRAL_BANK,
+    "UCOBK" to Bank.UCO,
+    "MAHBNK" to Bank.BANK_OF_MAHARASHTRA,
+    "PAYTMB" to Bank.PAYTM_BANK,
+    "AIRBNK" to Bank.AIRTEL_BANK,
+    "JIOPBK" to Bank.JIO_BANK,
+    "IPPBL" to Bank.INDIA_POST_BANK,
+    "SBIBNK" to Bank.SBI,
 )
 
 /** Headers of banks/cards/payment banks not modelled individually but clearly financial. */
 private val OTHER_FINANCIAL_HEADERS = setOf(
-    "IOBCHN", "RBLBNK", "SCBANK", "CITIBK", "HSBCIN", "AMEXIN", "ONECRD", "SLCEIT",
-    "PAYTMB", "AIRBNK", "JIOPBK", "IDBIBK", "BOIIND", "CENTBK",
+    "IOBCHN", "ONECRD", "SLCEIT",
 )
 
 /**
@@ -60,6 +78,23 @@ private val BANK_NAME_HINTS: List<Pair<String, Bank>> = listOf(
     "CANARABANK" to Bank.CANARA, "UNIONBANK" to Bank.UNION, "IDFCFIRST" to Bank.IDFC, "IDFCBANK" to Bank.IDFC,
     "INDUSIND" to Bank.INDUSIND, "YESBANK" to Bank.YES, "AUBANK" to Bank.AU, "AUSMALLFINANCE" to Bank.AU,
     "FEDERALBANK" to Bank.FEDERAL,
+    "IDBIBANK" to Bank.IDBI,
+    "BANDHANBANK" to Bank.BANDHAN,
+    "RBLBANK" to Bank.RBL,
+    "KARNATAKABANK" to Bank.KARNATAKA,
+    "JK BANK" to Bank.J_AND_K, "JKBANK" to Bank.J_AND_K,
+    "KARURVYSYA" to Bank.KARUR_VYSYA,
+    "CITIBANK" to Bank.CITIBANK,
+    "STANDARDCHARTERED" to Bank.STANDARD_CHARTERED,
+    "AMERICANEXPRESS" to Bank.AMERICAN_EXPRESS,
+    "CENTRALBANKOFINDIA" to Bank.CENTRAL_BANK,
+    "BANKOFINDIA" to Bank.BANK_OF_INDIA,
+    "UCOBANK" to Bank.UCO,
+    "BANKOFMAHARASHTRA" to Bank.BANK_OF_MAHARASHTRA,
+    "PAYTMPAYMENTSBANK" to Bank.PAYTM_BANK,
+    "AIRTELPAYMENTSBANK" to Bank.AIRTEL_BANK,
+    "JIOPAYMENTSBANK" to Bank.JIO_BANK,
+    "INDIAPOSTPAYMENTSBANK" to Bank.INDIA_POST_BANK,
 )
 
 /** Header prefixes too generic to name a bank on their own ("UNIONMF", "INDUSTOWER"); only exact headers count. */
@@ -126,6 +161,10 @@ private fun isPersonalNumber(sender: String): Boolean {
  */
 val BANKS_FORMERLY_OTHER: Set<Bank> = setOf(
     Bank.PNB, Bank.BOB, Bank.CANARA, Bank.UNION, Bank.IDFC, Bank.INDUSIND, Bank.YES, Bank.AU, Bank.FEDERAL,
+    Bank.IDBI, Bank.BANDHAN, Bank.RBL, Bank.KARNATAKA, Bank.J_AND_K, Bank.KARUR_VYSYA,
+    Bank.HSBC, Bank.CITIBANK, Bank.STANDARD_CHARTERED, Bank.AMERICAN_EXPRESS,
+    Bank.BANK_OF_INDIA, Bank.CENTRAL_BANK, Bank.UCO, Bank.BANK_OF_MAHARASHTRA,
+    Bank.PAYTM_BANK, Bank.AIRTEL_BANK, Bank.JIO_BANK, Bank.INDIA_POST_BANK,
 )
 
 internal object BankDetector {
@@ -150,6 +189,24 @@ internal object BankDetector {
         Regex("(?i)\\byes bank\\b") to Bank.YES,
         Regex("(?i)\\bau small finance|\\bau bank\\b") to Bank.AU,
         Regex("(?i)federal bank") to Bank.FEDERAL,
+        Regex("(?i)idbi bank") to Bank.IDBI,
+        Regex("(?i)bandhan bank") to Bank.BANDHAN,
+        Regex("(?i)\\brbl bank\\b") to Bank.RBL,
+        Regex("(?i)karnataka bank") to Bank.KARNATAKA,
+        Regex("(?i)j&k bank|jammu & kashmir bank") to Bank.J_AND_K,
+        Regex("(?i)karur vysya") to Bank.KARUR_VYSYA,
+        Regex("(?i)\\bhsbc\\b") to Bank.HSBC,
+        Regex("(?i)citibank") to Bank.CITIBANK,
+        Regex("(?i)standard chartered") to Bank.STANDARD_CHARTERED,
+        Regex("(?i)american express|\\bamex\\b") to Bank.AMERICAN_EXPRESS,
+        Regex("(?i)central bank of india") to Bank.CENTRAL_BANK,
+        Regex("(?i)(?<!state |central )bank of india") to Bank.BANK_OF_INDIA,
+        Regex("(?i)\\buco bank\\b") to Bank.UCO,
+        Regex("(?i)bank of maharashtra") to Bank.BANK_OF_MAHARASHTRA,
+        Regex("(?i)paytm payments bank|paytm bank") to Bank.PAYTM_BANK,
+        Regex("(?i)airtel payments bank") to Bank.AIRTEL_BANK,
+        Regex("(?i)jio payments bank") to Bank.JIO_BANK,
+        Regex("(?i)india post payments bank|\\bippbl\\b") to Bank.INDIA_POST_BANK,
     )
 
     private val vpa = Regex("\\S+@\\S+")
