@@ -27,11 +27,18 @@ object AppLock {
         _unlocked.value = true
     }
 
+    /** True between the last ON_START and ON_STOP — used by the in-app SMS scan cadence. */
+    @Volatile
+    var isForeground: Boolean = false
+        private set
+
     fun onBackground(now: Long = SystemClock.elapsedRealtime()) {
         backgroundedAt = now
+        isForeground = false
     }
 
     fun onForeground(lockEnabled: Boolean, now: Long = SystemClock.elapsedRealtime()) {
+        isForeground = true
         if (lockEnabled && shouldRelock(backgroundedAt, now)) _unlocked.value = false
         backgroundedAt = 0L
     }

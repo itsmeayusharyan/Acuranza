@@ -36,6 +36,7 @@ class AcuranzaApp : Application() {
             runCatching { container.settings.clearLegacyGmail() }
         }
         WorkScheduler.schedule(this)
+        com.acuranza.app.work.SmsForegroundTicker.start(this)
         com.acuranza.app.tools.WidgetUpdater.start(this)
         appScope.launch { runCatching { com.acuranza.app.tools.DigestSchedule.sync(this@AcuranzaApp) } }
     }

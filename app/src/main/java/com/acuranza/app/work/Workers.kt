@@ -162,10 +162,13 @@ object WorkScheduler {
             wm.cancelUniqueWork(SMS_SCAN)
             return
         }
+        // WorkManager's floor for periodic work is 15 minutes — Android will not run it faster in
+        // the background. The 10-minute experience the user chose comes from the in-app ticker
+        // (SmsForegroundTicker) while the app is open; this schedule catches up in the background.
         wm.enqueueUniquePeriodicWork(
             SMS_SCAN,
             ExistingPeriodicWorkPolicy.UPDATE,
-            PeriodicWorkRequestBuilder<SmsScanWorker>(Duration.ofHours(6)).build(),
+            PeriodicWorkRequestBuilder<SmsScanWorker>(Duration.ofMinutes(15)).build(),
         )
     }
 

@@ -121,16 +121,23 @@ private val promoHeader = Regex("OFFER|PROMO|SALE|LOAN")
 
 private val amountPattern = Regex("(?i)(?:rs[.:]?|inr|₹)\\s*[0-9][0-9,]*(?:\\.\\d{1,2})?")
 private val txnVerbs = Regex(
-    "(?i)\\b(debited|credited|spent|withdrawn|sent|received|paid|transferred|txn|transaction|purchase|" +
-        "used for|deducted|deposited|refund(?:ed)?)\\b",
+    "(?i)\\b(debited|credited|spent|withdrawn|sent|received|paid|transferred|txn|transaction|purchase|purchased|" +
+        "used for|used at|deducted|deposited|refund(?:ed)?|charged|swiped|withdraw|recharge[d]?|auto-?pay|" +
+        "added to|loaded)\\b",
 )
+private val balanceReport = Regex("(?i)\\b(avl bal|available bal|bal rs|balance (?:is |of )?rs)")
 private val accountMention = Regex(
     "(?i)\\b(a/?c|ac|acct|account|card)\\b|\\bx{2,}\\s?\\d{3,4}\\b|\\*{2,}\\d{3,4}\\b|ending\\s*(?:with\\s*)?\\d{4}|\\bupi\\b",
 )
 
-/** True when the body reads like a bank transaction alert: an amount, a transaction verb, and an account/card/UPI. */
+/**
+ * True when the body reads like a bank alert: an amount, an account/card/UPI mention, and either a
+ * transaction verb or a balance report (balance-only SMS are alerts too — the parser files them
+ * without inventing a transaction).
+ */
 fun looksTransactional(body: String): Boolean =
-    amountPattern.containsMatchIn(body) && txnVerbs.containsMatchIn(body) && accountMention.containsMatchIn(body)
+    amountPattern.containsMatchIn(body) && accountMention.containsMatchIn(body) &&
+        (txnVerbs.containsMatchIn(body) || balanceReport.containsMatchIn(body))
 
 /**
  * Permissive gate used by the importer: known bank senders always pass; any other sender (DLT header,
