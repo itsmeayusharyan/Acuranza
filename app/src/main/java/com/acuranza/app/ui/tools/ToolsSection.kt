@@ -121,9 +121,7 @@ fun ExportSection(onMessage: (String) -> Unit) {
         }
     }
 
-    SettingsSection(null) {
-        SettingsRow("Export data", "CSV, Excel, Beancount or Ledger", Icons.Outlined.FileDownload, divider = false) { exportOpen = true }
-    }
+    SettingsRow("Export data", "CSV, Excel, Beancount or Ledger", Icons.Outlined.FileDownload) { exportOpen = true }
 
     if (exportOpen) {
         ExportDialog(

@@ -145,7 +145,7 @@ fun MoreScreen(nav: NavController) {
                     modifier = Modifier.padding(top = 10.dp, bottom = 8.dp),
                 )
             }
-            items(hits, key = { "${'$'}{it.group}/${'$'}{it.page}/${'$'}{it.title}" }) { hit ->
+            items(hits, key = { "${it.group}/${it.page}/${it.title}" }) { hit ->
                 AcuranzaCard(Modifier.padding(vertical = 5.dp)) {
                     SettingsRow(
                         hit.title,

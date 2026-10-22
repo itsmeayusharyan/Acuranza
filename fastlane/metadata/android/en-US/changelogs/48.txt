@@ -1,0 +1,1 @@
+Two fixes: Settings search no longer crashes when results appear (a duplicated list key — every result now has a unique identity), and Export data sits flush inside the Data Management list instead of floating in its own double-bordered card.
