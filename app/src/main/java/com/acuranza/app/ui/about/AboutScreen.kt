@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -188,24 +187,5 @@ fun AboutContent(
             }
         }
 
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                "Offline by design · everything stays on this device",
-                style = MaterialTheme.typography.labelSmall,
-                color = c.tertiaryText,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "A derivative of the Kosh project, used under GPL-3.0",
-                style = MaterialTheme.typography.labelSmall,
-                color = c.tertiaryText,
-            )
-        }
     }
 }
