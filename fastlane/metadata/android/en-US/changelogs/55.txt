@@ -1,1 +1,1 @@
-Startup polish: the launch splash now follows your system theme while preferences load, so light-mode users no longer see a dark flash on cold start; the recategorisation sweep on launch skips itself when there is nothing to apply and processes a bounded batch per start, keeping cold starts short on large histories.
+Version line renamed to 1.0 — same app, cleaner number. Everything from the 1.13.x series is included: glass interface, colour themes, bank SMS identification for 30+ banks, deep settings search, and the hardened withdrawal flow.
