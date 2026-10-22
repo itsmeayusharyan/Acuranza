@@ -217,7 +217,14 @@ class SmsImportRepository(private val db: AcuranzaDatabase, private val attachme
 
     /** Outcomes of one shared or pasted message. */
     sealed interface PendingOutcome {
-        data class Added(val id: Long) : PendingOutcome
+        data class Added(
+            val id: Long,
+            /** Presentation fields for the detected-transaction alert; null where the SMS lacked them. */
+            val bank: String,
+            val amount: Long,
+            val type: com.acuranza.app.model.TxnType,
+            val merchant: String?,
+        ) : PendingOutcome
         data class Duplicate(val id: Long) : PendingOutcome
         data class Rejected(val reason: String) : PendingOutcome
     }
@@ -234,6 +241,12 @@ class SmsImportRepository(private val db: AcuranzaDatabase, private val attachme
                 if (db.smsImports().hasFingerprint(txn.fingerprint)) {
                     return@withTransaction PendingOutcome.Duplicate(-1)
                 }
+                // The presentation summary is captured before the parsed message is discarded —
+                // the alert must never need the raw text again.
+                val summaryBank = txn.bank.displayName
+                val summaryAmount = txn.amount
+                val summaryType = txn.type
+                val summaryMerchant = txn.merchant
                 val batch = db.smsImports().pendingBatch()
                     ?: db.smsImports().insertBatch(SmsImportBatchEntity(importedAt = 0, txnCount = 0, label = "Pending review"))
                         .let { db.smsImports().batchById(it)!! }
@@ -254,7 +267,8 @@ class SmsImportRepository(private val db: AcuranzaDatabase, private val attachme
                         suggestedCategory = txn.suggestedCategory,
                     ),
                 )
-                if (id == -1L) PendingOutcome.Duplicate(-1) else PendingOutcome.Added(id)
+                if (id == -1L) PendingOutcome.Duplicate(-1)
+                else PendingOutcome.Added(id, summaryBank, summaryAmount, summaryType, summaryMerchant)
             }
         }
     }
@@ -285,7 +299,8 @@ class SmsImportRepository(private val db: AcuranzaDatabase, private val attachme
                 suggestedCategory = txn.suggestedCategory,
             ),
         )
-        if (id == -1L) PendingOutcome.Duplicate(-1) else PendingOutcome.Added(id)
+        if (id == -1L) PendingOutcome.Duplicate(-1)
+        else PendingOutcome.Added(id, txn.bank.displayName, txn.amount, txn.type, txn.merchant)
     }
 
     /** Candidates waiting for review, newest first. */

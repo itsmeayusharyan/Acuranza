@@ -26,6 +26,8 @@ class Notifications(private val context: Context) {
                     .apply { description = "Credit card bills and due-date reminders" },
                 NotificationChannel(CH_INSIGHTS, "Insights", NotificationManager.IMPORTANCE_LOW)
                     .apply { description = "Budget and goal alerts" },
+                NotificationChannel(CH_DETECTED, "Detected transactions", NotificationManager.IMPORTANCE_DEFAULT)
+                    .apply { description = "Bank transactions Acuranza detected from notifications, waiting for your review" },
             ),
         )
     }
@@ -39,6 +41,15 @@ class Notifications(private val context: Context) {
     fun insight(key: Int, title: String, text: String) = post(CH_INSIGHTS, NOTIF_INSIGHT_BASE + key, title, text, ROUTE_INSIGHTS)
 
     fun reminder(key: Int, title: String, text: String) = post(CH_INSIGHTS, NOTIF_REMINDER_BASE + key, title, text, ROUTE_RECURRING)
+
+    /**
+     * A bank transaction Acuranza detected from an incoming notification, parked for review.
+     * Called ONLY from the notification-listener path — manual entries, CSV imports and SMS
+     * scans never post this. [key] is the pending-import id: stable, so a reposted alert
+     * replaces itself instead of stacking.
+     */
+    fun detectedTransaction(key: Int, title: String, text: String) =
+        post(CH_DETECTED, NOTIF_DETECTED_BASE + key, title, text, ROUTE_SMS_TRACKING)
 
     private fun post(channel: String, id: Int, title: String, text: String, route: String) {
         if (!canNotify()) return
@@ -76,12 +87,14 @@ class Notifications(private val context: Context) {
 
     companion object {
         const val CH_BILLS = "bills"
+        const val CH_DETECTED = "detected_transactions"
         const val CH_INSIGHTS = "insights"
 
         /** Intent extra naming the screen to open: one of the ROUTE_ constants. */
         const val EXTRA_ROUTE = "acuranza.route"
         const val ROUTE_REVIEW = "review"
         const val ROUTE_BILLS = "bills"
+        const val ROUTE_SMS_TRACKING = "sms-tracking"
         const val ROUTE_INSIGHTS = "insights"
         const val ROUTE_RECURRING = "recurring"
 
@@ -91,7 +104,8 @@ class Notifications(private val context: Context) {
             CH_INSIGHTS to "New insight",
         )
 
-        private const val NOTIF_BILL_BASE = 300_000
+        private const val NOTIF_BILL_BASE = 300
+        const val NOTIF_DETECTED_BASE = 6100_000
         private const val NOTIF_INSIGHT_BASE = 400_000
         private const val NOTIF_MATURITY_BASE = 500_000
         private const val NOTIF_REMINDER_BASE = 700_000

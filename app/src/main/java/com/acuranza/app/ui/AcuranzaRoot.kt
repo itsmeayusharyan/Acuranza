@@ -363,6 +363,7 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
     LaunchedEffect(initialRoute) {
         val target = when (initialRoute) {
             Notifications.ROUTE_REVIEW -> Routes.REVIEW
+            Notifications.ROUTE_SMS_TRACKING -> Routes.SMS_TRACKING
             Notifications.ROUTE_BILLS -> Routes.BILLS
             Notifications.ROUTE_INSIGHTS -> Routes.INSIGHTS
             Notifications.ROUTE_RECURRING -> Routes.RECURRING

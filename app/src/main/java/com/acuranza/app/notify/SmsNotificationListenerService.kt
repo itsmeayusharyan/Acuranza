@@ -38,9 +38,34 @@ class SmsNotificationListenerService : NotificationListenerService() {
         ) ?: return
 
         // Same pipeline as share/paste: reject auth/promo/personal/ambiguous text, keep only
-        // extracted transaction fields, park for review.
+        // extracted transaction fields, park for review. A genuinely NEW detected transaction
+        // raises Acuranza's own alert — duplicates and rejects stay silent. This alert fires
+        // from this path alone: manual entries, CSV imports and inbox scans never post it.
         kotlinx.coroutines.runBlocking {
-            runCatching { container.smsImports.addPending(text, sbn.postTime) }
+            runCatching {
+                when (val outcome = container.smsImports.addPending(text, sbn.postTime)) {
+                    is com.acuranza.app.repo.SmsImportRepository.PendingOutcome.Added ->
+                        Notifications(this@SmsNotificationListenerService).detectedTransaction(
+                            outcome.id.toInt(),
+                            alertTitle(outcome.type, outcome.amount),
+                            alertText(outcome.amount, outcome.type, outcome.merchant, outcome.bank),
+                        )
+                    else -> Unit
+                }
+            }
         }
+    }
+
+    companion object {
+        /** Pure presentation logic so the wording is unit-testable without Android classes. */
+        internal fun alertTitle(type: com.acuranza.app.model.TxnType, amount: Long): String =
+            when (type) {
+                com.acuranza.app.model.TxnType.INCOME -> "Money received: ${com.acuranza.app.model.Money.format(amount)}"
+                com.acuranza.app.model.TxnType.EXPENSE -> "Spent: ${com.acuranza.app.model.Money.format(amount)}"
+                com.acuranza.app.model.TxnType.TRANSFER -> "Transfer: ${com.acuranza.app.model.Money.format(amount)}"
+            }
+
+        internal fun alertText(amount: Long, type: com.acuranza.app.model.TxnType, merchant: String?, bank: String): String =
+            listOfNotNull(merchant, bank).joinToString(" · ").ifEmpty { "Tap to review this transaction" }
     }
 }
