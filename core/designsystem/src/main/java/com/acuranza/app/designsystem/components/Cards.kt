@@ -61,14 +61,16 @@ fun AcuranzaCard(
 }
 
 /**
- * An emphasis card with a flat ink face (light theme) and white content. Use sparingly:
- * one per screen at most. The [brush] parameter is kept for compatibility; pass a
- * [SolidColor] to change the face.
+ * An emphasis card with a flat dark face and white content — the app's hero treatment. The face
+ * follows the theme: the brand ink (deep navy) in Light mode, the elevated card surface in Dark
+ * and AMOLED modes, so the card never reads as an off-brand black slab. Use sparingly: one per
+ * screen at most. The [brush] parameter is kept for compatibility; pass a [SolidColor] to
+ * override the face.
  */
 @Composable
 fun GradientCard(
     modifier: Modifier = Modifier,
-    brush: Brush = SolidColor(InkFace),
+    brush: Brush = SolidColor(heroFace()),
     onClick: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(AcuranzaTheme.spacing.xl),
     shape: Shape = RoundedCornerShape(20.dp),
@@ -86,6 +88,11 @@ fun GradientCard(
 
 /** The flat ink used for emphasis cards and card faces. */
 val InkFace = Color(0xFF111111)
+
+/** The theme-aware emphasis face: brand ink on light, the elevated card surface on dark/AMOLED. */
+@Composable
+private fun heroFace(): Color =
+    if (AcuranzaTheme.colors.isDark) AcuranzaTheme.colors.cardSurface else AcuranzaTheme.colors.ink
 
 /** A plain outlined surface (the old frosted glass, now flat). */
 @Composable

@@ -1,0 +1,1 @@
+Light-mode consistency fix: the net-worth hero card (and the account balance emphasis card) used a hardcoded near-black face in every theme. The face now follows the theme — brand ink on Light, elevated card surface on Dark and AMOLED — so no component stays dark when Light mode is active. Bank-card artwork keeps its intentional dark style.
