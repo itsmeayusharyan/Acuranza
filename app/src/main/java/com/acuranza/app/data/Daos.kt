@@ -28,6 +28,12 @@ interface AccountDao {
     @Query("SELECT * FROM accounts ORDER BY type, name")
     suspend fun all(): List<AccountEntity>
 
+    @Query(
+        "SELECT * FROM accounts WHERE autoCreated = 1 AND NOT EXISTS " +
+            "(SELECT 1 FROM transactions t WHERE t.accountId = accounts.id OR t.toAccountId = accounts.id)",
+    )
+    suspend fun emptyAutoCreated(): List<AccountEntity>
+
     /** Accounts the user ignored or archived: their SMS are still read but never counted. */
     @Query("SELECT * FROM accounts WHERE archived = 1 ORDER BY type, name")
     fun observeIgnored(): Flow<List<AccountEntity>>

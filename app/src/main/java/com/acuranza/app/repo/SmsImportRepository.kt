@@ -39,7 +39,7 @@ data class ApprovedSmsImport(
  * touched by an undo because every import row references only the transaction its own batch
  * created.
  */
-class SmsImportRepository(private val db: AcuranzaDatabase) {
+class SmsImportRepository(private val db: AcuranzaDatabase, private val attachments: com.acuranza.app.repo.AttachmentRepository? = null) {
 
     /**
      * The account a parsed transaction belongs to. Matching is by the digits the message showed
@@ -163,18 +163,32 @@ class SmsImportRepository(private val db: AcuranzaDatabase) {
         rows.count { it.transactionId != null }
     }
 
-    /** Deletes one import and its transaction; the rest of the batch is untouched. */
+    /** Deletes one import and its transaction (and any receipt files on it); the rest of the batch is untouched. */
     suspend fun deleteImport(importId: Long) = db.withTransaction {
         val row = db.smsImports().byId(importId) ?: return@withTransaction
+        // Receipt files have no SQL cascade — delete them via the repo before the row goes,
+        // otherwise the encrypted files are orphaned on disk.
+        row.transactionId?.let { attachments?.deleteAllFor(it) }
         db.smsImports().deleteTransactionOf(importId)
         db.smsImports().deleteRow(importId)
         row
     }
 
-    /** Removes every SMS import, its transactions and the batch records. Manual data is untouched. */
+    /**
+     * Removes every SMS import, its transactions, its receipt files and the batch records, then
+     * deletes the SMS-created accounts that are left with zero transactions (provenance:
+     * `autoCreated`, and any account the user added transactions to survives). Manual data is
+     * untouched. Transactional and idempotent — a second call finds nothing and removes zero.
+     */
     suspend fun deleteAll(): Int = db.withTransaction {
         var removed = 0
-        for (batch in db.smsImports().latestBatches(limit = 10_000)) removed += undoBatch(batch.id)
+        val batches = db.smsImports().latestBatches(limit = 10_000)
+        // Receipt files have no SQL cascade — remove them via the repo before their rows cascade away.
+        for (batch in batches)
+            for (row in db.smsImports().byBatch(batch.id))
+                row.transactionId?.let { attachments?.deleteAllFor(it) }
+        for (batch in batches) removed += undoBatch(batch.id)
+        for (account in db.accounts().emptyAutoCreated()) db.accounts().delete(account)
         removed
     }
 

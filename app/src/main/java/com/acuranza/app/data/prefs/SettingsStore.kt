@@ -211,6 +211,8 @@ class SettingsStore(
     /** Withdraws consent and switches every capture off. Deleting the feature's data is a
      *  separate, explicit step performed by the withdrawal flow in the UI. */
     suspend fun revokeSmsConsent() = edit {
+        it[Keys.smsFirstImportDone] = false
+        it[Keys.smsLastScanAt] = 0L
         it[Keys.smsConsent] = false
         it[Keys.smsAutoScan] = false
         it[Keys.smsAutoCapture] = false

@@ -81,6 +81,7 @@ fun SmsTrackingScreen(nav: NavController) {
     var pending by remember { mutableStateOf<List<SmsImportEntity>>(emptyList()) }
     var reviewing by remember { mutableStateOf(false) }
     var clipboardHit by remember { mutableStateOf<String?>(null) }
+    var showWithdrawNudge by remember { mutableStateOf(false) }
     var showWithdrawDialog by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -175,14 +176,46 @@ fun SmsTrackingScreen(nav: NavController) {
         onBack = { nav.popBackSafely() },
         snackbar = snackbar,
     ) { padding ->
+        if (showWithdrawNudge) {
+            AlertDialog(
+                onDismissRequest = { showWithdrawNudge = false },
+                title = { Text("Export before you withdraw?") },
+                text = {
+                    Text(
+                        "Withdrawing stops SMS tracking and deletes everything it imported — pending bank " +
+                            "messages, imported transactions and the bank accounts it created for you. Export " +
+                            "your records first if you want to keep them. Exported files may contain sensitive " +
+                            "financial information — store them somewhere safe; nothing is exported or shared " +
+                            "automatically.",
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showWithdrawNudge = false
+                        nav.navigate(com.acuranza.app.ui.nav.Routes.SETTINGS_DATA)
+                    }) { Text("Export data first") }
+                },
+                dismissButton = {
+                    Row {
+                        TextButton(onClick = { showWithdrawNudge = false }) { Text("Cancel") }
+                        TextButton(onClick = {
+                            showWithdrawNudge = false
+                            showWithdrawDialog = true
+                        }) { Text("Continue") }
+                    }
+                },
+            )
+        }
+
         if (showWithdrawDialog) {
             AlertDialog(
                 onDismissRequest = { showWithdrawDialog = false },
                 title = { Text("Withdraw SMS tracking?") },
                 text = {
                     Text(
-                        "All processing stops immediately. This deletes every pending bank message and every " +
-                            "transaction imported from SMS (${pending.size} pending, plus imported ones). Transactions you " +
+                        "All processing stops immediately. This deletes every pending bank message, every " +
+                            "transaction imported from SMS (${pending.size} pending, plus imported ones) and the bank " +
+                            "accounts SMS tracking created, as long as they hold nothing else. Transactions you " +
                             "entered yourself, CSV imports, budgets and every other record are untouched; balances are " +
                             "recomputed from what remains. Android does not let an app revoke its own SMS permission — " +
                             "to remove that too, revoke it in App info → Permissions → SMS.",
@@ -278,7 +311,7 @@ fun SmsTrackingScreen(nav: NavController) {
                         refresh++
                     }
                 },
-                onWithdraw = { showWithdrawDialog = true },
+                onWithdraw = { showWithdrawNudge = true },
                 modifier = Modifier.padding(padding),
             )
         }

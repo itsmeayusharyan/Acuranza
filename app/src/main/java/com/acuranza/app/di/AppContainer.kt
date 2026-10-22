@@ -51,7 +51,7 @@ class AppContainer(context: Context, sandbox: com.acuranza.app.security.DecoySan
     val attachments = com.acuranza.app.repo.AttachmentRepository(db, attachmentStore)
     val statementImporter = com.acuranza.app.repo.StatementImporter(db)
     // SMS transaction tracking: the decoy profile gets the bookkeeping but never an inbox reader.
-    val smsImports = com.acuranza.app.repo.SmsImportRepository(db)
+    val smsImports = com.acuranza.app.repo.SmsImportRepository(db, attachments)
     // The full variant's inbox runner; in the standard build the READ_SMS grant never exists,
     // so the gate inside turns every scan into a recorded no-op.
     val smsScanRunner = if (sandbox == null) {
