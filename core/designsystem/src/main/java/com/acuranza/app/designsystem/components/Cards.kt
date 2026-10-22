@@ -112,7 +112,7 @@ fun Modifier.glassSurface(shape: Shape, colorOverride: Color? = null): Modifier 
     return this
         .clip(shape)
         .background(colorOverride ?: c.glass.copy(alpha = if (c.isDark) 0.80f else 0.92f))
-        .border(1.dp, if (colorOverride != null) c.glassBorder else c.glassBorder, shape)
+        .border(1.dp, c.glassBorder, shape)
         .drawWithContent {
             drawContent()
             if (c.isDark) {
