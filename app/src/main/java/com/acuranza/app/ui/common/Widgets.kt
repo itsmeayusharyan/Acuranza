@@ -400,7 +400,10 @@ fun ConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        title = {
+            com.acuranza.app.designsystem.components.DialogBlurBehind()
+            Text(title)
+        },
         text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onConfirm) {

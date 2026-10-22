@@ -247,7 +247,10 @@ private fun ExportDialog(onDismiss: () -> Unit, onExport: (ExportFormat, ExportR
     var range by remember { mutableStateOf(ExportRange.THIS_PERIOD) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Export data") },
+        title = {
+            com.acuranza.app.designsystem.components.DialogBlurBehind()
+            Text("Export data")
+        },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text("Range", style = MaterialTheme.typography.labelLarge, color = AcuranzaTheme.colors.subtleText)

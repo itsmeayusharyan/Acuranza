@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.Dp
@@ -49,11 +51,11 @@ fun AcuranzaCard(
     color: Color = AcuranzaTheme.colors.cardSurface,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // An explicit non-default color is a semantic tint (warning/primary washes): keep it solid.
+    val tinted = color != AcuranzaTheme.colors.cardSurface
     Column(
         modifier = modifier
-            .clip(shape)
-            .background(color)
-            .border(1.dp, AcuranzaTheme.colors.hairline, shape)
+            .glassSurface(shape, colorOverride = if (tinted) color else null)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         content = content,
@@ -93,6 +95,62 @@ val InkFace = Color(0xFF111111)
 @Composable
 private fun heroFace(): Color =
     if (AcuranzaTheme.colors.isDark) AcuranzaTheme.colors.cardSurface else AcuranzaTheme.colors.ink
+
+/**
+ * The glass surface treatment, centralized so every screen shares one implementation: a
+ * translucent fill derived from the theme's glass token, a fine glass border, and — in dark
+ * modes — a restrained top-edge highlight that suggests a lit glass edge. No real-time blur:
+ * Compose has no public in-app backdrop blur, so this scrim-glass is the primary treatment and
+ * the deliberate fallback everywhere (dialogs and sheets get true window blur separately on
+ * API 31+). Cheap to render (one fill, one border, one line), safe on every API level, and
+ * derived entirely from theme tokens so Dark, Light, System, AMOLED and every palette adapt
+ * without hardcoding.
+ */
+@Composable
+fun Modifier.glassSurface(shape: Shape, colorOverride: Color? = null): Modifier {
+    val c = AcuranzaTheme.colors
+    return this
+        .clip(shape)
+        .background(colorOverride ?: c.glass.copy(alpha = if (c.isDark) 0.80f else 0.92f))
+        .border(1.dp, if (colorOverride != null) c.glassBorder else c.glassBorder, shape)
+        .drawWithContent {
+            drawContent()
+            if (c.isDark) {
+                // Restrained lit edge: a 1dp gradient at the top, white at 10% fading out.
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        listOf(Color.White.copy(alpha = 0.10f), Color.Transparent),
+                        startY = 0f,
+                        endY = 6.dp.toPx(),
+                    ),
+                    size = Size(size.width, 6.dp.toPx()),
+                )
+            }
+        }
+}
+
+/** True window-level blur behind dialogs and bottom sheets on Android 12+, no-op below. */
+fun android.view.View.dialogBlurBehind(radiusPx: Int = 80) {
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return
+    var w: Any? = parent
+    while (w is android.view.View) {
+        if (w is androidx.compose.ui.window.DialogWindowProvider) {
+            w.window.setBackgroundBlurRadius(radiusPx)
+            return
+        }
+        w = w.parent
+    }
+}
+
+/**
+ * Call INSIDE a dialog/sheet's content: blurs the window behind it on Android 12+ (GPU-composited,
+ * one call — no per-frame cost). No-op below API 31, where the scrim glass is the treatment.
+ */
+@Composable
+fun DialogBlurBehind(radiusPx: Int = 80) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.SideEffect { view.dialogBlurBehind(radiusPx) }
+}
 
 /** A plain outlined surface (the old frosted glass, now flat). */
 @Composable

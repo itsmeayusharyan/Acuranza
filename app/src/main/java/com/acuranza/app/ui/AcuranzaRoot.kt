@@ -94,6 +94,7 @@ import com.acuranza.app.data.prefs.Settings
 import com.acuranza.app.data.prefs.ThemeMode
 import com.acuranza.app.di.AppContainer
 import com.acuranza.app.designsystem.components.AcuranzaLogo
+import com.acuranza.app.designsystem.components.glassSurface
 import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.components.PrimaryButton
 import com.acuranza.app.designsystem.components.pressScale
@@ -416,9 +417,9 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
     val colors = AcuranzaTheme.colors
     val haptic = com.acuranza.app.ui.common.rememberHaptic()
     val pillShape = RoundedCornerShape(30.dp)
-    // Translucent-style surface derived from the theme token itself — see-through enough to feel
-    // floating, opaque enough to stay readable over scrolling content on every palette.
-    val pillSurface = colors.glass.copy(alpha = if (colors.isDark) 0.94f else 0.96f)
+    // Translucent glass surface from the centralized treatment — see-through enough to float
+    // over scrolling content, opaque enough to stay readable on every palette.
+    val pillSurface = colors.glass.copy(alpha = if (colors.isDark) 0.88f else 0.92f)
 
     Box(
         Modifier
@@ -434,9 +435,8 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                 ambientColor = colors.ink.copy(alpha = 0.14f),
                 spotColor = colors.ink.copy(alpha = 0.18f),
             )
-            .clip(pillShape)
-            .background(pillSurface)
-            .border(1.dp, colors.glassBorder, pillShape)
+            .glassSurface(pillShape)
+            .background(pillSurface, pillShape)
             .height(68.dp),
     ) {
         Row(
