@@ -43,11 +43,13 @@ private val BANK_HEADERS: Map<String, Bank> = mapOf(
     "JIOPBK" to Bank.JIO_BANK,
     "IPPBL" to Bank.INDIA_POST_BANK,
     "SBIBNK" to Bank.SBI,
+    "SLCEIT" to Bank.SLICE,
+    "SLICEN" to Bank.SLICE,
 )
 
 /** Headers of banks/cards/payment banks not modelled individually but clearly financial. */
 private val OTHER_FINANCIAL_HEADERS = setOf(
-    "IOBCHN", "ONECRD", "SLCEIT",
+    "IOBCHN", "ONECRD",
 )
 
 /**
@@ -95,6 +97,7 @@ private val BANK_NAME_HINTS: List<Pair<String, Bank>> = listOf(
     "AIRTELPAYMENTSBANK" to Bank.AIRTEL_BANK,
     "JIOPAYMENTSBANK" to Bank.JIO_BANK,
     "INDIAPOSTPAYMENTSBANK" to Bank.INDIA_POST_BANK,
+    "SLICE" to Bank.SLICE,
 )
 
 /** Header prefixes too generic to name a bank on their own ("UNIONMF", "INDUSTOWER"); only exact headers count. */
@@ -172,6 +175,7 @@ val BANKS_FORMERLY_OTHER: Set<Bank> = setOf(
     Bank.HSBC, Bank.CITIBANK, Bank.STANDARD_CHARTERED, Bank.AMERICAN_EXPRESS,
     Bank.BANK_OF_INDIA, Bank.CENTRAL_BANK, Bank.UCO, Bank.BANK_OF_MAHARASHTRA,
     Bank.PAYTM_BANK, Bank.AIRTEL_BANK, Bank.JIO_BANK, Bank.INDIA_POST_BANK,
+    Bank.SLICE,
 )
 
 internal object BankDetector {

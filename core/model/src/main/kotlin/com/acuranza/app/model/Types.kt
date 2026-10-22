@@ -39,6 +39,7 @@ enum class Bank(val displayName: String, val shortName: String, val brandColor: 
     AIRTEL_BANK("Airtel Payments Bank", "Airtel", 0xFFE40000),
     JIO_BANK("Jio Payments Bank", "Jio", 0xFF0A2885),
     INDIA_POST_BANK("India Post Payments Bank", "IPPB", 0xFFB41118),
+    SLICE("Slice", "Slice", 0xFF201E50),
     OTHER("Other", "Other", 0xFF5F6B7A);
 
     companion object {

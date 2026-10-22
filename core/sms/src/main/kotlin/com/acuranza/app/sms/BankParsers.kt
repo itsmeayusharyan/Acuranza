@@ -107,6 +107,23 @@ internal object GenericParser : BankParser {
         "\\bfor\\s+(?!rs\\b|inr\\b|upi\\b|the\\b|your\\b|a\\b)([a-z][a-z0-9 .&'-]{2,40}?)(?=\\s+on\\s|\\.\\s|\\.$|\\s+ref|\\s+via\\s|\\s+from\\s|$)",
     )
 
+/**
+ * Slice (SLCEIT family): UPI alerts name the payee/payee-account after "from"/"to" and carry a
+ * Ref ID; card repayments are "Repayment of Rs.X received ... card account - slice". The shared
+ * engine derives direction, amount, date, masked digits and balance; these patterns only add
+ * Slice's phrasing.
+ */
+internal object SliceParser : BankParser {
+    override val bank = Bank.SLICE
+    override val merchantPatterns = rx(
+        "\\bfrom\\s+(.+?)\\s+via\\s+upi",
+        "\\bto\\s+(.+?)\\s+via\\s+upi",
+        "\\bfrom\\s+(.+?)\\s+on\\s+\\d",
+        "\\bto\\s+(.+?)\\s+on\\s+\\d",
+        // debits without a payee phrase fall back to nothing (merchant stays null — never invented)
+    )
+}
+
     fun forBank(bank: Bank): BankParser = when (bank) {
         Bank.HDFC -> HdfcParser
         Bank.ICICI -> IciciParser
@@ -120,6 +137,7 @@ internal object GenericParser : BankParser {
         Bank.HSBC, Bank.CITIBANK, Bank.STANDARD_CHARTERED, Bank.AMERICAN_EXPRESS,
         Bank.BANK_OF_INDIA, Bank.CENTRAL_BANK, Bank.UCO, Bank.BANK_OF_MAHARASHTRA,
         Bank.PAYTM_BANK, Bank.AIRTEL_BANK, Bank.JIO_BANK, Bank.INDIA_POST_BANK,
+        Bank.SLICE -> SliceParser
         Bank.OTHER,
         -> GenericParser
     }

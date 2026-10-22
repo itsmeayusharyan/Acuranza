@@ -85,8 +85,8 @@ internal object Extract {
     }
 
     private val refRe = Regex(
-        "(?i)\\b(?:upi\\s*ref(?:erence)?(?:\\s*no)?|ref(?:erence)?\\s*no|refno|ref|rrn|utr(?:\\s*no)?|txn\\s*id|upi)" +
-            "\\s*[:#.\\-]?\\s*(?:no\\.?\\s*)?([A-Za-z0-9]*[0-9][A-Za-z0-9]{5,})",
+        "(?i)\\b(?:upi\\s*ref(?:erence)?(?:\\s*no)?|ref(?:erence)?|refno|rrn|utr(?:\\s*no)?|txn\\s*id|upi)" +
+            "\\s*(?:no\\.?|id\\.?)?\\s*[:#.\\-]?\\s*([A-Za-z0-9]*[0-9][A-Za-z0-9]{5,})",
     )
 
     fun reference(body: String): String? = refRe.find(body)?.groupValues?.get(1)
