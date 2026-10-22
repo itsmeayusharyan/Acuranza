@@ -58,6 +58,7 @@ import com.acuranza.app.ui.common.DateField
 import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.FormColumn
 import com.acuranza.app.ui.common.AcuranzaScreen
+import com.acuranza.app.ui.common.rememberHaptic
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalHideAmounts
@@ -80,6 +81,7 @@ fun loanKindTitle(kind: String): String = when (kind) {
 
 @Composable
 fun LoansScreen(nav: NavController) {
+    val haptic = rememberHaptic()
     val c = LocalContainer.current
     val hidden = LocalHideAmounts.current
     val loans by c.loans.observe().collectAsState(initial = null)
@@ -87,7 +89,7 @@ fun LoansScreen(nav: NavController) {
         title = "Loans & EMIs",
         onBack = { nav.popBackSafely() },
         floating = {
-            ExtendedFloatingActionButton(onClick = { nav.navigate(Routes.editLoan()) }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Add loan") })
+            ExtendedFloatingActionButton(onClick = { haptic.tick(); nav.navigate(Routes.editLoan()) }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Add loan") })
         },
     ) { pad ->
         val list = loans ?: return@AcuranzaScreen

@@ -140,11 +140,18 @@ private fun RowSkeleton(
     onClick: (() -> Unit)? = null,
 ) {
     val colors = AcuranzaTheme.colors
+    val tick = com.acuranza.app.ui.common.rememberHaptic()
     Column {
         Row(
             Modifier
                 .fillMaxWidth()
-                .then(if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick) else Modifier)
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable(enabled = enabled) { tick(); onClick() }
+                    } else {
+                        Modifier
+                    }
+                )
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

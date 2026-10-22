@@ -2,28 +2,21 @@ package com.acuranza.app.ui.about
 
 import android.content.ActivityNotFoundException
 import android.os.Build
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SmartButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -32,14 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.acuranza.app.BuildConfig
 import com.acuranza.app.designsystem.components.AcuranzaLogo
 import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
+import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.settings.SettingsRow
 import com.acuranza.app.ui.settings.SettingsSection
@@ -48,7 +40,7 @@ import kotlinx.coroutines.launch
 /** Where the source and the releases actually live. */
 const val REPO_URL = "https://github.com/itsmeayusharyan/Acuranza"
 
-private fun openUrl(context: android.content.Context, url: String): Boolean = try {
+internal fun openUrl(context: android.content.Context, url: String): Boolean = try {
     context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
     true
 } catch (_: ActivityNotFoundException) {
@@ -94,6 +86,7 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
                 scope.launch { snackbar.showSnackbar("No browser found on this device") }
             }
         },
+        onAcknowledgements = { nav.navigate(Routes.ABOUT_ACKNOWLEDGEMENTS) },
         snackbar = snackbar,
     )
 }
@@ -110,49 +103,28 @@ fun AboutContent(
     onTerms: () -> Unit = {},
     onLicence: () -> Unit,
     onGithub: () -> Unit = {},
+    onAcknowledgements: () -> Unit = {},
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     device: AboutDeviceInfo = AboutDeviceInfo.fromSystem(),
 ) {
+    AcuranzaScreen(
+        title = "About",
+        subtitle = null,
+        onBack = onBack,
+        snackbar = snackbar,
+    ) { padding ->
     val c = AcuranzaTheme.colors
     Column(
         Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .fillMaxWidth()
+            .padding(padding)
             .verticalScroll(rememberScrollState()),
     ) {
-        // Header: a slightly lighter band with the title centred between the back arrow and its ghost twin.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .background(c.cardSurface)
-                .height(56.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                "About",
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-            )
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
-                }
-                Spacer(Modifier.weight(1f))
-                // A ghost spacer of the same width keeps the title optically centred.
-                Spacer(Modifier.size(48.dp))
-            }
-        }
-
         Column(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(top = 32.dp),
+                .padding(top = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             AcuranzaLogo(size = 88.dp, shape = LogoShape.RoundedSquare)
@@ -183,9 +155,10 @@ fun AboutContent(
             SettingsSection("Legal") {
                 SettingsRow("Privacy policy", "What Acuranza stores, and what it never sends", Icons.Outlined.Shield) { onPrivacy() }
                 SettingsRow("Terms of service", "The plain terms of using the app", Icons.Outlined.Gavel) { onTerms() }
-                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Info, divider = false) { onLicence() }
+                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Info) { onLicence() }
+                SettingsRow("Acknowledgements", "The libraries Acuranza is built on", Icons.Outlined.AutoAwesome, divider = false) { onAcknowledgements() }
             }
         }
-
     }
-}
+        }
+    }

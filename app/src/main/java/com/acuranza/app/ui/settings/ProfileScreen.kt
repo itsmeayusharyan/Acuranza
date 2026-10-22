@@ -58,6 +58,7 @@ import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalSettings
+import com.acuranza.app.ui.common.rememberHaptic
 import com.acuranza.app.ui.nav.popBackSafely
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -164,6 +165,7 @@ fun ProfileScreen(nav: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val haptic = rememberHaptic()
 
     var draftName by remember(s.profileName) { mutableStateOf(s.profileName ?: "") }
     var draftAvatar by remember(s.profileAvatar) { mutableStateOf(s.profileAvatar) }
@@ -231,6 +233,7 @@ fun ProfileScreen(nav: NavController) {
                     val cleaned = ProfileName.clean(draftName)
                     if (ProfileName.validate(cleaned) == null) {
                         scope.launch {
+                            haptic.confirm()
                             c.settings.setProfileName(cleaned.takeIf { it.isNotEmpty() })
                             if (avatarChanged) {
                                 c.settings.setProfileAvatar(draftAvatar)

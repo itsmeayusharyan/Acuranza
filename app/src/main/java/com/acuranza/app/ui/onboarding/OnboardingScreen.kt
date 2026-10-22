@@ -93,6 +93,9 @@ private const val NOTIFICATIONS_STEP = 3
 
 @Composable
 fun OnboardingScreen() {
+    val slideSpec = com.acuranza.app.designsystem.theme.motionTween<androidx.compose.ui.unit.IntOffset>(com.acuranza.app.designsystem.theme.Motion.EMPHASIZED)
+    val fadeSpec = com.acuranza.app.designsystem.theme.motionTween<Float>(com.acuranza.app.designsystem.theme.Motion.STANDARD)
+    val fadeSpecOut = com.acuranza.app.designsystem.theme.motionTween<Float>(com.acuranza.app.designsystem.theme.Motion.FAST)
     val c = LocalContainer.current
     var step by rememberSaveable { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -115,8 +118,8 @@ fun OnboardingScreen() {
             targetState = step,
             transitionSpec = {
                 val forward = targetState > initialState
-                (slideInHorizontally(tween(320)) { if (forward) it / 3 else -it / 3 } + fadeIn(tween(320))) togetherWith
-                    (slideOutHorizontally(tween(260)) { if (forward) -it / 3 else it / 3 } + fadeOut(tween(200)))
+                (slideInHorizontally(slideSpec) { if (forward) it / 3 else -it / 3 } + fadeIn(fadeSpec)) togetherWith
+                    (slideOutHorizontally(slideSpec) { if (forward) -it / 3 else it / 3 } + fadeOut(fadeSpecOut))
             },
             label = "onboarding",
             modifier = Modifier.weight(1f),

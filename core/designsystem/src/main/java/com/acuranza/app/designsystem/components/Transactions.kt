@@ -46,6 +46,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.acuranza.app.designsystem.theme.AmountStyles
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
+import androidx.compose.animation.core.EaseOut
+import com.acuranza.app.designsystem.theme.LocalReducedMotion
+import com.acuranza.app.designsystem.theme.Motion
 import com.acuranza.app.model.Paise
 import com.acuranza.app.model.TxnSource
 import com.acuranza.app.model.TxnType
@@ -249,10 +252,13 @@ fun SwipeActionsRow(
 @Composable
 fun Modifier.staggeredEntrance(index: Int, maxDelayItems: Int = 10): Modifier {
     if (LocalInspectionMode.current) return this
+    // Reduced motion: compose at full alpha with no staged delay — the raw coroutine delays below
+    // are NOT scaled by the system animation scale, so they must be skipped outright.
+    if (LocalReducedMotion.current) return this
     val anim = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay((index.coerceAtMost(maxDelayItems) * 35).toLong())
-        anim.animateTo(1f, tween(220))
+        kotlinx.coroutines.delay((index.coerceAtMost(maxDelayItems) * Motion.STAGGER_MS))
+        anim.animateTo(1f, tween(Motion.ENTRANCE, easing = EaseOut))
     }
     return this.graphicsLayer {
         alpha = anim.value.coerceIn(0f, 1f)
@@ -264,7 +270,8 @@ fun Modifier.staggeredEntrance(index: Int, maxDelayItems: Int = 10): Modifier {
 @Composable
 fun Modifier.fadeIn(delayMillis: Int = 0): Modifier {
     if (LocalInspectionMode.current) return this
+    if (LocalReducedMotion.current) return this
     val anim = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { anim.animateTo(1f, tween(400, delayMillis)) }
+    LaunchedEffect(Unit) { anim.animateTo(1f, tween(Motion.ENTRANCE, delayMillis, easing = EaseOut)) }
     return this.graphicsLayer { alpha = anim.value }
 }

@@ -163,7 +163,7 @@ private fun KeypadKey(key: String, onKey: (String) -> Unit, modifier: Modifier) 
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
         if (pressed) 0.97f else 1f,
-        tween(120),
+        com.acuranza.app.designsystem.theme.motionTween<Float>(com.acuranza.app.designsystem.theme.Motion.INSTANT),
         label = "key-scale",
     )
     val isOp = key in setOf("+", "-", "×", "÷")

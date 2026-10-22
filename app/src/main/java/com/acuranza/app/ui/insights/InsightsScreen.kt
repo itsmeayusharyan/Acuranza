@@ -241,6 +241,10 @@ private fun SummaryCard(s: Insight, hidden: Boolean, onAction: (InsightAction) -
 
 @Composable
 private fun InsightDetailCard(i: Insight, hidden: Boolean, onAction: (InsightAction) -> Unit, initiallyExpanded: Boolean) {
+    val insightFadeIn = com.acuranza.app.designsystem.theme.motionTween<Float>(com.acuranza.app.designsystem.theme.Motion.STANDARD)
+    val insightExpand = com.acuranza.app.designsystem.theme.motionTween<androidx.compose.ui.unit.IntSize>(com.acuranza.app.designsystem.theme.Motion.STANDARD)
+    val insightFadeOut = com.acuranza.app.designsystem.theme.motionTween<Float>(com.acuranza.app.designsystem.theme.Motion.FAST)
+    val insightShrink = com.acuranza.app.designsystem.theme.motionTween<androidx.compose.ui.unit.IntSize>(com.acuranza.app.designsystem.theme.Motion.FAST)
     var expanded by rememberSaveable(i.id) { mutableStateOf(initiallyExpanded) }
     val (accent, icon) = i.severity.toUi().accent()
     val hasMore = i.detail != null || i.metrics.isNotEmpty() || i.chart != null || i.action != null
@@ -252,7 +256,7 @@ private fun InsightDetailCard(i: Insight, hidden: Boolean, onAction: (InsightAct
             .background(AcuranzaTheme.colors.cardSurface)
             .border(1.dp, AcuranzaTheme.colors.hairline, shape)
             .clickable(enabled = hasMore) { expanded = !expanded }
-            .animateContentSize(tween(200))
+            .animateContentSize(com.acuranza.app.designsystem.theme.motionTween(com.acuranza.app.designsystem.theme.Motion.STANDARD))
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
@@ -279,7 +283,11 @@ private fun InsightDetailCard(i: Insight, hidden: Boolean, onAction: (InsightAct
                 )
             }
         }
-        AnimatedVisibility(expanded, enter = fadeIn(tween(180)) + expandVertically(tween(200)), exit = fadeOut(tween(120)) + shrinkVertically(tween(160))) {
+        AnimatedVisibility(
+            expanded,
+            enter = fadeIn(insightFadeIn) + expandVertically(insightExpand),
+            exit = fadeOut(insightFadeOut) + shrinkVertically(insightShrink),
+        ) {
             Column(Modifier.padding(start = 44.dp, top = 12.dp)) {
                 i.detail?.let {
                     Text(if (hidden) it.maskAmounts() else it, style = MaterialTheme.typography.bodySmall)

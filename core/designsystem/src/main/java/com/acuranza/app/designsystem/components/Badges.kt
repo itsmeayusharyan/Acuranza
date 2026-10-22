@@ -131,7 +131,11 @@ fun CreditCardVisual(
 
 @Composable
 private fun UtilisationBar(fraction: Float, modifier: Modifier = Modifier) {
-    val f by animateFloatAsState(fraction.coerceIn(0f, 1f), tween(800), label = "util")
+    val f by animateFloatAsState(
+        fraction.coerceIn(0f, 1f),
+        com.acuranza.app.designsystem.theme.motionTween(com.acuranza.app.designsystem.theme.Motion.STANDARD),
+        label = "util",
+    )
     val colors = AcuranzaTheme.colors
     val barColor = when {
         fraction >= 0.75f -> Color(0xFFF87171)

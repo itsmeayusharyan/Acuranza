@@ -99,6 +99,8 @@ import com.acuranza.app.designsystem.components.LogoShape
 import com.acuranza.app.designsystem.components.PrimaryButton
 import com.acuranza.app.designsystem.components.pressScale
 import com.acuranza.app.designsystem.theme.BrandPalette
+import com.acuranza.app.designsystem.theme.Motion
+import com.acuranza.app.designsystem.theme.motionTween
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.designsystem.theme.rememberReducedMotion
 import com.acuranza.app.model.TxnType
@@ -173,6 +175,7 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
             // The one gate for staged motion: staggered entrances skip entirely, stock tweens and
             // springs already collapse via the system's animation-duration scale.
             com.acuranza.app.designsystem.theme.LocalReducedMotion provides rememberReducedMotion(),
+            com.acuranza.app.designsystem.theme.LocalHapticsEnabled provides (settings?.hapticsEnabled ?: true),
         ) {
             var splashDone by remember { mutableStateOf(AppLock.splashShown) }
             LaunchedEffect(Unit) {
@@ -233,9 +236,13 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
                         .fillMaxSize()
                         .then(if (locked) Modifier.graphicsLayer { alpha = 0f }.clearAndSetSemantics { } else Modifier),
                 ) {
+                    val stageFade = com.acuranza.app.designsystem.theme.motionTween<Float>(Motion.STANDARD)
+                    val stageFadeOut = com.acuranza.app.designsystem.theme.motionTween<Float>(Motion.FAST)
                     AnimatedContent(
                         targetState = stage,
-                        transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
+                        transitionSpec = {
+                            fadeIn(stageFade) togetherWith fadeOut(stageFadeOut)
+                        },
                         label = "stage",
                     ) { s ->
                         when (s) {
@@ -256,9 +263,10 @@ private enum class Stage { Splash, Onboarding, Gate, Main }
 
 @Composable
 private fun Splash() {
+    val splashSpec = motionTween<Float>(Motion.EMPHASIZED)
     var start by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { start = true }
-    val alpha by animateFloatAsState(if (start) 1f else 0f, tween(300), label = "splash")
+    val alpha by animateFloatAsState(if (start) 1f else 0f, splashSpec, label = "splash")
     Box(
         Modifier
             .fillMaxSize()
@@ -353,6 +361,8 @@ private fun LockScreen(onUnlocked: () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
+    val fabEnter = motionTween<Float>(Motion.FAST)
+    val fabExit = motionTween<Float>(Motion.INSTANT)
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route
@@ -399,8 +409,8 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
         floatingActionButton = {
             AnimatedVisibility(
                 current == Routes.HOME || current == Routes.TRANSACTIONS,
-                enter = fadeIn(tween(180)),
-                exit = fadeOut(tween(120)),
+                enter = fadeIn(fabEnter),
+                exit = fadeOut(fabExit),
             ) {
                 AddFab { nav.navigate(Routes.addTxn()) }
             }
@@ -493,7 +503,7 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                             role = androidx.compose.ui.semantics.Role.Tab,
                         ) {
                             if (!selected) {
-                                haptic()
+                                haptic.tick()
                                 onTab(tab.route)
                             }
                         }
@@ -559,6 +569,9 @@ private fun AddFab(onClick: () -> Unit) {
 @Composable
 private fun AcuranzaNavHost(nav: NavHostController) {
     val idArg = listOf(navArgument("id") { type = NavType.LongType })
+    // Captured here because NavHost's transition lambdas are not composable scopes.
+    val navFadeIn = motionTween<Float>(Motion.STANDARD)
+    val navFadeOut = motionTween<Float>(Motion.FAST)
     NavHost(
         navController = nav,
         startDestination = Routes.HOME,
@@ -566,24 +579,24 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         // parallel. Pops mirror it, slightly quicker. The system animation scale (and the
         // reduced-motion gate via Motion's specs) still collapses these to instant when asked.
         enterTransition = {
-            if (targetState.destination.route in TabRoutes) fadeIn(tween(220))
+            if (targetState.destination.route in TabRoutes) fadeIn(navFadeIn)
             else slideInHorizontally(
                 animationSpec = androidx.compose.animation.core.spring(
                     dampingRatio = 0.9f,
                     stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
                 ),
-            ) { it / 4 } + fadeIn(tween(240))
+            ) { it / 4 } + fadeIn(navFadeIn)
         },
-        exitTransition = { fadeOut(tween(180)) },
-        popEnterTransition = { fadeIn(tween(220)) },
+        exitTransition = { fadeOut(navFadeOut) },
+        popEnterTransition = { fadeIn(navFadeIn) },
         popExitTransition = {
-            if (initialState.destination.route in TabRoutes) fadeOut(tween(180))
+            if (initialState.destination.route in TabRoutes) fadeOut(navFadeOut)
             else slideOutHorizontally(
                 animationSpec = androidx.compose.animation.core.spring(
                     dampingRatio = 0.9f,
                     stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
                 ),
-            ) { it / 4 } + fadeOut(tween(220))
+            ) { it / 4 } + fadeOut(navFadeIn)
         },
     ) {
         composable(Routes.HOME) { HomeScreen(nav) }
@@ -633,6 +646,7 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.SETTINGS_APPEARANCE) { com.acuranza.app.ui.settings.AppearancePage(nav) }
         composable(Routes.SETTINGS_DATA) { com.acuranza.app.ui.settings.DataManagementPage(nav) }
         composable(Routes.SETTINGS_SMS_IMPORTS) { com.acuranza.app.ui.settings.SmsImportsScreen(nav) }
+        composable(Routes.ABOUT_ACKNOWLEDGEMENTS) { com.acuranza.app.ui.about.AcknowledgementsScreen(nav) }
         composable(Routes.PROFILE) { com.acuranza.app.ui.settings.ProfileScreen(nav) }
         composable(Routes.INSIGHTS) { InsightsScreen(nav) }
         composable(Routes.CATEGORIES) { CategoriesScreen(nav) }

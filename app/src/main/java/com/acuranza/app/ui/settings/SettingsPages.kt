@@ -224,6 +224,8 @@ fun AppearancePage(nav: NavController) {
             ) { choice -> scope.launch { c.settings.setAccentColor(choice) } }
             SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
                 Icons.Outlined.VisibilityOff)
+            SettingsToggle("Haptic feedback", "Vibrate gently when interacting with the app", s.hapticsEnabled, { v -> scope.launch { c.settings.setHapticsEnabled(v) } },
+                Icons.Outlined.Bolt)
             SettingsRow("Edit home", "Choose what appears on your dashboard and in what order", Icons.Outlined.DashboardCustomize, divider = false) {
                 nav.navigate(Routes.EDIT_HOME)
             }

@@ -448,6 +448,14 @@ class ScreensScreenshotTest {
         }
     }
 
+    /** The acknowledgements page: grouped libraries, then the app's own licence row. */
+    @Test
+    fun acknowledgements_dark() = paparazzi.snapshot {
+        Frame(dark = true) {
+            com.acuranza.app.ui.about.AcknowledgementsContent(onBack = {}, onLicence = {}, onUrl = {})
+        }
+    }
+
     @Test
     fun about_dark() = paparazzi.snapshot {
         Frame(dark = true) {

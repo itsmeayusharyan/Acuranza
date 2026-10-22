@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -99,11 +100,33 @@ fun AcuranzaScreen(
     )
 }
 
-/** Haptic tick for confirmations. */
+/**
+ * App-generated haptic feedback: gated by the Appearance toggle, backed by the view's haptic
+ * feedback — which respects the system's own touch-feedback setting and no-ops on devices without
+ * a vibrator, so no permission and no failure path can ever interrupt the action it accompanies.
+ * Fires only from click handlers (never composition), so recomposition cannot repeat it.
+ */
+class AppHaptics internal constructor(private val hf: HapticFeedback, private val enabled: Boolean) {
+    /** Subtle tick for ordinary taps: bottom navigation, chips, rows, icon buttons, FABs. */
+    fun tick() {
+        if (enabled) hf.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    }
+
+    /** Firmer tick for meaningful moments: saves, dialog confirmations, destructive prompts. */
+    fun confirm() {
+        if (enabled) hf.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+
+    /** Existing call sites read `haptic()` = confirm. */
+    operator fun invoke() = confirm()
+}
+
+/** The app-wide haptic entry point; re-created when the Appearance toggle flips, so changes apply immediately. */
 @Composable
-fun rememberHaptic(): () -> Unit {
+fun rememberHaptic(): AppHaptics {
     val haptic = LocalHapticFeedback.current
-    return remember(haptic) { { haptic.performHapticFeedback(HapticFeedbackType.LongPress) } }
+    val enabled = LocalSettings.current.hapticsEnabled
+    return remember(haptic, enabled) { AppHaptics(haptic, enabled) }
 }
 
 /** A bottom sheet with the calculator keypad for fast amount entry. */
@@ -406,7 +429,8 @@ fun ConfirmDialog(
         },
         text = { Text(message) },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            val haptic = rememberHaptic()
+            TextButton(onClick = { haptic.confirm(); onConfirm() }) {
                 Text(confirmLabel, color = if (destructive) AcuranzaTheme.colors.alert else MaterialTheme.colorScheme.primary)
             }
         },

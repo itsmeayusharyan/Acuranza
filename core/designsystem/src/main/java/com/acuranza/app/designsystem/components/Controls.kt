@@ -7,12 +7,16 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import com.acuranza.app.designsystem.theme.AcuranzaText
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.acuranza.app.designsystem.theme.LocalHapticsEnabled
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,6 +84,14 @@ import com.acuranza.app.model.TxnType
 /**
  * A pill-shaped segmented control with a sliding indicator, e.g. Month / Quarter / Year.
  */
+/** Subtle tap tick for design-system controls; gated by the shell's LocalHapticsEnabled. */
+@Composable
+internal fun rememberTick(): () -> Unit {
+    val enabled = LocalHapticsEnabled.current
+    val hf = LocalHapticFeedback.current
+    return remember(enabled, hf) { { if (enabled) hf.performHapticFeedback(HapticFeedbackType.TextHandleMove) } }
+}
+
 @Composable
 fun SegmentedTabs(
     options: List<String>,
@@ -87,6 +99,7 @@ fun SegmentedTabs(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tick = rememberTick()
     val shape = RoundedCornerShape(50)
     BoxWithConstraints(
         modifier = modifier
@@ -97,9 +110,10 @@ fun SegmentedTabs(
             .padding(3.dp),
     ) {
         val segment = maxWidth / options.size.coerceAtLeast(1)
+        val reduced = com.acuranza.app.designsystem.theme.LocalReducedMotion.current
         val offset by animateDpAsState(
             targetValue = segment * selectedIndex,
-            animationSpec = tween(200),
+            animationSpec = if (reduced) snap() else spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessMediumLow),
             label = "segment",
         )
         Box(
@@ -119,7 +133,7 @@ fun SegmentedTabs(
                         .weight(1f)
                         .fillMaxHeight()
                         .clip(shape)
-                        .clickable { onSelect(i) }
+                        .clickable { tick(); onSelect(i) }
                         .semantics {
                             role = Role.Tab
                             this.selected = selected
@@ -149,6 +163,7 @@ fun RangeChips(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tick = rememberTick()
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         options.forEachIndexed { i, label ->
             val active = i == selectedIndex
@@ -158,7 +173,7 @@ fun RangeChips(
                     .heightIn(min = 32.dp)
                     .clip(shape)
                     .then(if (active) Modifier.background(AcuranzaTheme.colors.ink) else Modifier)
-                    .clickable { onSelect(i) }
+                    .clickable { tick(); onSelect(i) }
                     .padding(horizontal = 12.dp, vertical = 7.dp)
                     .semantics {
                         role = Role.Tab
@@ -293,11 +308,14 @@ fun LoadingShimmer(
     height: Dp = 72.dp,
     shape: RoundedCornerShape = RoundedCornerShape(20.dp),
 ) {
+    val reduced = com.acuranza.app.designsystem.theme.LocalReducedMotion.current
     val transition = rememberInfiniteTransition(label = "shimmer")
+    // Reduced motion: a frozen placeholder instead of an endless sweep.
     val x by transition.animateFloat(
-        initialValue = -1f,
+        initialValue = if (reduced) 2f else -1f,
         targetValue = 2f,
-        animationSpec = infiniteRepeatable(tween(1300, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = if (reduced) infiniteRepeatable(tween(0), RepeatMode.Restart)
+        else infiniteRepeatable(tween(1300, easing = LinearEasing), RepeatMode.Restart),
         label = "shimmer-x",
     )
     val base = AcuranzaTheme.colors.shimmerBase
@@ -411,6 +429,7 @@ fun SectionHeader(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
+    val tick = rememberTick()
     Row(
         modifier = modifier.fillMaxWidth().padding(bottom = 2.dp).heightIn(min = 32.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -428,7 +447,7 @@ fun SectionHeader(
                 color = AcuranzaTheme.colors.accent,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable(role = Role.Button, onClick = onAction)
+                    .clickable(role = Role.Button) { tick(); onAction() }
                     .padding(horizontal = 6.dp, vertical = 6.dp),
             )
         }
@@ -510,6 +529,7 @@ fun QuickAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tick = rememberTick()
     val interaction = remember { MutableInteractionSource() }
     val indication = LocalIndication.current
     Column(

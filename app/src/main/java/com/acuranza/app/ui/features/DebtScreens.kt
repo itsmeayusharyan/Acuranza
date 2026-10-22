@@ -47,6 +47,7 @@ import com.acuranza.app.ui.common.DateField
 import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.FormColumn
 import com.acuranza.app.ui.common.AcuranzaScreen
+import com.acuranza.app.ui.common.rememberHaptic
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalHideAmounts
@@ -59,6 +60,7 @@ import java.time.LocalDate
 /** Money lent to or borrowed from people, with partial repayments. */
 @Composable
 fun DebtsScreen(nav: NavController) {
+    val haptic = rememberHaptic()
     val c = LocalContainer.current
     val hidden = LocalHideAmounts.current
     val scope = rememberCoroutineScope()
@@ -71,7 +73,7 @@ fun DebtsScreen(nav: NavController) {
     AcuranzaScreen(
         title = "Lent & borrowed",
         onBack = { nav.popBackSafely() },
-        floating = { ExtendedFloatingActionButton(onClick = { adding = true }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Add") }) },
+        floating = { ExtendedFloatingActionButton(onClick = { haptic.tick(); adding = true }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("Add") }) },
     ) { pad ->
         val list = debts ?: return@AcuranzaScreen
         val open = list.filter { !it.closed }

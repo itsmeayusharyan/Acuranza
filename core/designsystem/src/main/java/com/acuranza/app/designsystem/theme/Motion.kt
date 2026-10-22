@@ -31,6 +31,9 @@ import kotlinx.coroutines.delay
  * effects, which should be skipped outright rather than played with a zero duration.
  */
 object Motion {
+    /** Micro press-feedback (keypad keys): must read as instant. */
+    const val INSTANT = 120
+
     /** High-frequency feedback: presses, ripples, small state swaps. */
     const val FAST = 150
 

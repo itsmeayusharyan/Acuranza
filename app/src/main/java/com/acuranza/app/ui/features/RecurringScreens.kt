@@ -58,6 +58,7 @@ import com.acuranza.app.ui.common.DateField
 import com.acuranza.app.ui.common.Fmt
 import com.acuranza.app.ui.common.FormColumn
 import com.acuranza.app.ui.common.AcuranzaScreen
+import com.acuranza.app.ui.common.rememberHaptic
 import com.acuranza.app.ui.common.AcuranzaTextField
 import com.acuranza.app.ui.common.LocalContainer
 import com.acuranza.app.ui.common.LocalHideAmounts
@@ -83,6 +84,7 @@ private fun cadenceOf(name: String) = runCatching { Recurring.Cadence.valueOf(na
 /** Subscriptions, EMIs and UPI AutoPay mandates found in spending, the user's own schedules, and what's due soon. */
 @Composable
 fun RecurringScreen(nav: NavController) {
+    val haptic = rememberHaptic()
     val c = LocalContainer.current
     val hidden = LocalHideAmounts.current
     val scope = rememberCoroutineScope()
@@ -102,7 +104,7 @@ fun RecurringScreen(nav: NavController) {
         onBack = { nav.popBackSafely() },
         floating = {
             ExtendedFloatingActionButton(
-                onClick = { nav.navigate(Routes.editRecurring()) },
+                onClick = { haptic.tick(); nav.navigate(Routes.editRecurring()) },
                 icon = { Icon(Icons.Outlined.Add, null) },
                 text = { Text("Schedule") },
             )

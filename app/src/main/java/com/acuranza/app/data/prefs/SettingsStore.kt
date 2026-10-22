@@ -73,6 +73,8 @@ data class Settings(
     val smsFirstImportDone: Boolean = false,
     /** Full variant: automatic capture from the SMS app's notifications (consent + system grant). */
     val smsAutoCapture: Boolean = false,
+    /** App-generated haptic feedback; the system's own touch-feedback setting rules underneath. */
+    val hapticsEnabled: Boolean = true,
     /** The user's display name for the profile card and the home greeting; null = not configured. */
     val profileName: String? = null,
     /** Absolute path of the profile photo inside app-private storage; null = no photo (initials fallback). */
@@ -141,6 +143,7 @@ class SettingsStore(
         val smsLastScanStatus = stringPreferencesKey("sms_last_scan_status")
         val smsFirstImportDone = booleanPreferencesKey("sms_first_import_done")
         val smsAutoCapture = booleanPreferencesKey("sms_auto_capture")
+        val hapticsEnabled = booleanPreferencesKey("haptics_enabled")
         val profileName = stringPreferencesKey("profile_name")
         val profileAvatar = stringPreferencesKey("profile_avatar")
     }
@@ -180,6 +183,7 @@ class SettingsStore(
             smsLastScanStatus = p[Keys.smsLastScanStatus] ?: "",
             smsFirstImportDone = p[Keys.smsFirstImportDone] ?: false,
             smsAutoCapture = p[Keys.smsAutoCapture] ?: false,
+            hapticsEnabled = p[Keys.hapticsEnabled] ?: true,
             profileName = p[Keys.profileName],
             profileAvatar = p[Keys.profileAvatar],
         )
@@ -229,6 +233,9 @@ class SettingsStore(
     // Full variant only: inbox scanning bookkeeping.
     suspend fun setSmsAutoScan(enabled: Boolean) = edit { it[Keys.smsAutoScan] = enabled }
     suspend fun setSmsAutoCapture(enabled: Boolean) = edit { it[Keys.smsAutoCapture] = enabled }
+
+    /** Haptic feedback preference (Appearance); system settings still gate the actual vibration. */
+    suspend fun setHapticsEnabled(on: Boolean) = edit { it[Keys.hapticsEnabled] = on }
 
     /** Profile: display name (null clears it); validated by the caller. */
     suspend fun setProfileName(name: String?) = edit {
