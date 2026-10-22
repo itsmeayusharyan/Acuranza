@@ -46,6 +46,7 @@ import com.acuranza.app.designsystem.components.AcuranzaLogo
 import com.acuranza.app.designsystem.theme.AcuranzaText
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.designsystem.theme.StaggeredEntrance
+import com.acuranza.app.ui.common.LocalSettings
 import com.acuranza.app.ui.nav.Routes
 
 private fun Context.versionName(): String = runCatching {
@@ -99,6 +100,10 @@ fun MoreScreen(nav: NavController) {
                     Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
+        }
+        item(key = "profile") {
+            val s = LocalSettings.current
+            ProfileCard(name = s.profileName, avatarPath = s.profileAvatar) { nav.navigate(Routes.PROFILE) }
         }
         item(key = "search") {
             OutlinedTextField(

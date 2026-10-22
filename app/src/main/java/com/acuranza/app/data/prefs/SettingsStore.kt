@@ -73,6 +73,10 @@ data class Settings(
     val smsFirstImportDone: Boolean = false,
     /** Full variant: automatic capture from the SMS app's notifications (consent + system grant). */
     val smsAutoCapture: Boolean = false,
+    /** The user's display name for the profile card and the home greeting; null = not configured. */
+    val profileName: String? = null,
+    /** Absolute path of the profile photo inside app-private storage; null = no photo (initials fallback). */
+    val profileAvatar: String? = null,
 ) {
     /** When salary arrives, which sets where every budget period starts. */
     val payCycle: PayCycle by lazy {
@@ -137,6 +141,8 @@ class SettingsStore(
         val smsLastScanStatus = stringPreferencesKey("sms_last_scan_status")
         val smsFirstImportDone = booleanPreferencesKey("sms_first_import_done")
         val smsAutoCapture = booleanPreferencesKey("sms_auto_capture")
+        val profileName = stringPreferencesKey("profile_name")
+        val profileAvatar = stringPreferencesKey("profile_avatar")
     }
 
     val settings: Flow<Settings> = store.data.catch { e ->
@@ -174,6 +180,8 @@ class SettingsStore(
             smsLastScanStatus = p[Keys.smsLastScanStatus] ?: "",
             smsFirstImportDone = p[Keys.smsFirstImportDone] ?: false,
             smsAutoCapture = p[Keys.smsAutoCapture] ?: false,
+            profileName = p[Keys.profileName],
+            profileAvatar = p[Keys.profileAvatar],
         )
     }
         // Writes to keys outside Settings (claimed notifications, repair version) mustn't re-run every screen.
@@ -221,6 +229,16 @@ class SettingsStore(
     // Full variant only: inbox scanning bookkeeping.
     suspend fun setSmsAutoScan(enabled: Boolean) = edit { it[Keys.smsAutoScan] = enabled }
     suspend fun setSmsAutoCapture(enabled: Boolean) = edit { it[Keys.smsAutoCapture] = enabled }
+
+    /** Profile: display name (null clears it); validated by the caller. */
+    suspend fun setProfileName(name: String?) = edit {
+        if (name == null) it.remove(Keys.profileName) else it[Keys.profileName] = name
+    }
+
+    /** Profile: photo path inside app-private storage (null removes the photo). */
+    suspend fun setProfileAvatar(path: String?) = edit {
+        if (path == null) it.remove(Keys.profileAvatar) else it[Keys.profileAvatar] = path
+    }
     suspend fun setSmsFirstImportDone() = edit { it[Keys.smsFirstImportDone] = true }
     suspend fun recordSmsScan(status: String, skipped: Int = 0) = edit {
         it[Keys.smsLastScanAt] = System.currentTimeMillis()

@@ -35,6 +35,7 @@ private const val G_ABOUT = "About"
 
 val SettingsSearchIndex: List<SettingsSearchHit> = listOf(
     // ── Hub destinations ────────────────────────────────────────────────────────────────────────
+    SettingsSearchHit(G_ACCOUNT, "Profile", "Profile", "Your display name and profile photo", "profile name photo picture avatar", Routes.PROFILE),
     SettingsSearchHit(G_ACCOUNT, "Management", "Management", "Accounts, imports and categories", "accounts cards review", Routes.SETTINGS_MANAGEMENT),
     SettingsSearchHit(G_GENERAL, "Financial tools", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", "sms tracking", Routes.SETTINGS_FINANCIAL),
     SettingsSearchHit(G_APPEARANCE, "Appearance", "Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", "dark light system amoled", Routes.SETTINGS_APPEARANCE),

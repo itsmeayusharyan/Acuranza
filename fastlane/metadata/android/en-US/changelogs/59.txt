@@ -1,0 +1,1 @@
+Profile: a profile card now sits at the top of Settings — tap it to set your display name and photo (system photo picker, no storage permissions). The name shows in the home greeting and the photo/initials avatar wherever your profile appears; everything stays on-device and survives restarts and updates.

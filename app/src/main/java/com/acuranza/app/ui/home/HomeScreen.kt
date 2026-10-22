@@ -136,6 +136,8 @@ data class HomeState(
     val billsDue: Int = 0,
     /** Unread items for the header's notification bell. */
     val notificationsUnread: Int = 0,
+    /** The user's display name for the greeting; null = just "Good morning". */
+    val profileName: String? = null,
     val insights: List<Insight> = emptyList(),
     val recent: List<TransactionItem> = emptyList(),
     val accounts: List<AccountWithBalance> = emptyList(),
@@ -289,10 +291,12 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
         baseState,
         unreadNotifications,
         c.settings.settings.map { it.homeLayout }.distinctUntilChanged(),
-    ) { base, unread, savedLayout ->
+        c.settings.settings.map { it.profileName }.distinctUntilChanged(),
+    ) { base, unread, savedLayout, profileName ->
         base.copy(
             notificationsUnread = unread,
             sections = HomeLayout.visible(HomeLayout.decode(savedLayout)),
+            profileName = profileName,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
@@ -451,7 +455,11 @@ fun HomeContent(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(Fmt.todayLong(), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
-                    Text(Fmt.greeting(), style = AcuranzaText.screenTitle)
+                    Text(
+                        Fmt.greeting() + (state.profileName?.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""),
+                        style = AcuranzaText.screenTitle,
+                        maxLines = 1,
+                    )
                 }
                 IconButton(onClick = onToggleHidden) {
                     Icon(

@@ -230,6 +230,48 @@ class ScreensScreenshotTest {
     @Test
     fun settings_dark() = paparazzi.snapshot { Frame(dark = true, tab = Routes.SETTINGS) { settingsBody() } }
 
+    /** The profile editor with a configured name — dark is the shipped default. */
+    @Test
+    fun profile_dark() = paparazzi.snapshot {
+        Frame(dark = true) {
+            Column(Modifier.padding(horizontal = 20.dp)) {
+                com.acuranza.app.ui.settings.ProfileContent(
+                    savedName = "Ayush",
+                    savedAvatar = null,
+                    name = "Ayush Aryan",
+                    stagedAvatar = null,
+                    nameError = null,
+                    onNameChange = {},
+                    onPickImage = {},
+                    onSave = {},
+                    onCancel = {},
+                    saveEnabled = true,
+                )
+            }
+        }
+    }
+
+    /** Untouched profile: initials fallback, empty name field, Save disabled. */
+    @Test
+    fun profile_default_light() = paparazzi.snapshot {
+        Frame {
+            Column(Modifier.padding(horizontal = 20.dp)) {
+                com.acuranza.app.ui.settings.ProfileContent(
+                    savedName = null,
+                    savedAvatar = null,
+                    name = "",
+                    stagedAvatar = null,
+                    nameError = null,
+                    onNameChange = {},
+                    onPickImage = {},
+                    onSave = {},
+                    onCancel = {},
+                    saveEnabled = false,
+                )
+            }
+        }
+    }
+
     @Composable
     private fun settingsBody() {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
@@ -241,6 +283,7 @@ class ScreensScreenshotTest {
                     Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                 }
             }
+            com.acuranza.app.ui.settings.ProfileCard(name = null, avatarPath = null, onClick = {})
             AcuranzaCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
                 SettingsRow("Appearance", "Theme, accent colour, hide amounts, edit home", Icons.Outlined.Palette) {}
                 SettingsRow("Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup) {}
