@@ -6,4 +6,6 @@
     <color name="widget_track">#FF2A3A5C</color>
     <color name="widget_accent">#FF60A5FA</color>
     <color name="widget_button">#FF1E2942</color>
+    <color name="widget_income">#FF34D399</color>
+    <color name="widget_overdue">#FFF87171</color>
 </resources>

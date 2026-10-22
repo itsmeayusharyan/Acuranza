@@ -11,6 +11,13 @@ object QuickLaunch {
     /** Values of [Notifications.EXTRA_ROUTE] handled by the main shell. */
     const val ROUTE_ADD_EXPENSE = "add_expense"
     const val ROUTE_ADD_INCOME = "add_income"
+    const val ROUTE_TRANSFER = "transfer"
+    const val ROUTE_TRANSACTIONS = "transactions"
+    const val ROUTE_BILLS = "bills"
+    const val ROUTE_ACCOUNTS = "accounts"
+
+    /** Prefix for per-transaction deep links from the Recent widget: "txn-view:<id>". */
+    const val TXN_VIEW_PREFIX = "txn-view:"
 
     fun intent(context: Context, route: String?): Intent =
         Intent(context, MainActivity::class.java)

@@ -23,6 +23,34 @@
         android:textStyle="bold" />
 
     <TextView
+        android:id="@+id/widget_transfer"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_margin="4dp"
+        android:layout_weight="1"
+        android:background="@drawable/widget_button_bg"
+        android:gravity="center"
+        android:minHeight="40dp"
+        android:text="@string/widget_transfer"
+        android:textColor="@color/widget_ink"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_transactions"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_margin="4dp"
+        android:layout_weight="1"
+        android:background="@drawable/widget_button_bg"
+        android:gravity="center"
+        android:minHeight="40dp"
+        android:text="@string/widget_transactions"
+        android:textColor="@color/widget_ink"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
         android:id="@+id/widget_add_income"
         android:layout_width="0dp"
         android:layout_height="match_parent"
