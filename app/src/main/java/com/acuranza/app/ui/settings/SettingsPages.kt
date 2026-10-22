@@ -187,6 +187,7 @@ fun NotificationsPage(nav: NavController) {
             ) { d -> scope.launch { c.settings.setMonthStartDay(d) } }
             PaydaySettings(s)
         }
+        com.acuranza.app.ui.tools.DigestSection(onMessage = {})
     }
 }
 
@@ -339,16 +340,6 @@ private fun previewBackground(theme: com.acuranza.app.designsystem.theme.ColorTh
     }
 }
 
-@Composable
-fun ToolsPage(nav: NavController) {
-    val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    fun show(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
-    SettingsPage("Tools", "Export, digest and widget options", nav, snackbar) {
-        com.acuranza.app.ui.tools.ToolsSection(onMessage = { show(it) })
-    }
-}
-
 /**
  * Backups, imports, sample data and the destructive actions. The backup machinery (activity
  * launchers, password dialogs, busy overlay) moved here unchanged from the old flat Settings.
@@ -408,6 +399,7 @@ fun DataManagementPage(nav: NavController) {
                 if (smsImportCount > 0) "$smsImportCount from bank messages — review, search or delete" else "Transactions confirmed from bank messages appear here",
                 Icons.Outlined.Sms,
             ) { nav.navigate(Routes.SETTINGS_SMS_IMPORTS) }
+            com.acuranza.app.ui.tools.ExportSection(onMessage = ::show)
             if (sampleLoaded) {
                 SettingsRow("Remove sample data", "Deletes only the demo accounts, transactions and investments", Icons.Outlined.Science, enabled = busy == null) {
                     confirmRemoveSample = true

@@ -69,9 +69,12 @@ import java.time.format.FormatStyle
 /** Date ranges offered by the export dialog. */
 enum class ExportRange(val label: String) { THIS_PERIOD("This month"), LAST_PERIOD("Last month"), LAST_12("Last 12 months"), ALL("All time") }
 
-/** Tools settings: export, the daily digest and the home-screen widget privacy switch. */
+/**
+ * Export settings, now hosted on the Data Management page: CSV, Excel, Beancount and Ledger
+ * exports with range choice, file handling and share behavior unchanged.
+ */
 @Composable
-fun ToolsSection(onMessage: (String) -> Unit) {
+fun ExportSection(onMessage: (String) -> Unit) {
     val c = LocalContainer.current
     val s = LocalSettings.current
     val context = LocalContext.current
@@ -119,7 +122,63 @@ fun ToolsSection(onMessage: (String) -> Unit) {
     }
 
     SettingsSection(null) {
-        SettingsRow("Export data", "CSV, Excel, Beancount or Ledger", Icons.Outlined.FileDownload) { exportOpen = true }
+        SettingsRow("Export data", "CSV, Excel, Beancount or Ledger", Icons.Outlined.FileDownload, divider = false) { exportOpen = true }
+    }
+
+    if (exportOpen) {
+        ExportDialog(
+            onDismiss = { exportOpen = false },
+            onExport = { format, range ->
+                exportOpen = false
+                pendingExport = format to range
+                val (from, to) = rangeDates(range, s.payCycle, null)
+                val name = Exporters.fileName(format, from ?: LocalDate.of(2000, 1, 1), to).let {
+                    if (range == ExportRange.ALL) "acuranza-all-${LocalDate.now()}.${format.extension}" else it
+                }
+                val opened = if (format.mimeType == "text/csv") createCsv.launchOrFalse(name) else createText.launchOrFalse(name)
+                if (!opened) {
+                    pendingExport = null
+                    onMessage(NO_FILE_PICKER)
+                }
+            },
+        )
+    }
+
+}
+
+/**
+ * Daily digest and home-screen widget settings, now hosted on the Notifications page: digest
+ * scheduling (with its notification-permission request), the time picker and the app-lock-gated
+ * widget privacy switch — including decoy-profile behavior — unchanged.
+ */
+@Composable
+fun DigestSection(onMessage: (String) -> Unit) {
+    val c = LocalContainer.current
+    val s = LocalSettings.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val store = remember { ToolsSettings.get(context) }
+    val realPrefs by remember { store.prefs }.collectAsStateWithLifecycle(initialValue = ToolsPrefs())
+
+    // The decoy profile shows ordinary-looking settings but never changes the real ones.
+    val decoy = DecoySession.isActive
+    var decoyPrefs by remember { mutableStateOf(ToolsPrefs(pinHash = DECOY_PLACEHOLDER)) }
+    val prefs = if (decoy) decoyPrefs else realPrefs
+
+    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    fun saveDigest(enabled: Boolean, minutes: Int = prefs.digestMinutes) {
+        if (decoy) {
+            decoyPrefs = decoyPrefs.copy(digestEnabled = enabled, digestMinutes = minutes); return
+        }
+        scope.launch {
+            store.setDigestEnabled(enabled)
+            store.setDigestMinutes(minutes)
+            DigestSchedule.sync(context)
+        }
+    }
+
+    SettingsSection(null) {
         SettingsToggle(
             "Daily digest",
             "Today's spending, budget left and items to review",
@@ -157,27 +216,6 @@ fun ToolsSection(onMessage: (String) -> Unit) {
             divider = false,
         )
     }
-
-
-    if (exportOpen) {
-        ExportDialog(
-            onDismiss = { exportOpen = false },
-            onExport = { format, range ->
-                exportOpen = false
-                pendingExport = format to range
-                val (from, to) = rangeDates(range, s.payCycle, null)
-                val name = Exporters.fileName(format, from ?: LocalDate.of(2000, 1, 1), to).let {
-                    if (range == ExportRange.ALL) "acuranza-all-${LocalDate.now()}.${format.extension}" else it
-                }
-                val opened = if (format.mimeType == "text/csv") createCsv.launchOrFalse(name) else createText.launchOrFalse(name)
-                if (!opened) {
-                    pendingExport = null
-                    onMessage(NO_FILE_PICKER)
-                }
-            },
-        )
-    }
-
 }
 
 private fun formatMinutes(minutes: Int): String =

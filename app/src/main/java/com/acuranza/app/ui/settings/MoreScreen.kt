@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
@@ -23,7 +24,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,9 +68,8 @@ private val SettingsEntries = listOf(
     SettingsEntry("General", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
     SettingsEntry("Appearance", "Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
     SettingsEntry("Privacy & Security", "Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
-    SettingsEntry("Data Management", "Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
-    SettingsEntry("Notifications", "Notifications", "Reminders, and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
-    SettingsEntry("Advanced", "Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune, Routes.SETTINGS_TOOLS),
+    SettingsEntry("Data Management", "Data management", "Backups, imports, exports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
+    SettingsEntry("Notifications", "Notifications", "Reminders, digest, widgets and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
     SettingsEntry("About", "About", "Version, privacy policy and licence", Icons.Outlined.Info, Routes.ABOUT),
 )
 
@@ -84,9 +83,8 @@ private val SettingsEntries = listOf(
 fun MoreScreen(nav: NavController) {
     var query by remember { mutableStateOf("") }
     val q = query.trim()
-    val matches = if (q.isEmpty()) SettingsEntries else SettingsEntries.filter {
-        it.title.contains(q, ignoreCase = true) || it.description.contains(q, ignoreCase = true)
-    }
+    // Deep search: the flat registry covers hub destinations AND rows buried inside nested pages.
+    val hits = SettingsSearchIndex.searchSettings(q)
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -126,7 +124,7 @@ fun MoreScreen(nav: NavController) {
                 modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
             )
         }
-        if (q.isNotEmpty() && matches.isEmpty()) {
+        if (q.isNotEmpty() && hits.isEmpty()) {
             item(key = "empty") {
                 Column(Modifier.fillMaxWidth().padding(vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("No settings match “${query.trim()}”", style = MaterialTheme.typography.titleSmall, color = AcuranzaTheme.colors.ink)
@@ -141,24 +139,20 @@ fun MoreScreen(nav: NavController) {
         } else if (q.isNotEmpty()) {
             item(key = "results-label") {
                 Text(
-                    "${matches.size} result" + if (matches.size == 1) "" else "s",
+                    "${hits.size} result" + if (hits.size == 1) "" else "s",
                     style = AcuranzaText.sectionLabel,
                     color = AcuranzaTheme.colors.subtleText,
                     modifier = Modifier.padding(top = 10.dp, bottom = 8.dp),
                 )
             }
-            item(key = "results") {
-                StaggeredEntrance(0) {
-                    AcuranzaCard(contentPadding = PaddingValues(0.dp)) {
-                        matches.forEachIndexed { index, entry ->
-                            SettingsRow(
-                                entry.title,
-                                entry.description,
-                                entry.icon,
-                                divider = index < matches.lastIndex,
-                            ) { nav.navigate(entry.route) }
-                        }
-                    }
+            items(hits, key = { "${'$'}{it.group}/${'$'}{it.page}/${'$'}{it.title}" }) { hit ->
+                AcuranzaCard(Modifier.padding(vertical = 5.dp)) {
+                    SettingsRow(
+                        hit.title,
+                        hit.description,
+                        null,
+                        value = hit.group,
+                    ) { nav.navigate(hit.route) }
                 }
             }
         } else {
