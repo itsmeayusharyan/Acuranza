@@ -134,10 +134,13 @@ import com.acuranza.app.ui.nav.navigateToTab
 fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed: () -> Unit) {
     val settingsState by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
     val settings = settingsState
-    val dark = when (settings?.themeMode ?: ThemeMode.DARK) {
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    // While prefs are still loading (first frames), follow the system instead of defaulting dark:
+    // a light-pinned user otherwise sees a dark splash flicker on every cold start. The splash
+    // covers the DataStore read; once it lands, the pinned theme applies.
+    val dark = when (settings?.themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
+        else -> isSystemInDarkTheme()   // SYSTEM, or prefs not loaded yet
     }
 
     val activity = LocalContext.current as? androidx.activity.ComponentActivity

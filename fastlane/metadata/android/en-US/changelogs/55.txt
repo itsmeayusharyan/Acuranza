@@ -1,0 +1,1 @@
+Startup polish: the launch splash now follows your system theme while preferences load, so light-mode users no longer see a dark flash on cold start; the recategorisation sweep on launch skips itself when there is nothing to apply and processes a bounded batch per start, keeping cold starts short on large histories.

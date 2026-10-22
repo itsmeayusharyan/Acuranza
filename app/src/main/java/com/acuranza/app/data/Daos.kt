@@ -299,7 +299,7 @@ interface TransactionDao {
 
     /** Imported expenses that are still uncategorised, or were filed as transfers to a phone-number payee. */
     /** Imported expenses still in "other" that the user hasn't reviewed (a reviewed "other" is a choice). */
-    @Query("SELECT * FROM transactions WHERE source != 'MANUAL' AND type = 'EXPENSE' AND categoryKey = 'other' AND reviewed = 0")
+    @Query("SELECT * FROM transactions WHERE source != 'MANUAL' AND type = 'EXPENSE' AND categoryKey = 'other' AND reviewed = 0 ORDER BY timestamp")
     suspend fun recategoriseCandidates(): List<TransactionEntity>
 
     @Query("DELETE FROM transactions")
