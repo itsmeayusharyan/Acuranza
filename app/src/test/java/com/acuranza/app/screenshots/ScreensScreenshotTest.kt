@@ -336,6 +336,85 @@ class ScreensScreenshotTest {
         }
     }
 
+    // ── v1.13.21 coverage additions: consent, insights, dark variants ────────────────────────
+    @Test
+    fun sms_consent() = paparazzi.snapshot {
+        Frame { com.acuranza.app.ui.settings.SmsConsentContent(Modifier, onAgree = {}) }
+    }
+
+    @Test
+    fun insights_empty() = paparazzi.snapshot {
+        Frame(tab = Routes.INSIGHTS) {
+            com.acuranza.app.ui.insights.InsightsContent(insights = emptyList(), hidden = false)
+        }
+    }
+
+    private fun insight(id: String, severity: com.acuranza.app.finance.Severity, title: String, message: String) =
+        com.acuranza.app.finance.Insight(id = id, severity = severity, title = title, message = message)
+
+    @Test
+    fun insights_populated() = paparazzi.snapshot {
+        Frame(tab = Routes.INSIGHTS) {
+            com.acuranza.app.ui.insights.InsightsContent(
+                insights = listOf(
+                    insight("i1", com.acuranza.app.finance.Severity.ALERT, "Overspending on Food & Dining",
+                        "You've spent 82% of this month's food budget with 9 days to go."),
+                    insight("i2", com.acuranza.app.finance.Severity.WARNING, "Rising transport costs",
+                        "Transport spending is 34% above your 3-month average."),
+                    insight("i3", com.acuranza.app.finance.Severity.TIP, "Idle cash in HDFC ••4521",
+                        "₹18,400 has been idle for 45 days — a recurring SIP could put it to work."),
+                    insight("i4", com.acuranza.app.finance.Severity.GOOD, "Savings rate up",
+                        "You saved 22% of income this month, up from 14% last month."),
+                ),
+                hidden = false,
+            )
+        }
+    }
+
+    @Test
+    fun activity_dark() = paparazzi.snapshot {
+        val groups = FakeData.recent.groupBy { it.date }.map { (d, items) -> DayGroup(d, items, items.sumOf { it.signedAmount }) }
+        Frame(dark = true, tab = Routes.TRANSACTIONS) {
+            TransactionsContent(
+                TxnListState(
+                    period = Period(today.withDayOfMonth(1), today.withDayOfMonth(1).plusMonths(1)),
+                    groups = groups,
+                    income = FakeData.summary.income,
+                    expense = FakeData.summary.expense,
+                    loaded = true,
+                ),
+                hidden = false,
+            )
+        }
+    }
+
+    @Test
+    fun add_transaction_dark() = paparazzi.snapshot {
+        Frame(dark = true) {
+            AddTransactionContent(
+                refs = EditorRefs(FakeData.accounts.map { it.account }, FakeData.categories),
+                editId = null,
+                initialType = TxnType.EXPENSE,
+                initialAccountId = FakeData.hdfc.id,
+                initialAmount = "642",
+                initialCategoryKey = "food",
+                initialMerchant = "Swiggy",
+            )
+        }
+    }
+
+    @Test
+    fun about_dark() = paparazzi.snapshot {
+        Frame(dark = true) {
+            AboutContent(
+                onBack = {},
+                onPrivacy = {},
+                onTerms = {},
+                onLicence = {},
+            )
+        }
+    }
+
     @Test
     fun splash_and_logo() = paparazzi.snapshot {
         AcuranzaTheme {

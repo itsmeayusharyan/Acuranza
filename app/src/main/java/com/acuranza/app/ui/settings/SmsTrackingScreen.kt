@@ -320,7 +320,7 @@ fun SmsTrackingScreen(nav: NavController) {
 
 /** What the user agrees to before anything is processed. */
 @Composable
-private fun SmsConsentContent(modifier: Modifier, onAgree: () -> Unit) {
+fun SmsConsentContent(modifier: Modifier, onAgree: () -> Unit) {
     Column(modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Spacer(Modifier.height(12.dp))
         AcuranzaCard {
