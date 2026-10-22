@@ -101,10 +101,6 @@ fun MoreScreen(nav: NavController) {
                 }
             }
         }
-        item(key = "profile") {
-            val s = LocalSettings.current
-            ProfileCard(name = s.profileName, avatarPath = s.profileAvatar) { nav.navigate(Routes.PROFILE) }
-        }
         item(key = "search") {
             OutlinedTextField(
                 value = query,
@@ -128,6 +124,10 @@ fun MoreScreen(nav: NavController) {
                 ),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
             )
+        }
+        item(key = "profile") {
+            val s = LocalSettings.current
+            ProfileCard(name = s.profileName, avatarPath = s.profileAvatar) { nav.navigate(Routes.PROFILE) }
         }
         if (q.isNotEmpty() && hits.isEmpty()) {
             item(key = "empty") {
