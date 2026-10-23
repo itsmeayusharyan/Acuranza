@@ -8,6 +8,8 @@ import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * The standard build's path to the full build: the user picks an Acuranza APK from storage,
@@ -18,6 +20,11 @@ import java.io.File
  *
  * Nothing here disables or evades any check: the picked APK's permissions are declared in it,
  * the user confirms the install through Android's dialog, and the security scan runs as usual.
+ *
+ * Session results are published to a process-scoped [events] flow rather than a screen-owned
+ * callback: the screen can be recreated (rotation, memory pressure) or the process killed
+ * while Android's installer dialog is open, and the outcome must still reach whatever UI is
+ * alive afterwards instead of dying with one composition.
  */
 class PackageUpgradeInstaller(private val context: Context) {
 
@@ -74,13 +81,16 @@ class PackageUpgradeInstaller(private val context: Context) {
 
     /**
      * Stages the verified APK as an in-place update through a PackageInstaller session and
-     * commits it. Android answers on [InstallResultReceiver]; a pending user action launches
-     * the system's install confirmation, where the user — and any security check — has the
-     * final word.
+     * commits it. Android answers on [InstallResultReceiver], which publishes to [events];
+     * a pending user action launches the system's install confirmation, where the user —
+     * and any security check — has the final word.
+     *
+     * @return null when the session was committed and the outcome will arrive via [events],
+     *   or a human-readable staging error otherwise (session creation, disk write).
      */
-    fun install(apkFile: File): Boolean {
+    fun install(apkFile: File): String? {
         var sessionId = -1
-        val ok = runCatching {
+        val stagingError = runCatching {
             val installer = context.packageManager.packageInstaller
             val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
             sessionId = installer.createSession(params)
@@ -95,19 +105,42 @@ class PackageUpgradeInstaller(private val context: Context) {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
             )
             session.commit(confirm.intentSender)
-            true
-        }.getOrDefault(false)
+            null
+        }.getOrElse { it.message ?: it.javaClass.simpleName }
         // The session owns its bytes after commit; the picked copy is dead weight either way.
-        runCatching { apkFile.delete() }
-        if (!ok && sessionId != -1) runCatching { context.packageManager.packageInstaller.abandonSession(sessionId) }
-        return ok
+        if (stagingError == null) runCatching { apkFile.delete() }
+        else if (sessionId != -1) runCatching { context.packageManager.packageInstaller.abandonSession(sessionId) }
+        return stagingError
     }
 
     companion object {
         const val EXTRA_SESSION = "acuranza.session"
-        /** Re-set before each install attempt; survives while the process lives. */
-        var onResult: ((Int, String?) -> Unit)? = null
+
+        /**
+         * Latest installer-session event, process-scoped so it outlives any single screen
+         * instance. Null when no session is pending or the last event was dismissed.
+         */
+        internal val _events = MutableStateFlow<InstallEvent?>(null)
+        val events: StateFlow<InstallEvent?> = _events
+
+        /** Clears the current event; used to dismiss a finished failure before retrying. */
+        fun reset() { _events.value = null }
     }
+}
+
+/** The outcome of an in-place upgrade session, as it should be shown to the user. */
+sealed interface InstallEvent {
+    /** The session is committed and Android's confirmation dialog was launched. */
+    data object WaitingForConfirmation : InstallEvent
+
+    /** The update installed; the app process is replaced moments later. */
+    data object Success : InstallEvent
+
+    /**
+     * The session failed or the user cancelled. [reason] is human-readable and specific;
+     * the user may pick the APK again and retry.
+     */
+    data class Failed(val status: Int, val reason: String) : InstallEvent
 }
 
 /** Receives the session results, launches the user-action intent when the system asks. */
@@ -115,6 +148,7 @@ class InstallResultReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
         val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+        fun fail(why: String) { PackageUpgradeInstaller._events.value = InstallEvent.Failed(status, why) }
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 val confirm: Intent? = if (Build.VERSION.SDK_INT >= 33) {
@@ -123,16 +157,34 @@ class InstallResultReceiver : BroadcastReceiver() {
                     @Suppress("DEPRECATION")
                     intent.getParcelableExtra(Intent.EXTRA_INTENT)
                 }
-                if (confirm != null) {
-                    runCatching {
-                        context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }
+                if (confirm == null) {
+                    fail("Android didn't return its install confirmation dialog")
+                    return
+                }
+                val launched = runCatching {
+                    context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+                if (launched.isFailure) {
+                    fail(
+                        "Couldn't open Android's install dialog (${launched.exceptionOrNull()?.javaClass?.simpleName}) " +
+                            "- allow install requests for Acuranza in system settings, then try again",
+                    )
+                } else {
+                    PackageUpgradeInstaller._events.value = InstallEvent.WaitingForConfirmation
                 }
             }
             PackageInstaller.STATUS_SUCCESS ->
-                PackageUpgradeInstaller.onResult?.invoke(PackageInstaller.STATUS_SUCCESS, null)
+                PackageUpgradeInstaller._events.value = InstallEvent.Success
+            PackageInstaller.STATUS_FAILURE_ABORTED ->
+                fail("Install cancelled — nothing was changed")
+            PackageInstaller.STATUS_FAILURE_BLOCKED ->
+                fail("Android blocked this install${message?.let { " ($it)" } ?: ""}")
+            PackageInstaller.STATUS_FAILURE_STORAGE ->
+                fail("Not enough storage to install the Full build")
+            PackageInstaller.STATUS_FAILURE_INCOMPATIBLE ->
+                fail("This build isn't compatible with your device")
             else ->
-                PackageUpgradeInstaller.onResult?.invoke(status, message)
+                fail("Install failed${message?.let { " ($it)" } ?: " (status $status)"}")
         }
     }
 }

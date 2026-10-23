@@ -29,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -110,23 +112,17 @@ fun SmsTrackingScreen(nav: NavController) {
     // In-app upgrade to the Full build (standard build only): the user picks an Acuranza APK
     // from storage; the app verifies package + signature + version and stages Android's own
     // install confirmation. The OS security check runs as usual; nothing is disabled.
-    var upgrading by remember { mutableStateOf(false) }
-    // The install callback is held on a static until the result arrives; if the user leaves this
-    // screen (or the installer never answers), dispose must drop it so the disposed composition
-    // and its scope don't leak for the process's lifetime.
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        onDispose {
-            if (com.acuranza.app.install.PackageUpgradeInstaller.onResult != null) {
-                com.acuranza.app.install.PackageUpgradeInstaller.onResult = null
-            }
-        }
-    }
+    // Session outcomes arrive on a process-scoped event flow, so a screen recreation while
+    // Android's installer dialog is open can no longer strand the UI on "install in progress".
+    var staging by remember { mutableStateOf(false) }
+    val installEvent by com.acuranza.app.install.PackageUpgradeInstaller.events.collectAsState()
+    val upgrading = staging || installEvent is com.acuranza.app.install.InstallEvent.WaitingForConfirmation
     val apkPicker = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                upgrading = true
+                staging = true
                 val installer = com.acuranza.app.install.PackageUpgradeInstaller(context)
                 val staged = runCatching {
                     val cache = java.io.File(context.cacheDir, "picked-update.apk")
@@ -135,16 +131,7 @@ fun SmsTrackingScreen(nav: NavController) {
                     } ?: return@runCatching false
                     when (val verified = installer.verify(cache)) {
                         is com.acuranza.app.install.PackageUpgradeInstaller.Verified.Ok -> {
-                            com.acuranza.app.install.PackageUpgradeInstaller.onResult = { status, statusMessage ->
-                                scope.launch {
-                                    message = when (status) {
-                                        android.content.pm.PackageInstaller.STATUS_SUCCESS -> "Full build installed"
-                                        else -> "Install stopped (${statusMessage ?: "status $status"})"
-                                    }
-                                    upgrading = false
-                                    com.acuranza.app.install.PackageUpgradeInstaller.onResult = null
-                                }
-                            }
+                            com.acuranza.app.install.PackageUpgradeInstaller.reset()
                             installer.install(cache)
                         }
                         is com.acuranza.app.install.PackageUpgradeInstaller.Verified.Rejected -> {
@@ -161,7 +148,12 @@ fun SmsTrackingScreen(nav: NavController) {
                         }
                     }
                 }.getOrDefault(false)
-                if (!staged) upgrading = false
+                when {
+                    staged == null -> Unit // committed; the event flow reports the outcome
+                    staged is String -> message = "Couldn't start the install: $staged"
+                    else -> Unit // validator rejection already messaged
+                }
+                staging = false
             }
         }
     }
@@ -313,6 +305,11 @@ fun SmsTrackingScreen(nav: NavController) {
                 onMessage = { message = it },
                 onChanged = { refresh++ },
                 onPickFullApk = { apkPicker.launch(arrayOf("application/vnd.android.package-archive")) },
+                onRetryInstall = {
+                    com.acuranza.app.install.PackageUpgradeInstaller.reset()
+                    apkPicker.launch(arrayOf("application/vnd.android.package-archive"))
+                },
+                installEvent = installEvent,
                 upgrading = upgrading,
                 refreshKey = refresh,
                 onReview = { reviewing = true },
@@ -561,6 +558,8 @@ private fun SmsOverviewContent(
     onChanged: () -> Unit,
     onPickFullApk: () -> Unit,
     upgrading: Boolean,
+    installEvent: com.acuranza.app.install.InstallEvent? = null,
+    onRetryInstall: () -> Unit = {},
     refreshKey: Int,
     onReview: () -> Unit,
     onDeleteAll: () -> Unit,
@@ -747,12 +746,52 @@ private fun SmsOverviewContent(
                             style = MaterialTheme.typography.bodySmall,
                             color = AcuranzaTheme.colors.subtleText,
                         )
-                        SecondaryButton(
-                            if (upgrading) "Install in progress…" else "Install Full build from APK",
-                            enabled = !upgrading,
-                            onClick = onPickFullApk,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        if (upgrading) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                androidx.compose.foundation.layout.Row(
+                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.5.dp)
+                                    Text("Updating Acuranza to Full Build…", style = MaterialTheme.typography.titleSmall)
+                                }
+                                Text(
+                                    "Your data — transactions, accounts, settings — stays exactly as it is; this is an in-place " +
+                                        "update to the same app. Nothing installs until you approve Android's dialog.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AcuranzaTheme.colors.subtleText,
+                                )
+                                if (installEvent is com.acuranza.app.install.InstallEvent.WaitingForConfirmation) {
+                                    Text(
+                                        "Android's installer is open — review and approve the update there.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                            }
+                        } else {
+                            when (val ev = installEvent) {
+                                is com.acuranza.app.install.InstallEvent.Failed -> {
+                                    Text(ev.reason, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.alert)
+                                    SecondaryButton(
+                                        "Try again",
+                                        enabled = true,
+                                        onClick = onRetryInstall,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                                com.acuranza.app.install.InstallEvent.Success -> Text(
+                                    "Full build installed — Acuranza is restarting as the Full build.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AcuranzaTheme.colors.income,
+                                )
+                                else -> SecondaryButton(
+                                    "Install Full build from APK",
+                                    enabled = true,
+                                    onClick = onPickFullApk,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
                     }
                 }
             }
