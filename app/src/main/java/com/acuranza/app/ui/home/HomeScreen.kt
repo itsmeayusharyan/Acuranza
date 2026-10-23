@@ -139,6 +139,8 @@ data class HomeState(
     val notificationsUnread: Int = 0,
     /** The user's display name for the greeting; null = just "Good morning". */
     val profileName: String? = null,
+    /** The saved profile photo path for the header avatar; null = initials fallback. */
+    val profileAvatar: String? = null,
     val insights: List<Insight> = emptyList(),
     val recent: List<TransactionItem> = emptyList(),
     val accounts: List<AccountWithBalance> = emptyList(),
@@ -293,11 +295,13 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
         unreadNotifications,
         c.settings.settings.map { it.homeLayout }.distinctUntilChanged(),
         c.settings.settings.map { it.profileName }.distinctUntilChanged(),
-    ) { base, unread, savedLayout, profileName ->
+        c.settings.settings.map { it.profileAvatar }.distinctUntilChanged(),
+    ) { base, unread, savedLayout, profileName, profileAvatar ->
         base.copy(
             notificationsUnread = unread,
             sections = HomeLayout.visible(HomeLayout.decode(savedLayout)),
             profileName = profileName,
+            profileAvatar = profileAvatar,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
@@ -335,6 +339,7 @@ fun HomeScreen(nav: NavController) {
     HomeContent(
         state = state,
         hidden = hidden,
+        onProfile = { nav.navigate(com.acuranza.app.ui.nav.Routes.PROFILE) },
         loadingDemo = loadingDemo,
         onToggleHidden = { vm.toggleHidden(hidden) },
         onInsights = { nav.navigateToTab(Routes.INSIGHTS) },
@@ -419,6 +424,7 @@ private fun NotificationsBellButton(unread: Int, onOpen: () -> Unit) {
 fun HomeContent(
     state: HomeState,
     hidden: Boolean,
+    onProfile: () -> Unit = {},
     loadingDemo: Boolean = false,
     onToggleHidden: () -> Unit = {},
     onInsights: () -> Unit = {},
@@ -454,6 +460,15 @@ fun HomeContent(
                 Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                com.acuranza.app.ui.settings.ProfileAvatar(
+                    path = state.profileAvatar,
+                    name = state.profileName,
+                    size = 40.dp,
+                    modifier = Modifier
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onProfile),
+                )
+                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(Fmt.todayLong(), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
                     Text(

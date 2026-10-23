@@ -86,7 +86,7 @@ object ProfileName {
  * profile is untouched). Decoding happens off the main thread.
  */
 @Composable
-fun ProfileAvatar(path: String?, name: String?, size: Dp) {
+fun ProfileAvatar(path: String?, name: String?, size: Dp, modifier: Modifier = Modifier) {
     val file = remember(path) { path?.let(::File)?.takeIf { it.exists() } }
     var bitmap by remember(file?.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(file?.absolutePath) {
@@ -96,7 +96,7 @@ fun ProfileAvatar(path: String?, name: String?, size: Dp) {
     }
     val initial = name?.trim()?.take(1)?.uppercase()?.takeIf { it.isNotEmpty() }
     Box(
-        Modifier
+        modifier
             .size(size)
             .clip(CircleShape)
             .background(AcuranzaTheme.colors.accentTint),

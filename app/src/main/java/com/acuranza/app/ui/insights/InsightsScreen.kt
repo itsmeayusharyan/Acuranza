@@ -39,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,12 +86,44 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.acuranza.app.util.Time
+import com.acuranza.app.util.Period
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import com.acuranza.app.ui.nav.popBackSafely
 import com.acuranza.app.ui.nav.navigateToTab
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class InsightsViewModel(private val c: AppContainer) : ViewModel() {
     val insights: StateFlow<List<Insight>?> = c.insights.observeInsights().map<List<Insight>, List<Insight>?> { it }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The selected analysis window for the comparison card. */
+    val range = kotlinx.coroutines.flow.MutableStateFlow(InsightRange.M1)
+    fun setRange(r: InsightRange) { range.value = r }
+
+    val comparison: kotlinx.coroutines.flow.StateFlow<PeriodComparison?> = range
+        .flatMapLatest { r ->
+            c.settings.settings.map { it.payCycle }.distinctUntilChanged().flatMapLatest { cycle ->
+                kotlinx.coroutines.flow.flow {
+                    val today = Time.today()
+                    val current = if (r.months == 1) {
+                        Period.containing(today, cycle)
+                    } else {
+                        Period(today.minusMonths((r.months - 1).toLong()).withDayOfMonth(1), today.plusDays(1))
+                    }
+                    val previous = if (r.months == 1) {
+                        current.previous()
+                    } else {
+                        Period(current.start.minusMonths(r.months.toLong()), current.start)
+                    }
+                    val cur = runCatching { c.transactions.summary(current) }.getOrNull()
+                    val prev = runCatching { c.transactions.summary(previous) }.getOrNull()
+                    if (cur != null) emit(PeriodComparison(r, cur, prev))
+                }
+            }
+        }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), null)
 
     fun dismiss(id: String) = viewModelScope.launch { c.insights.dismiss(id) }
     fun restoreDismissed() = viewModelScope.launch { c.settings.clearDismissedInsights() }
@@ -121,11 +154,32 @@ fun openInsightAction(nav: NavController, action: InsightAction) {
     }
 }
 
+/** Selectable analysis window for the income-vs-spending comparison. */
+enum class InsightRange(val months: Int, val label: String) {
+    M1(1, "1M"), M3(3, "3M"), M6(6, "6M"), Y1(12, "1Y"),
+}
+
+/** The selected window's totals beside the equivalent previous window's, for the delta card. */
+data class PeriodComparison(
+    val range: InsightRange,
+    val current: com.acuranza.app.repo.MonthSummary,
+    val previous: com.acuranza.app.repo.MonthSummary?,
+) {
+    /** Percent change vs the previous window; null when the previous window had nothing to compare. */
+    fun delta(of: (com.acuranza.app.repo.MonthSummary) -> Long): Double? {
+        val prev = previous ?: return null
+        val base = of(prev).toDouble().let { if (it == 0.0) return null else kotlin.math.abs(it) }
+        return (of(current) - of(prev)) / base * 100.0
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(nav: NavController) {
     val vm = acuranzaViewModel { InsightsViewModel(it) }
     val insights by vm.insights.collectAsStateWithLifecycle()
+    val range by vm.range.collectAsState()
+    val comparison by vm.comparison.collectAsState()
     val scope = rememberCoroutineScope()
     val haptic = rememberHaptic()
     var refreshing by remember { mutableStateOf(false) }
@@ -150,6 +204,9 @@ fun InsightsScreen(nav: NavController) {
             InsightsContent(
                 insights = insights,
                 hidden = LocalHideAmounts.current,
+                range = range,
+                comparison = comparison,
+                onRange = vm::setRange,
                 onDismiss = { haptic(); vm.dismiss(it.id) },
                 onAction = { openInsightAction(nav, it) },
             )
@@ -162,6 +219,9 @@ fun InsightsScreen(nav: NavController) {
 fun InsightsContent(
     insights: List<Insight>?,
     hidden: Boolean,
+    range: InsightRange = InsightRange.M1,
+    comparison: PeriodComparison? = null,
+    onRange: (InsightRange) -> Unit = {},
     onDismiss: (Insight) -> Unit = {},
     onAction: (InsightAction) -> Unit = {},
     expandedByDefault: Set<String> = emptySet(),
@@ -180,6 +240,17 @@ fun InsightsContent(
     val summary = list.orEmpty().firstOrNull { it.isSummary }
     val cards = list.orEmpty().filterNot { it.isSummary }
     LazyColumn(state = listState, contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 40.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item(key = "range") {
+            com.acuranza.app.designsystem.components.RangeChips(
+                options = InsightRange.entries.map { it.label },
+                selectedIndex = InsightRange.entries.indexOf(range),
+                onSelect = { onRange(InsightRange.entries[it]) },
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+        }
+        comparison?.let { cmp ->
+            item(key = "comparison") { ComparisonCard(cmp, hidden) }
+        }
         summary?.let { s -> item(key = "summary") { SummaryCard(s, hidden, onAction) } }
         cards.groupBy { it.severity }.toSortedMap().forEach { (sev, items) ->
             item(key = "h-$sev") {
@@ -205,6 +276,60 @@ fun InsightsContent(
                 Text("Tap an insight for details · swipe left to dismiss", style = MaterialTheme.typography.bodySmall,
                     color = AcuranzaTheme.colors.subtleText, modifier = Modifier.padding(top = 12.dp, start = 4.dp))
             }
+        }
+    }
+}
+
+/** Income vs spending for the selected window, with deltas against the previous window. */
+@Composable
+private fun ComparisonCard(cmp: PeriodComparison, hidden: Boolean) {
+    val colors = AcuranzaTheme.colors
+    fun money(v: Long): String = if (hidden) "₹ ••••" else com.acuranza.app.model.Money.format(v, showPaise = false)
+    com.acuranza.app.designsystem.components.AcuranzaCard(Modifier.padding(horizontal = 0.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Text(
+                "Income vs spending · ${cmp.range.label}",
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.subtleText,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ComparisonMetric("Income", money(cmp.current.income), cmp.delta { it.income }, colors.income, Modifier.weight(1f))
+                ComparisonMetric("Spending", money(cmp.current.expense), cmp.delta { it.expense }, colors.ink, Modifier.weight(1f))
+                ComparisonMetric("Savings", money(cmp.current.savings), cmp.delta { it.savings }, colors.income, Modifier.weight(1f))
+            }
+            val rate = cmp.current.savingsRate
+            if (rate != null && !hidden) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Savings rate ${(rate * 100).toInt()}% of income" +
+                        (cmp.previous?.savingsRate?.let { prev ->
+                            if (prev > 0) " · was ${(prev * 100).toInt()}%" else ""
+                        } ?: ""),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.subtleText,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ComparisonMetric(label: String, value: String, deltaPct: Double?, tint: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    val colors = AcuranzaTheme.colors
+    Column(modifier) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = colors.subtleText)
+        Text(value, style = MaterialTheme.typography.titleMedium, color = tint)
+        if (deltaPct != null) {
+            val arrow = if (deltaPct >= 0) "▲" else "▼"
+            val good = if (label == "Spending") deltaPct <= 0 else deltaPct >= 0
+            Text(
+                "$arrow ${kotlin.math.abs(deltaPct).toInt()}% vs prev",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (deltaPct == 0.0) colors.subtleText else if (good) colors.income else colors.alert,
+            )
+        } else {
+            Text("—", style = MaterialTheme.typography.labelSmall, color = colors.subtleText)
         }
     }
 }
