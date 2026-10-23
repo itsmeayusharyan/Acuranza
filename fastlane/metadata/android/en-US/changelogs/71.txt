@@ -1,0 +1,1 @@
+About audit: the Licence page now links to the full licence text in the repository (with a fallback if no browser is installed), joining Privacy policy, Terms, Acknowledgements and the GitHub repository row. Every external link on the About pages was verified reachable; version stays read from the build configuration; nothing about the app's offline behavior changed.

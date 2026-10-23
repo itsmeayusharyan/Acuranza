@@ -6,22 +6,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Description
 import androidx.navigation.NavController
 import com.acuranza.app.designsystem.theme.AcuranzaTheme
 import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.nav.popBackSafely
+import kotlinx.coroutines.launch
 
 /** The app's own licence, as a dedicated page. The full text ships with the source distribution. */
+/** The full licence text, as committed in the repository (verified reachable). */
+const val LICENCE_URL = "https://github.com/itsmeayusharyan/Acuranza/blob/acuranza/LICENSE"
+
 @Composable
 fun GplScreen(nav: NavController) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val snackbar = androidx.compose.runtime.remember { SnackbarHostState() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     AcuranzaScreen(
         title = "Licence",
         subtitle = "GNU General Public License v3.0",
         onBack = { nav.popBackSafely() },
+        snackbar = snackbar,
     ) { padding ->
         Column(
             Modifier
@@ -51,7 +62,18 @@ fun GplScreen(nav: NavController) {
                     "derives from. Each source file keeps the copyright notice it carried.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = AcuranzaTheme.colors.subtleText,
+                modifier = Modifier.padding(bottom = 16.dp),
             )
+            com.acuranza.app.ui.settings.SettingsRow(
+                "View the full licence text",
+                "github.com/itsmeayusharyan/Acuranza · LICENSE",
+                androidx.compose.material.icons.Icons.Outlined.Description,
+                divider = false,
+            ) {
+                if (!openUrl(context, LICENCE_URL)) {
+                    scope.launch { snackbar.showSnackbar("No browser found on this device") }
+                }
+            }
         }
     }
 }
