@@ -448,6 +448,14 @@ class ScreensScreenshotTest {
         }
     }
 
+    /** The redesigned first-launch welcome: logo, value proposition, three props, Get started. */
+    @Test
+    fun onboarding_welcome() = paparazzi.snapshot {
+        Frame(dark = true) {
+            com.acuranza.app.ui.onboarding.Welcome(onNext = {})
+        }
+    }
+
     @Test
     fun about_dark() = paparazzi.snapshot {
         Frame(dark = true) {
