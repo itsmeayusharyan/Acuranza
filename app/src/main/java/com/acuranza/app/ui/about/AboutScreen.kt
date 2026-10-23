@@ -74,7 +74,6 @@ fun AboutScreen(nav: androidx.navigation.NavController) {
         onPrivacy = { nav.navigate(Routes.ABOUT_PRIVACY) },
         onTerms = { nav.navigate(Routes.ABOUT_TERMS) },
         onLicence = { nav.navigate(Routes.ABOUT_GPL) },
-        onAcknowledgements = { nav.navigate(Routes.ABOUT_ACKNOWLEDGEMENTS) },
         snackbar = snackbar,
     )
 }
@@ -90,7 +89,6 @@ fun AboutContent(
     onPrivacy: () -> Unit,
     onTerms: () -> Unit = {},
     onLicence: () -> Unit,
-    onAcknowledgements: () -> Unit = {},
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     device: AboutDeviceInfo = AboutDeviceInfo.fromSystem(),
 ) {
@@ -133,8 +131,7 @@ fun AboutContent(
             SettingsSection("Legal") {
                 SettingsRow("Privacy policy", "What Acuranza stores, and what it never sends", Icons.Outlined.Shield) { onPrivacy() }
                 SettingsRow("Terms of service", "The plain terms of using the app", Icons.Outlined.Gavel) { onTerms() }
-                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Info) { onLicence() }
-                SettingsRow("Acknowledgements", "The libraries Acuranza is built on", Icons.Outlined.AutoAwesome, divider = false) { onAcknowledgements() }
+                SettingsRow("Licence", "GPL-3.0 · free and open source", Icons.Outlined.Info, divider = false) { onLicence() }
             }
         }
     }

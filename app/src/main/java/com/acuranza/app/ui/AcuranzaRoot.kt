@@ -642,7 +642,6 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.SETTINGS_APPEARANCE) { com.acuranza.app.ui.settings.AppearancePage(nav) }
         composable(Routes.SETTINGS_DATA) { com.acuranza.app.ui.settings.DataManagementPage(nav) }
         composable(Routes.SETTINGS_SMS_IMPORTS) { com.acuranza.app.ui.settings.SmsImportsScreen(nav) }
-        composable(Routes.ABOUT_ACKNOWLEDGEMENTS) { com.acuranza.app.ui.about.AcknowledgementsScreen(nav) }
         composable(Routes.SAVINGS_GOAL) { com.acuranza.app.ui.home.SavingsGoalScreen(nav) }
         composable(Routes.WIDGETS_PREVIEW) { com.acuranza.app.ui.tools.WidgetsPreviewScreen(nav) }
         composable(Routes.PROFILE) { com.acuranza.app.ui.settings.ProfileScreen(nav) }
