@@ -49,7 +49,7 @@ every insight is computed on the phone.
 - **Insights**: offline rules including budget pace, spending spikes, savings rate, subscriptions,
   card utilisation, emergency-fund cover and unusual spends.
 - **Export**: CSV (opens in Excel), Beancount and Ledger, so your data is never locked in.
-- **Everyday tools**: home-screen widgets (balances, this month, recent transactions, upcoming payments, quick add), a quick-add tile in Quick
+- **Everyday tools**: home-screen widgets (this month, savings goal, spending by category, quick add, shortcuts) with an in-app preview screen for adding them to your launcher, a quick-add tile in Quick
   Settings, and an optional daily digest notification.
 - **Languages**: English and Hindi (हिन्दी).
 
