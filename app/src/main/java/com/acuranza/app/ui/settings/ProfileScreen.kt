@@ -35,8 +35,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -88,11 +88,10 @@ object ProfileName {
 @Composable
 fun ProfileAvatar(path: String?, name: String?, size: Dp) {
     val file = remember(path) { path?.let(::File)?.takeIf { it.exists() } }
-    val bitmap by produceState<ImageBitmap?>(null, file?.absolutePath) {
-        value = file?.let {
-            withContext(Dispatchers.IO) {
-                runCatching { BitmapFactory.decodeFile(it.absolutePath)?.asImageBitmap() }.getOrNull()
-            }
+    var bitmap by remember(file?.absolutePath) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(file?.absolutePath) {
+        bitmap = withContext(Dispatchers.IO) {
+            runCatching { file?.let { BitmapFactory.decodeFile(it.absolutePath)?.asImageBitmap() } }.getOrNull()
         }
     }
     val initial = name?.trim()?.take(1)?.uppercase()?.takeIf { it.isNotEmpty() }

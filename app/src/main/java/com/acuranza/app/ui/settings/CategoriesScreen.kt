@@ -36,6 +36,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -257,7 +258,7 @@ fun CategoryEditSheet(
 ) {
     var name by remember { mutableStateOf(currentName) }
     var icon by remember { mutableStateOf(currentIcon) }
-    var color by remember { mutableStateOf(currentColor) }
+    var color by remember { mutableLongStateOf(currentColor) }
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val nameOk = name.isNotBlank()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state, containerColor = MaterialTheme.colorScheme.surface) {

@@ -383,17 +383,12 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
             com.acuranza.app.tools.QuickLaunch.ROUTE_TRANSACTIONS -> Routes.TRANSACTIONS
             com.acuranza.app.tools.QuickLaunch.ROUTE_BILLS -> Routes.BILLS
             com.acuranza.app.tools.QuickLaunch.ROUTE_ACCOUNTS -> Routes.ACCOUNTS
+            com.acuranza.app.tools.QuickLaunch.ROUTE_PLANNING -> Routes.PLANNING
+            com.acuranza.app.tools.QuickLaunch.ROUTE_REPORTS -> Routes.REPORTS
             else -> null
         }
-        // The Recent widget links a specific transaction: "txn-view:<id>".
-        val txnViewId = if (target == null && initialRoute?.startsWith(com.acuranza.app.tools.QuickLaunch.TXN_VIEW_PREFIX) == true) {
-            initialRoute.removePrefix(com.acuranza.app.tools.QuickLaunch.TXN_VIEW_PREFIX).toLongOrNull()
-        } else null
         if (target != null) {
             if (target in TabRoutes) nav.navigateToTab(target) else nav.navigate(target) { launchSingleTop = true }
-            onRouteConsumed()
-        } else if (txnViewId != null) {
-            nav.navigate(Routes.TXN_DETAIL.replace("{id}", txnViewId.toString())) { launchSingleTop = true }
             onRouteConsumed()
         }
     }

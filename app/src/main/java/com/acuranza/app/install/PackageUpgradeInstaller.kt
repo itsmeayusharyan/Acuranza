@@ -27,16 +27,31 @@ class PackageUpgradeInstaller(private val context: Context) {
         data class Rejected(val reason: PackageUpgradeValidator.Decision) : Verified
     }
 
+    /**
+     * The signing certificates of a PackageInfo across API levels: SigningInfo exists only from
+     * 28, so 26–27 fall back to the deprecated-but-functional signatures field, with the matching
+     * request flag. Without this the in-app installer would see zero certificates on Android 8.x
+     * and reject its own legitimate APK.
+     */
+    @Suppress("DEPRECATION")
+    private fun signingCertsOf(info: android.content.pm.PackageInfo): Array<out android.content.pm.Signature> =
+        if (Build.VERSION.SDK_INT >= 28) info.signingInfo?.apkContentsSigners.orEmpty()
+        else info.signatures.orEmpty()
+
+    private val signingFlags: Int =
+        if (Build.VERSION.SDK_INT >= 28) PackageManager.GET_SIGNING_CERTIFICATES
+        else @Suppress("DEPRECATION") PackageManager.GET_SIGNATURES
+
     /** Reads the picked APK's manifest and checks it against this app. */
     fun verify(apkFile: File): Verified {
-        val info = context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, PackageManager.GET_SIGNING_CERTIFICATES)
+        val info = context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, signingFlags)
             ?: return Verified.Rejected(PackageUpgradeValidator.Decision.NotAnApk)
         val own = runCatching {
-            context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            context.packageManager.getPackageInfo(context.packageName, signingFlags)
         }.getOrNull() ?: return Verified.Rejected(PackageUpgradeValidator.Decision.NotAnApk)
 
-        val pickedCerts = info.signingInfo?.apkContentsSigners.orEmpty()
-        val ownCerts = own.signingInfo?.apkContentsSigners.orEmpty()
+        val pickedCerts = signingCertsOf(info)
+        val ownCerts = signingCertsOf(own)
         val signaturesMatch = pickedCerts.isNotEmpty() && pickedCerts.size == ownCerts.size &&
             pickedCerts.zip(ownCerts).all { (a, b) -> a.toByteArray().contentEquals(b.toByteArray()) }
 

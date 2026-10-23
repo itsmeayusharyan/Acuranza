@@ -31,6 +31,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -77,7 +79,7 @@ fun SmsTrackingScreen(nav: NavController) {
     val snackbar = remember { SnackbarHostState() }
 
     var message by remember { mutableStateOf<String?>(null) }
-    var refresh by remember { mutableStateOf(0) }
+    var refresh by remember { mutableIntStateOf(0) }
     var pending by remember { mutableStateOf<List<SmsImportEntity>>(emptyList()) }
     var reviewing by remember { mutableStateOf(false) }
     var clipboardHit by remember { mutableStateOf<String?>(null) }
@@ -109,6 +111,16 @@ fun SmsTrackingScreen(nav: NavController) {
     // from storage; the app verifies package + signature + version and stages Android's own
     // install confirmation. The OS security check runs as usual; nothing is disabled.
     var upgrading by remember { mutableStateOf(false) }
+    // The install callback is held on a static until the result arrives; if the user leaves this
+    // screen (or the installer never answers), dispose must drop it so the disposed composition
+    // and its scope don't leak for the process's lifetime.
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            if (com.acuranza.app.install.PackageUpgradeInstaller.onResult != null) {
+                com.acuranza.app.install.PackageUpgradeInstaller.onResult = null
+            }
+        }
+    }
     val apkPicker = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -377,7 +389,7 @@ private fun SmsPendingReviewContent(
 ) {
     val c = LocalContainer.current
     val edits = remember(pending) { pending.associate { it.id to mutableStateOf(PendingEditState()) } }
-    var expanded by remember { mutableStateOf(-1L) }
+    var expanded by remember { mutableLongStateOf(-1L) }
     // Account matching: the hint says where each candidate would land; the user can override it.
     var hints by remember(pending) { mutableStateOf<Map<Long, com.acuranza.app.data.sms.SmsAccountMatcher.Match>>(emptyMap()) }
     var accounts by remember { mutableStateOf<List<com.acuranza.app.data.sms.SmsAccountMatcher.CandidateAccount>>(emptyList()) }

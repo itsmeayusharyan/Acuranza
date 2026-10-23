@@ -76,33 +76,23 @@
         </receiver>
 
         <receiver
-            android:name=".tools.BalancesWidgetProvider"
+            android:name=".tools.SavingsGoalWidgetProvider"
             android:exported="true"
-            android:label="@string/widget_balances_title">
+            android:label="@string/widget_goal_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_balances_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_goal_info" />
         </receiver>
 
         <receiver
-            android:name=".tools.RecentWidgetProvider"
+            android:name=".tools.ShortcutsWidgetProvider"
             android:exported="true"
-            android:label="@string/widget_recent_title">
+            android:label="@string/widget_shortcuts_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_recent_info" />
-        </receiver>
-
-        <receiver
-            android:name=".tools.UpcomingWidgetProvider"
-            android:exported="true"
-            android:label="@string/widget_upcoming_title">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_upcoming_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_shortcuts_info" />
         </receiver>
 
         <service

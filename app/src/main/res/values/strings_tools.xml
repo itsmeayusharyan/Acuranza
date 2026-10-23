@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_month_title">This month</string>
-    <string name="widget_spent">spent</string>
-    <string name="widget_month_description">Spent, income and saved this budgeting period</string>
+    <string name="widget_month_description">Income, spending, net savings and budget progress</string>
+    <string name="widget_income_label">Income</string>
+    <string name="widget_spending_label">Spent</string>
     <string name="widget_quick_add_description">Add an expense, income or transfer, or open transactions</string>
-    <string name="widget_add_expense">− Expense</string>
-    <string name="widget_add_income">+ Income</string>
-    <string name="widget_balances_title">Net worth</string>
-    <string name="widget_balances_description">Your accounts and net worth at a glance</string>
-    <string name="widget_balances_empty">No accounts yet — add one in Acuranza</string>
-    <string name="widget_recent_title">Recent transactions</string>
-    <string name="widget_recent_description">Your latest transactions with amounts</string>
-    <string name="widget_recent_empty">No transactions yet</string>
-    <string name="widget_upcoming_title">Upcoming payments</string>
-    <string name="widget_upcoming_description">Bills due and recurring payments ahead</string>
-    <string name="widget_upcoming_empty">Nothing due — all clear</string>
+    <string name="widget_expense_label">− Expense</string>
+    <string name="widget_add_income_label">+ Income</string>
+    <string name="widget_transfer_label">↔ Transfer</string>
+    <string name="widget_transactions_label">≡ Transactions</string>
+    <string name="widget_shortcuts_title">Shortcuts</string>
+    <string name="widget_shortcuts_description">Bills, budgets, reports and accounts, one tap away</string>
+    <string name="widget_shortcut_bills_label">Bills</string>
+    <string name="widget_shortcut_budgets_label">Budgets</string>
+    <string name="widget_shortcut_reports_label">Reports</string>
+    <string name="widget_shortcut_accounts_label">Accounts</string>
+    <string name="widget_goal_title">Savings goal</string>
+    <string name="widget_goal_description">Progress toward your savings target this period</string>
+    <string name="widget_goal_empty">Set a savings target in the app to track progress</string>
     <string name="widget_transfer">Transfer</string>
     <string name="widget_transactions">Transactions</string>
     <string name="tile_add_expense">Add expense</string>

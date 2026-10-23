@@ -15,9 +15,9 @@ object QuickLaunch {
     const val ROUTE_TRANSACTIONS = "transactions"
     const val ROUTE_BILLS = "bills"
     const val ROUTE_ACCOUNTS = "accounts"
+    const val ROUTE_PLANNING = "planning"
+    const val ROUTE_REPORTS = "reports"
 
-    /** Prefix for per-transaction deep links from the Recent widget: "txn-view:<id>". */
-    const val TXN_VIEW_PREFIX = "txn-view:"
 
     fun intent(context: Context, route: String?): Intent =
         Intent(context, MainActivity::class.java)

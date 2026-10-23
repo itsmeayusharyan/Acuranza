@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -160,7 +161,7 @@ fun LoanDetailScreen(nav: NavController, id: Long) {
     val hidden = LocalHideAmounts.current
     val scope = rememberCoroutineScope()
     val status by c.loans.observe(id).collectAsState(initial = null)
-    var tab by remember { mutableStateOf(0) }
+    var tab by remember { mutableIntStateOf(0) }
     var prepayAmount by remember { mutableStateOf<Long?>(null) }
     var prepayDate by remember { mutableStateOf(Time.today().plusMonths(1)) }
     var reduce by remember { mutableStateOf(Loans.Reduce.TENURE) }

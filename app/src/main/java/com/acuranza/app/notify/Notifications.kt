@@ -18,7 +18,7 @@ import com.acuranza.app.R
 class Notifications(private val context: Context) {
 
     fun createChannels() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        // NotificationChannel is API-26+; minSdk is 26, so no guard is needed.
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannels(
             listOf(

@@ -130,12 +130,11 @@ class DigestWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
         private const val NOTIF_ID = 600_001
 
         fun notify(context: Context, text: String) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-                    NotificationChannel(CHANNEL, "Daily digest", NotificationManager.IMPORTANCE_LOW)
-                        .apply { description = "A short summary of the day, once a day" },
-                )
-            }
+            // NotificationChannel is API-26+; minSdk is 26, so no guard is needed.
+            context.getSystemService(NotificationManager::class.java).createNotificationChannel(
+                NotificationChannel(CHANNEL, "Daily digest", NotificationManager.IMPORTANCE_LOW)
+                    .apply { description = "A short summary of the day, once a day" },
+            )
             val open = QuickLaunch.pending(context, null, NOTIF_ID)
             val publicVersion = NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_notification)

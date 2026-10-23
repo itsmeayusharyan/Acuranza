@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -997,7 +998,7 @@ private fun SalaryPlanSheet(
 ) {
     var salary by remember { mutableStateOf(info.salaryEntered ?: info.salaryDetected) }
     var save by remember { mutableStateOf(info.savingsTarget) }
-    var payDay by remember { mutableStateOf(info.payDay) }
+    var payDay by remember { mutableIntStateOf(info.payDay) }
     val money = { p: Long -> com.acuranza.app.model.Money.format(p, showPaise = false) }
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(

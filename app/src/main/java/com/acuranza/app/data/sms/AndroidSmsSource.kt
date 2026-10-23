@@ -145,10 +145,12 @@ class SmsScanRunner(
             // a dry run is a real scan for bookkeeping purposes, or every tap would re-walk
             // the entire 12-month inbox.
             settings.recordSmsScan("ok")
-            android.util.Log.d(
-                "AcuranzaSms",
-                "scan dry=true since=$since skipped=${outcome.skipped} candidates=${candidates.size} balances=${outcome.balances.size} millis=${System.currentTimeMillis() - startedAt}",
-            )
+            if (com.acuranza.app.BuildConfig.DEBUG) {
+                android.util.Log.d(
+                    "AcuranzaSms",
+                    "scan dry=true since=$since skipped=${outcome.skipped} candidates=${candidates.size} balances=${outcome.balances.size} millis=${System.currentTimeMillis() - startedAt}",
+                )
+            }
             return Result(decision, 0, outcome.skipped, candidates.size, "ok") to candidates
         }
 
@@ -185,10 +187,12 @@ class SmsScanRunner(
 
         if (!current.smsFirstImportDone && imported > 0) settings.setSmsFirstImportDone()
         settings.recordSmsScan("ok", outcome.skipped)
-        android.util.Log.d(
-            "AcuranzaSms",
-            "scan dry=false auto=$auto since=$since skipped=${outcome.skipped} candidates=${importable.size} imported=$imported millis=${System.currentTimeMillis() - startedAt}",
-        )
+        if (com.acuranza.app.BuildConfig.DEBUG) {
+            android.util.Log.d(
+                "AcuranzaSms",
+                "scan dry=false auto=$auto since=$since skipped=${outcome.skipped} candidates=${importable.size} imported=$imported millis=${System.currentTimeMillis() - startedAt}",
+            )
+        }
         return Result(decision, imported, outcome.skipped, importable.size, "ok") to emptyList()
     }
 }

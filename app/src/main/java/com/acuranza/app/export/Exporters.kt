@@ -35,7 +35,7 @@ data class ExportData(
 object Exporters {
 
     /** UTF-8 byte order mark: makes Excel read ₹ and other non-ASCII text correctly. */
-    const val BOM = "﻿"
+    const val BOM = "\uFEFF"
 
     fun export(format: ExportFormat, data: ExportData): String = when (format) {
         ExportFormat.CSV -> csv(data, lineEnd = "\n")

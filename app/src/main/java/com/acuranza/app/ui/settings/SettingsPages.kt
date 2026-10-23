@@ -67,6 +67,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -361,7 +362,7 @@ fun DataManagementPage(nav: NavController) {
 
     fun show(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
     LaunchedEffect(Unit) { sampleLoaded = runCatching { c.demoData.isLoaded() }.getOrDefault(false) }
-    var smsImportCount by remember { mutableStateOf(0) }
+    var smsImportCount by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         smsImportCount = runCatching {
             c.smsImports.totalImports() - c.smsImports.pendingCount()

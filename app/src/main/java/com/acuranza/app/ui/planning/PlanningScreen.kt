@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -495,7 +496,7 @@ private fun GoalSheet(
     val haptic = rememberHaptic()
     var name by remember { mutableStateOf(goal?.name ?: "") }
     var target by remember { mutableStateOf(goal?.target) }
-    var saved by remember { mutableStateOf(goal?.saved ?: 0L) }
+    var saved by remember { mutableLongStateOf(goal?.saved ?: 0L) }
     var deadline by remember { mutableStateOf(goal?.deadline?.let(LocalDate::ofEpochDay) ?: Time.today().plusYears(1)) }
     var ret by remember { mutableStateOf((goal?.expectedReturnPct ?: 7.0).toString()) }
     var loanOn by remember { mutableStateOf((goal?.loanAmount ?: 0) > 0) }
