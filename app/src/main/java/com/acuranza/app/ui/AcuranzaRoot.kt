@@ -385,6 +385,7 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
             com.acuranza.app.tools.QuickLaunch.ROUTE_ACCOUNTS -> Routes.ACCOUNTS
             com.acuranza.app.tools.QuickLaunch.ROUTE_PLANNING -> Routes.PLANNING
             com.acuranza.app.tools.QuickLaunch.ROUTE_REPORTS -> Routes.REPORTS
+            com.acuranza.app.tools.QuickLaunch.ROUTE_SAVINGS_GOAL -> Routes.SAVINGS_GOAL
             else -> null
         }
         if (target != null) {
@@ -642,6 +643,7 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.SETTINGS_DATA) { com.acuranza.app.ui.settings.DataManagementPage(nav) }
         composable(Routes.SETTINGS_SMS_IMPORTS) { com.acuranza.app.ui.settings.SmsImportsScreen(nav) }
         composable(Routes.ABOUT_ACKNOWLEDGEMENTS) { com.acuranza.app.ui.about.AcknowledgementsScreen(nav) }
+        composable(Routes.SAVINGS_GOAL) { com.acuranza.app.ui.home.SavingsGoalScreen(nav) }
         composable(Routes.PROFILE) { com.acuranza.app.ui.settings.ProfileScreen(nav) }
         composable(Routes.INSIGHTS) { InsightsScreen(nav) }
         composable(Routes.CATEGORIES) { CategoriesScreen(nav) }

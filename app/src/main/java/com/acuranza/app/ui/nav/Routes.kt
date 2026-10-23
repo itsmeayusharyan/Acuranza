@@ -59,6 +59,7 @@ object Routes {
     const val ABOUT_TERMS = "about/terms"
     const val ABOUT_GPL = "about/gpl"
     const val ABOUT_ACKNOWLEDGEMENTS = "about/acknowledgements"
+    const val SAVINGS_GOAL = "savings-goal"
 
     fun addTxn(type: TxnType = TxnType.EXPENSE, accountId: Long? = null) = "txn/add?type=${type.name}&account=${accountId ?: -1}"
     fun editTxn(id: Long) = "txn/edit/$id"

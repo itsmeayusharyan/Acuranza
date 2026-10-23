@@ -17,7 +17,10 @@
     <string name="widget_shortcut_accounts_label">Accounts</string>
     <string name="widget_goal_title">Savings goal</string>
     <string name="widget_goal_description">Progress toward your savings target this period</string>
-    <string name="widget_goal_empty">Set a savings target in the app to track progress</string>
+    <string name="widget_goal_empty_tap">No savings goal yet — tap to set one</string>
+    <string name="widget_categories_title">Spending by category</string>
+    <string name="widget_categories_description">This period\'s spending split by category</string>
+    <string name="widget_categories_empty">No spending yet this period</string>
     <string name="widget_transfer">Transfer</string>
     <string name="widget_transactions">Transactions</string>
     <string name="tile_add_expense">Add expense</string>

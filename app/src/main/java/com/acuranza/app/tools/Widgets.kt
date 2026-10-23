@@ -59,6 +59,52 @@ data class GoalProgress(val saved: Paise, val target: Paise) {
     }
 }
 
+/** One legend slice of the category donut. */
+data class CategorySlice(val name: String, val amount: Paise, val fraction: Float, val color: Int)
+
+object CategorySlices {
+    /** Fallback palette when a category has no colour of its own (order-stable across refreshes). */
+    private val PALETTE = intArrayOf(
+        0xFF2563EB.toInt(), 0xFF0D9488.toInt(), 0xFF9333EA.toInt(),
+        0xFFEA580C.toInt(), 0xFF0284C7.toInt(), 0xFF65A30D.toInt(),
+    )
+
+    /**
+     * This period's spending split by category: the [max] largest named categories, then
+     * everything else merged into an "Other" slice. Colours come from the user's categories when
+     * set, else the stable palette. Expenses only — income never belongs in a spending donut.
+     */
+    fun of(
+        txns: List<TransactionEntity>,
+        categoryNames: Map<String, String>,
+        categoryColors: Map<String, Long>,
+        max: Int = 4,
+    ): List<CategorySlice> {
+        val byCategory = txns.asSequence()
+            .filter { SmsMapping.countsInStats(it) && it.type == TxnType.EXPENSE && !it.excludeFromStats }
+            .groupBy { it.categoryKey }
+            .map { (key, txnsOfKey) -> key to txnsOfKey.sumOf { it.amount } }
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
+        val total = byCategory.sumOf { it.second }
+        if (total <= 0) return emptyList()
+
+        val head = byCategory.take(max)
+        val tailSum = byCategory.drop(max).sumOf { it.second }
+        val rows = head.mapIndexed { i, (key, amount) ->
+            val color = categoryColors[key]?.toInt() ?: PALETTE[i % PALETTE.size]
+            CategorySlice(categoryNames[key] ?: key, amount, amount.toFloat() / total, color)
+        } + (if (tailSum > 0) {
+            listOf(CategorySlice("Other", tailSum, tailSum.toFloat() / total, 0xFF94A3B8.toInt()))
+        } else {
+            emptyList()
+        })
+        // Normalise so the donut always closes the circle regardless of rounding.
+        val sum = rows.sumOf { it.fraction.toDouble() }
+        return if (sum > 0) rows.map { it.copy(fraction = (it.fraction / sum).toFloat()) } else rows
+    }
+}
+
 object WidgetUpdater {
     private const val HIDDEN = "₹ ••••"
 
@@ -90,9 +136,15 @@ object WidgetUpdater {
         SavingsGoalWidgetProvider::class.java.let {
             val ids = manager.getAppWidgetIds(ComponentName(context, it)); if (ids.isNotEmpty()) updateSavingsGoal(context, manager, ids, c)
         }
+        CategoryDonutWidgetProvider::class.java.let {
+            val ids = manager.getAppWidgetIds(ComponentName(context, it)); if (ids.isNotEmpty()) updateCategoryDonut(context, manager, ids, c)
+        }
     }
 
-    /** The "This month" widget: income, spending, net savings, savings rate and budget progress. */
+    /**
+     * The "This month" widget, Groww-style: muted label, headline net-savings figure with a rate
+     * qualifier, income/spent value pairs, a savings-rate ring, and a budget progress band.
+     */
     suspend fun updateMonth(context: Context, manager: AppWidgetManager, ids: IntArray, c: AppContainer) {
         val settings = c.settings.current()
         val tools = ToolsSettings.get(context).current()
@@ -104,45 +156,54 @@ object WidgetUpdater {
 
         val views = RemoteViews(context.packageName, R.layout.widget_month)
         views.setTextViewText(R.id.widget_title, title(period, settings.monthStartDay))
-        views.setTextViewText(R.id.widget_income, if (show) Money.format(f.income, showPaise = false) else HIDDEN)
-        views.setTextViewText(R.id.widget_spent, if (show) Money.format(f.spent, showPaise = false) else HIDDEN)
-        // Net savings is the headline figure. Negative savings keep their sign and turn red.
         views.setTextViewText(R.id.widget_saved, if (show) Money.format(f.saved, showPaise = false) else HIDDEN)
         views.setTextColor(
             R.id.widget_saved,
-            context.getColor(
-                when {
-                    !show -> R.color.widget_ink
-                    f.saved < 0 -> R.color.widget_overdue
-                    else -> R.color.widget_ink
-                },
-            ),
+            context.getColor(if (show && f.saved < 0) R.color.widget_overdue else R.color.widget_ink),
         )
         val rate = f.ratePercent
         views.setTextViewText(
             R.id.widget_rate,
             when {
                 !show -> ""
-                rate == null -> "No income yet this month"
+                rate == null -> "No income yet"
+                f.saved < 0 -> "Overspent"
                 else -> "$rate% saved"
             },
         )
-        // Budget progress when a budget exists; the share of income spent otherwise.
-        views.setProgressBar(R.id.widget_bar, 100, if (show) f.barPercent else 0, false)
+        views.setTextViewText(R.id.widget_income, if (show) Money.compact(f.income) else HIDDEN)
+        views.setTextViewText(R.id.widget_spent, if (show) Money.compact(f.spent) else HIDDEN)
+        // The ring shows the budget progress when a budget exists, else the savings rate.
+        val ringFraction = when {
+            budget != null && budget > 0 -> f.barPercent / 100f
+            rate != null -> rate / 100f
+            else -> 0f
+        }
+        val ring = WidgetCharts.ring(
+            sizePx = 180,
+            progress = if (show) ringFraction else 0f,
+            trackColor = context.getColor(R.color.widget_track),
+            progressColor = context.getColor(R.color.widget_accent),
+            strokeWidthPx = 22f,
+        )
+        views.setImageViewBitmap(R.id.widget_ring, ring)
         views.setTextViewText(
             R.id.widget_bar_caption,
             when {
                 !show -> ""
                 budget != null && budget > 0 -> "${f.barPercent}% of ${Money.compact(budget)} budget"
                 f.income > 0 -> "${f.barPercent}% of income spent"
-                else -> ""
+                else -> "No activity yet this month"
             },
         )
-        views.setOnClickPendingIntent(R.id.widget_root, QuickLaunch.pending(context, null, 7_100))
+        views.setOnClickPendingIntent(
+            R.id.widget_root,
+            QuickLaunch.pending(context, com.acuranza.app.notify.Notifications.ROUTE_INSIGHTS, 7_100),
+        )
         ids.forEach { manager.updateAppWidget(it, views) }
     }
 
-    /** The savings-goal widget: this period's net savings against the configured target. */
+    /** The savings-goal widget: ring progress, headline saved figure, target and remaining. */
     suspend fun updateSavingsGoal(context: Context, manager: AppWidgetManager, ids: IntArray, c: AppContainer) {
         val settings = c.settings.current()
         val tools = ToolsSettings.get(context).current()
@@ -159,21 +220,67 @@ object WidgetUpdater {
         } else {
             views.setViewVisibility(R.id.widget_goal_body, android.view.View.VISIBLE)
             views.setViewVisibility(R.id.widget_empty, android.view.View.GONE)
-            views.setTextViewText(
-                R.id.widget_goal_amounts,
-                if (show) "${Money.compact(goal.saved)} of ${Money.compact(goal.target)}" else HIDDEN,
-            )
-            views.setProgressBar(R.id.widget_goal_bar, 100, if (show) goal.percent else 0, false)
+            views.setTextViewText(R.id.widget_goal_saved, if (show) Money.format(goal.saved, showPaise = false) else HIDDEN)
             views.setTextViewText(
                 R.id.widget_goal_caption,
                 when {
                     !show -> ""
                     goal.percent >= 100 -> "Goal reached"
-                    else -> "${goal.percent}% · ${Money.compact(goal.remaining)} to go"
+                    else -> "${Money.compact(goal.remaining)} to go"
                 },
             )
+            views.setTextViewText(R.id.widget_goal_target, if (show) "of ${Money.compact(goal.target)} · ${goal.percent}%" else HIDDEN)
+            val ring = WidgetCharts.ring(
+                sizePx = 180,
+                progress = if (show) goal.percent / 100f else 0f,
+                trackColor = context.getColor(R.color.widget_track),
+                progressColor = context.getColor(R.color.widget_income),
+                strokeWidthPx = 22f,
+            )
+            views.setImageViewBitmap(R.id.widget_goal_ring, ring)
         }
-        views.setOnClickPendingIntent(R.id.widget_root, QuickLaunch.pending(context, null, 7_600))
+        // Opens the real Savings Goal screen — never the app default.
+        views.setOnClickPendingIntent(R.id.widget_root, QuickLaunch.pending(context, QuickLaunch.ROUTE_SAVINGS_GOAL, 7_600))
+        ids.forEach { manager.updateAppWidget(it, views) }
+    }
+
+    /** The spending-by-category widget: a donut of the period's top expenses with a legend. */
+    suspend fun updateCategoryDonut(context: Context, manager: AppWidgetManager, ids: IntArray, c: AppContainer) {
+        val settings = c.settings.current()
+        val tools = ToolsSettings.get(context).current()
+        val period = Period.containing(Time.today(), settings.payCycle)
+        val txns = c.db.transactions().between(period.startMillis, period.endMillis)
+        val categories = c.db.categories().all()
+        val names = categories.associate { it.key to it.name }
+        val colors = categories.associate { it.key to it.colorArgb }
+        val slices = CategorySlices.of(txns, names, colors)
+        val show = showAmounts(settings.hideAmounts, settings.biometricLockEnabled, tools.widgetAmountsWhenLocked)
+        val total = slices.sumOf { it.amount }
+
+        val views = RemoteViews(context.packageName, R.layout.widget_categories)
+        if (slices.isEmpty()) {
+            views.setViewVisibility(R.id.widget_donut, android.view.View.GONE)
+            views.setViewVisibility(R.id.widget_cat_empty, android.view.View.VISIBLE)
+            views.setViewVisibility(R.id.widget_cat_legend, android.view.View.GONE)
+        } else {
+            views.setViewVisibility(R.id.widget_donut, android.view.View.VISIBLE)
+            views.setViewVisibility(R.id.widget_cat_empty, android.view.View.GONE)
+            views.setViewVisibility(R.id.widget_cat_legend, android.view.View.VISIBLE)
+            val donut = WidgetCharts.donut(
+                sizePx = 200,
+                slices = slices.map { it.color to it.fraction },
+                strokeWidthPx = 26f,
+                gapDegrees = 3f,
+            )
+            views.setImageViewBitmap(R.id.widget_donut, donut)
+            views.setTextViewText(R.id.widget_cat_total, if (show) Money.compact(total) else HIDDEN)
+            val legend = slices.joinToString("\n") { slice ->
+                val amount = if (show) Money.compact(slice.amount) else HIDDEN
+                "${slice.name} · $amount"
+            }
+            views.setTextViewText(R.id.widget_cat_legend, legend)
+        }
+        views.setOnClickPendingIntent(R.id.widget_root, QuickLaunch.pending(context, QuickLaunch.ROUTE_REPORTS, 7_700))
         ids.forEach { manager.updateAppWidget(it, views) }
     }
 
@@ -184,7 +291,7 @@ object WidgetUpdater {
     }
 }
 
-/** "This month": income, spending, net savings, savings rate and budget progress. */
+/** "This month": headline net savings, rate, income/spent pairs, progress ring and budget band. */
 class MonthWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val pending = goAsync()
@@ -198,13 +305,27 @@ class MonthWidgetProvider : AppWidgetProvider() {
     }
 }
 
-/** "Savings goal": this period's savings against the configured target, with progress. */
+/** "Savings goal": ring progress and figures; tapping opens the Savings Goal screen. */
 class SavingsGoalWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 runCatching { WidgetUpdater.updateSavingsGoal(context, manager, ids, (context.applicationContext as AcuranzaApp).container) }
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+}
+
+/** "Spending by category": a donut of this period's top expenses with a legend; opens Reports. */
+class CategoryDonutWidgetProvider : AppWidgetProvider() {
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                runCatching { WidgetUpdater.updateCategoryDonut(context, manager, ids, (context.applicationContext as AcuranzaApp).container) }
             } finally {
                 pending.finish()
             }

@@ -17,6 +17,7 @@ object QuickLaunch {
     const val ROUTE_ACCOUNTS = "accounts"
     const val ROUTE_PLANNING = "planning"
     const val ROUTE_REPORTS = "reports"
+    const val ROUTE_SAVINGS_GOAL = "savings-goal"
 
 
     fun intent(context: Context, route: String?): Intent =
