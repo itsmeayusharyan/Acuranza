@@ -73,7 +73,7 @@ fun InsightCard(
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            IconBubble(color = accent, size = 32.dp, shape = RoundedCornerShape(10.dp), alpha = 0.10f) {
+            IconBubble(color = accent, size = 32.dp, shape = RoundedCornerShape(12.dp), alpha = 0.10f) {
                 Icon(icon, contentDescription = severity.name.lowercase(), tint = accent, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.width(12.dp))

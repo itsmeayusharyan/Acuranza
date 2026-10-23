@@ -1,9 +1,12 @@
 package com.acuranza.app.tools
 
+import com.acuranza.app.designsystem.theme.BrandPalette
+
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
@@ -140,7 +143,7 @@ class DigestWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle("Acuranza")
                 .setContentText("Your daily summary is ready")
-                .setColor(0xFF2563EB.toInt())
+                .setColor(BrandPalette.Blue.toArgb())
                 .build()
             val n = NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -149,7 +152,7 @@ class DigestWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setContentIntent(open)
                 .setAutoCancel(true)
-                .setColor(0xFF2563EB.toInt())
+                .setColor(BrandPalette.Blue.toArgb())
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setPublicVersion(publicVersion)
                 .build()

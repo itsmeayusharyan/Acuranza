@@ -312,7 +312,7 @@ fun ProfileContent(
                         null
                     },
                     singleLine = true,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = AcuranzaTheme.colors.cardSurface,
                         focusedContainerColor = AcuranzaTheme.colors.cardSurface,

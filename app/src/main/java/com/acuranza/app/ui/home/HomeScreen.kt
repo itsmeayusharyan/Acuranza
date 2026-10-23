@@ -674,7 +674,7 @@ item(key = "empty") {
                             Column(
                                 Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(12.dp))
                                     .clickable { onCategory(c.categoryKey) }
                                     .padding(vertical = 10.dp),
                             ) {

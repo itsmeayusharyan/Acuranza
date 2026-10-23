@@ -437,7 +437,7 @@ private fun BottomBar(nav: NavHostController, current: String?) {
 fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
     val colors = AcuranzaTheme.colors
     val haptic = com.acuranza.app.ui.common.rememberHaptic()
-    val pillShape = RoundedCornerShape(30.dp)
+    val pillShape = RoundedCornerShape(percent = 50)
     // Translucent glass surface from the centralized treatment — see-through enough to float
     // over scrolling content, opaque enough to stay readable on every palette.
     val pillSurface = colors.glass.copy(alpha = if (colors.isDark) 0.88f else 0.92f)
@@ -519,7 +519,7 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                                 scaleX = 0.72f + 0.28f * pill
                                 scaleY = 0.72f + 0.28f * pill
                             }
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(24.dp))
                             .background(colors.accentTint),
                     )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {

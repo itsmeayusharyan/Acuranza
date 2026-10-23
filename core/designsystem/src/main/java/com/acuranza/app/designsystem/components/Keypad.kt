@@ -184,9 +184,9 @@ private fun KeypadKey(key: String, onKey: (String) -> Unit, modifier: Modifier) 
         modifier = modifier
             .height(56.dp)
             .scale(scale)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(bg)
-            .border(1.dp, AcuranzaTheme.colors.hairline, RoundedCornerShape(14.dp))
+            .border(1.dp, AcuranzaTheme.colors.hairline, RoundedCornerShape(16.dp))
             .clickable(interactionSource = interaction, indication = androidx.compose.material3.ripple(), role = Role.Button) {
                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onKey(key)

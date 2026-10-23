@@ -1,5 +1,7 @@
 package com.acuranza.app.notify
 
+import com.acuranza.app.designsystem.theme.BrandPalette
+
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -65,7 +68,7 @@ class Notifications(private val context: Context) {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Acuranza")
             .setContentText(PUBLIC_TEXT[channel] ?: "New activity")
-            .setColor(0xFF2563EB.toInt())
+            .setColor(BrandPalette.Blue.toArgb())
             .build()
         val notification = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
@@ -74,7 +77,7 @@ class Notifications(private val context: Context) {
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(pending)
             .setAutoCancel(true)
-            .setColor(0xFF2563EB.toInt())
+            .setColor(BrandPalette.Blue.toArgb())
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(publicVersion)
             .build()

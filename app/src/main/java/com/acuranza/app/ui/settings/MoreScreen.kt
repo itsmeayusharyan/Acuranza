@@ -117,7 +117,7 @@ fun MoreScreen(nav: NavController) {
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = AcuranzaTheme.colors.cardSurface,
                     focusedContainerColor = AcuranzaTheme.colors.cardSurface,

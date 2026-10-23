@@ -347,7 +347,7 @@ private fun MonthGrid(
                             }
                             val fg = if (day == selected) colors.onInk else MaterialTheme.colorScheme.onSurface
                             Column(
-                                Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)).background(bg).clickable { onDay(day) }.padding(3.dp),
+                                Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(bg).clickable { onDay(day) }.padding(3.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text(

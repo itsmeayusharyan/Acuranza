@@ -385,7 +385,7 @@ private fun InsightDetailCard(i: Insight, hidden: Boolean, onAction: (InsightAct
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(32.dp).clip(RoundedCornerShape(12.dp)).background(accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.width(12.dp))

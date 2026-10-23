@@ -122,10 +122,10 @@ fun UncategorisedBanner(count: Int, onClick: () -> Unit, modifier: Modifier = Mo
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         color = AcuranzaTheme.colors.cardSurfaceHigh,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
     ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.Category, contentDescription = null, tint = AcuranzaTheme.colors.subtleText)

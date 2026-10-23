@@ -436,7 +436,7 @@ private fun GoalsTab(
             val plan = g.plan
             val money = { p: Long -> if (hidden) "₹ ••••" else Money.format(p, showPaise = false) }
             val hint = when (g.standing) {
-                GoalStanding.REACHED -> "Goal reached 🎉"
+                GoalStanding.REACHED -> "Goal reached"
                 GoalStanding.OVERDUE -> "Deadline passed · ${Fmt.date(g.deadline)} · ${money(plan.gap)} to go"
                 GoalStanding.DUE_NOW -> "${money(plan.gap)} needed by ${Fmt.date(g.deadline)}"
                 else -> buildString {

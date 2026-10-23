@@ -95,10 +95,10 @@ fun PendingAccountsBanner(count: Int, onClick: () -> Unit, modifier: Modifier = 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         color = AcuranzaTheme.colors.warning.copy(alpha = 0.10f),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
     ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.TravelExplore, contentDescription = null, tint = AcuranzaTheme.colors.warning)
@@ -130,10 +130,10 @@ fun IgnoredSmsBanner(count: Int, onClick: () -> Unit, onDismiss: () -> Unit, mod
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         color = AcuranzaTheme.colors.alert.copy(alpha = 0.08f),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
     ) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.VisibilityOff, contentDescription = null, tint = AcuranzaTheme.colors.alert)

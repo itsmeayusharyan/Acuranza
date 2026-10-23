@@ -214,7 +214,7 @@ private fun Welcome(onNext: () -> Unit) {
 private fun ValueProp(icon: ImageVector, title: String, text: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+            Modifier.size(44.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
         Spacer(Modifier.width(14.dp))

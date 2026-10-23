@@ -295,7 +295,7 @@ fun CategoryEditSheet(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .clickable(onClick = { onDelete?.invoke() })
                         .padding(vertical = 14.dp),
                     horizontalArrangement = Arrangement.Center,
@@ -385,7 +385,7 @@ fun ReplaceCategoryDialog(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(if (option.key == selectedKey) AcuranzaTheme.colors.accentTint else Color.Transparent)
                             .clickable { onSelect(option.key) }
                             .padding(horizontal = 8.dp, vertical = 6.dp),

@@ -543,7 +543,7 @@ fun QuickAction(
         Box(
             Modifier
                 .size(46.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(AcuranzaTheme.colors.fill),
             contentAlignment = Alignment.Center,
         ) {

@@ -1,4 +1,7 @@
 package com.acuranza.app.tools
+import androidx.compose.ui.graphics.toArgb
+
+import com.acuranza.app.designsystem.theme.BrandPalette
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -65,7 +68,7 @@ data class CategorySlice(val name: String, val amount: Paise, val fraction: Floa
 object CategorySlices {
     /** Fallback palette when a category has no colour of its own (order-stable across refreshes). */
     private val PALETTE = intArrayOf(
-        0xFF2563EB.toInt(), 0xFF0D9488.toInt(), 0xFF9333EA.toInt(),
+        BrandPalette.Blue.toArgb(), 0xFF0D9488.toInt(), 0xFF9333EA.toInt(),
         0xFFEA580C.toInt(), 0xFF0284C7.toInt(), 0xFF65A30D.toInt(),
     )
 

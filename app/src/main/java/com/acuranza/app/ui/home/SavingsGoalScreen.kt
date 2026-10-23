@@ -111,7 +111,7 @@ fun SavingsGoalScreen(nav: NavController) {
                         prefix = { Text("₹") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(16.dp),
                         textStyle = TextStyle(color = AcuranzaTheme.colors.ink),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = AcuranzaTheme.colors.cardSurface,

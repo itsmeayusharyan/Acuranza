@@ -61,7 +61,7 @@ fun GoalOutlookSection(o: GoalOutlook, deadline: LocalDate, hidden: Boolean, onI
         Modifier
             .fillMaxWidth()
             .padding(top = 6.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(AcuranzaTheme.colors.cardSurface)
             .clickable { expanded = !expanded }
             .padding(horizontal = 14.dp, vertical = 10.dp),

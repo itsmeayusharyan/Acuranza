@@ -156,7 +156,7 @@ fun DialogBlurBehind(radiusPx: Int = 80) {
 @Composable
 fun GlassSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(14.dp),
+    shape: Shape = RoundedCornerShape(16.dp),
     contentPadding: PaddingValues = PaddingValues(AcuranzaTheme.spacing.md),
     content: @Composable ColumnScope.() -> Unit,
 ) {
