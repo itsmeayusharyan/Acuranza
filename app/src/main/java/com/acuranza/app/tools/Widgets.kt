@@ -154,47 +154,24 @@ object WidgetUpdater {
         val f = WidgetFigures.of(period, txns, budget)
         val show = showAmounts(settings.hideAmounts, settings.biometricLockEnabled, tools.widgetAmountsWhenLocked)
 
-        val views = RemoteViews(context.packageName, R.layout.widget_month)
-        views.setTextViewText(R.id.widget_title, title(period, settings.monthStartDay))
-        views.setTextViewText(R.id.widget_saved, if (show) Money.format(f.saved, showPaise = false) else HIDDEN)
-        views.setTextColor(
-            R.id.widget_saved,
-            context.getColor(if (show && f.saved < 0) R.color.widget_overdue else R.color.widget_ink),
-        )
         val rate = f.ratePercent
-        views.setTextViewText(
-            R.id.widget_rate,
-            when {
-                !show -> ""
-                rate == null -> "No income yet"
-                f.saved < 0 -> "Overspent"
-                else -> "$rate% saved"
-            },
-        )
-        views.setTextViewText(R.id.widget_income, if (show) Money.compact(f.income) else HIDDEN)
-        views.setTextViewText(R.id.widget_spent, if (show) Money.compact(f.spent) else HIDDEN)
-        // The ring shows the budget progress when a budget exists, else the savings rate.
         val ringFraction = when {
             budget != null && budget > 0 -> f.barPercent / 100f
             rate != null -> rate / 100f
             else -> 0f
         }
-        val ring = WidgetCharts.ring(
-            sizePx = 180,
-            progress = if (show) ringFraction else 0f,
-            trackColor = context.getColor(R.color.widget_track),
-            progressColor = context.getColor(R.color.widget_accent),
-            strokeWidthPx = 22f,
-        )
-        views.setImageViewBitmap(R.id.widget_ring, ring)
-        views.setTextViewText(
-            R.id.widget_bar_caption,
-            when {
-                !show -> ""
-                budget != null && budget > 0 -> "${f.barPercent}% of ${Money.compact(budget)} budget"
-                f.income > 0 -> "${f.barPercent}% of income spent"
-                else -> "No activity yet this month"
-            },
+        val caption = when {
+            budget != null && budget > 0 -> "${f.barPercent}% of ${Money.compact(budget)} budget"
+            f.income > 0 -> "${f.barPercent}% of income spent"
+            else -> "No activity yet this month"
+        }
+        val views = WidgetViews.month(
+            context = context,
+            f = f,
+            show = show,
+            title = title(period, settings.monthStartDay),
+            ringFraction = ringFraction,
+            budgetCaption = caption,
         )
         views.setOnClickPendingIntent(
             R.id.widget_root,
@@ -213,32 +190,7 @@ object WidgetUpdater {
         val show = showAmounts(settings.hideAmounts, settings.biometricLockEnabled, tools.widgetAmountsWhenLocked)
         val goal = GoalProgress.of(f.saved, c.featurePrefs.current().savingsTarget)
 
-        val views = RemoteViews(context.packageName, R.layout.widget_goal)
-        if (goal == null) {
-            views.setViewVisibility(R.id.widget_goal_body, android.view.View.GONE)
-            views.setViewVisibility(R.id.widget_empty, android.view.View.VISIBLE)
-        } else {
-            views.setViewVisibility(R.id.widget_goal_body, android.view.View.VISIBLE)
-            views.setViewVisibility(R.id.widget_empty, android.view.View.GONE)
-            views.setTextViewText(R.id.widget_goal_saved, if (show) Money.format(goal.saved, showPaise = false) else HIDDEN)
-            views.setTextViewText(
-                R.id.widget_goal_caption,
-                when {
-                    !show -> ""
-                    goal.percent >= 100 -> "Goal reached"
-                    else -> "${Money.compact(goal.remaining)} to go"
-                },
-            )
-            views.setTextViewText(R.id.widget_goal_target, if (show) "of ${Money.compact(goal.target)} · ${goal.percent}%" else HIDDEN)
-            val ring = WidgetCharts.ring(
-                sizePx = 180,
-                progress = if (show) goal.percent / 100f else 0f,
-                trackColor = context.getColor(R.color.widget_track),
-                progressColor = context.getColor(R.color.widget_income),
-                strokeWidthPx = 22f,
-            )
-            views.setImageViewBitmap(R.id.widget_goal_ring, ring)
-        }
+        val views = WidgetViews.goal(context, goal, show)
         // Opens the real Savings Goal screen — never the app default.
         views.setOnClickPendingIntent(R.id.widget_root, QuickLaunch.pending(context, QuickLaunch.ROUTE_SAVINGS_GOAL, 7_600))
         ids.forEach { manager.updateAppWidget(it, views) }
@@ -257,29 +209,7 @@ object WidgetUpdater {
         val show = showAmounts(settings.hideAmounts, settings.biometricLockEnabled, tools.widgetAmountsWhenLocked)
         val total = slices.sumOf { it.amount }
 
-        val views = RemoteViews(context.packageName, R.layout.widget_categories)
-        if (slices.isEmpty()) {
-            views.setViewVisibility(R.id.widget_donut, android.view.View.GONE)
-            views.setViewVisibility(R.id.widget_cat_empty, android.view.View.VISIBLE)
-            views.setViewVisibility(R.id.widget_cat_legend, android.view.View.GONE)
-        } else {
-            views.setViewVisibility(R.id.widget_donut, android.view.View.VISIBLE)
-            views.setViewVisibility(R.id.widget_cat_empty, android.view.View.GONE)
-            views.setViewVisibility(R.id.widget_cat_legend, android.view.View.VISIBLE)
-            val donut = WidgetCharts.donut(
-                sizePx = 200,
-                slices = slices.map { it.color to it.fraction },
-                strokeWidthPx = 26f,
-                gapDegrees = 3f,
-            )
-            views.setImageViewBitmap(R.id.widget_donut, donut)
-            views.setTextViewText(R.id.widget_cat_total, if (show) Money.compact(total) else HIDDEN)
-            val legend = slices.joinToString("\n") { slice ->
-                val amount = if (show) Money.compact(slice.amount) else HIDDEN
-                "${slice.name} · $amount"
-            }
-            views.setTextViewText(R.id.widget_cat_legend, legend)
-        }
+        val views = WidgetViews.categories(context, slices, show)
         views.setOnClickPendingIntent(R.id.widget_root, QuickLaunch.pending(context, QuickLaunch.ROUTE_REPORTS, 7_700))
         ids.forEach { manager.updateAppWidget(it, views) }
     }
@@ -339,11 +269,7 @@ class CategoryDonutWidgetProvider : AppWidgetProvider() {
  */
 class QuickAddWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        val views = RemoteViews(context.packageName, R.layout.widget_quick_add)
-        views.setOnClickPendingIntent(R.id.widget_add_expense, QuickLaunch.pending(context, QuickLaunch.ROUTE_ADD_EXPENSE, 7_201))
-        views.setOnClickPendingIntent(R.id.widget_add_income, QuickLaunch.pending(context, QuickLaunch.ROUTE_ADD_INCOME, 7_202))
-        views.setOnClickPendingIntent(R.id.widget_add_transfer, QuickLaunch.pending(context, QuickLaunch.ROUTE_TRANSFER, 7_203))
-        views.setOnClickPendingIntent(R.id.widget_add_transactions, QuickLaunch.pending(context, QuickLaunch.ROUTE_TRANSACTIONS, 7_204))
+        val views = WidgetViews.quickAdd(context)
         ids.forEach { manager.updateAppWidget(it, views) }
     }
 }
@@ -351,11 +277,7 @@ class QuickAddWidgetProvider : AppWidgetProvider() {
 /** "Shortcuts": compact navigation to the most-used screens. Static — no data, no refresh needed. */
 class ShortcutsWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        val views = RemoteViews(context.packageName, R.layout.widget_shortcuts)
-        views.setOnClickPendingIntent(R.id.widget_shortcut_bills, QuickLaunch.pending(context, QuickLaunch.ROUTE_BILLS, 7_301))
-        views.setOnClickPendingIntent(R.id.widget_shortcut_budgets, QuickLaunch.pending(context, QuickLaunch.ROUTE_PLANNING, 7_302))
-        views.setOnClickPendingIntent(R.id.widget_shortcut_reports, QuickLaunch.pending(context, QuickLaunch.ROUTE_REPORTS, 7_303))
-        views.setOnClickPendingIntent(R.id.widget_shortcut_accounts, QuickLaunch.pending(context, QuickLaunch.ROUTE_ACCOUNTS, 7_304))
+        val views = WidgetViews.shortcuts(context)
         ids.forEach { manager.updateAppWidget(it, views) }
     }
 }

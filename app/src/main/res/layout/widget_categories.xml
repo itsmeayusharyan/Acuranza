@@ -4,12 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
+    android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="12dp">
+    android:padding="14dp">
 
     <FrameLayout
-        android:layout_width="72dp"
-        android:layout_height="72dp">
+        android:id="@+id/widget_donut_frame"
+        android:layout_width="84dp"
+        android:layout_height="84dp">
 
         <ImageView
             android:id="@+id/widget_donut"
@@ -25,7 +27,7 @@
             android:gravity="center"
             android:maxLines="1"
             android:textColor="@color/widget_ink"
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
     </FrameLayout>
 
@@ -33,9 +35,9 @@
         android:id="@+id/widget_cat_legend"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
+        android:layout_marginStart="16dp"
         android:layout_weight="1"
-        android:lineSpacingExtra="3dp"
+        android:lineSpacingExtra="4dp"
         android:textColor="@color/widget_ink"
         android:textSize="12sp" />
 

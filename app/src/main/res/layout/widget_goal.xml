@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:id="@+id/widget_goal_body"
@@ -17,16 +17,18 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:letterSpacing="0.06"
                 android:text="@string/widget_goal_title"
                 android:textColor="@color/widget_subtle"
-                android:textSize="12sp" />
+                android:textSize="11sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/widget_goal_saved"
@@ -35,7 +37,7 @@
                 android:layout_marginTop="2dp"
                 android:maxLines="1"
                 android:textColor="@color/widget_ink"
-                android:textSize="24sp"
+                android:textSize="26sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -60,8 +62,8 @@
 
         <ImageView
             android:id="@+id/widget_goal_ring"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
             android:contentDescription="@string/widget_goal_title" />
     </LinearLayout>
 
