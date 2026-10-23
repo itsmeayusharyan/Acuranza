@@ -93,7 +93,6 @@ val SettingsSearchIndex: List<SettingsSearchHit> = listOf(
     SettingsSearchHit(G_NOTIFICATIONS, "Notifications", "Home screen widgets", "Show real amounts on the widget even with app lock on", "widget amounts lock", Routes.SETTINGS_NOTIFICATIONS),
 
     // ── About ──────────────────────────────────────────────────────────────────────────────────
-    SettingsSearchHit(G_ABOUT, "About", "GitHub repository", "Source, issues and releases", "source code open source github", Routes.ABOUT),
     SettingsSearchHit(G_ABOUT, "About", "Privacy policy", "What Acuranza stores, and what it never sends", "legal privacy data", Routes.ABOUT_PRIVACY),
     SettingsSearchHit(G_ABOUT, "About", "Terms of service", "The plain terms of using the app", "legal terms", Routes.ABOUT_TERMS),
     SettingsSearchHit(G_ABOUT, "About", "Licence", "GPL-3.0 · free and open source", "license gpl legal", Routes.ABOUT_GPL),

@@ -12,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Shield
@@ -22,7 +21,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,10 +33,6 @@ import com.acuranza.app.ui.common.AcuranzaScreen
 import com.acuranza.app.ui.nav.Routes
 import com.acuranza.app.ui.settings.SettingsRow
 import com.acuranza.app.ui.settings.SettingsSection
-import kotlinx.coroutines.launch
-
-/** Where the source and the releases actually live. */
-const val REPO_URL = "https://github.com/itsmeayusharyan/Acuranza"
 
 internal fun openUrl(context: android.content.Context, url: String): Boolean = try {
     context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
@@ -74,18 +68,12 @@ data class AboutDeviceInfo(
 fun AboutScreen(nav: androidx.navigation.NavController) {
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     AboutContent(
         onBack = { nav.popBackStack() },
         onPrivacy = { nav.navigate(Routes.ABOUT_PRIVACY) },
         onTerms = { nav.navigate(Routes.ABOUT_TERMS) },
         onLicence = { nav.navigate(Routes.ABOUT_GPL) },
-        onGithub = {
-            if (!openUrl(context, REPO_URL)) {
-                scope.launch { snackbar.showSnackbar("No browser found on this device") }
-            }
-        },
         onAcknowledgements = { nav.navigate(Routes.ABOUT_ACKNOWLEDGEMENTS) },
         snackbar = snackbar,
     )
@@ -102,7 +90,6 @@ fun AboutContent(
     onPrivacy: () -> Unit,
     onTerms: () -> Unit = {},
     onLicence: () -> Unit,
-    onGithub: () -> Unit = {},
     onAcknowledgements: () -> Unit = {},
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     device: AboutDeviceInfo = AboutDeviceInfo.fromSystem(),
@@ -137,15 +124,6 @@ fun AboutContent(
 
         // The section kit expects its parent to own the horizontal padding (as Settings' list does).
         Column(Modifier.padding(horizontal = 20.dp)) {
-            SettingsSection("Project") {
-                SettingsRow(
-                    "GitHub repository",
-                    "Source, issues and releases · github.com/itsmeayusharyan/Acuranza",
-                    Icons.Outlined.Description,
-                    divider = false,
-                ) { onGithub() }
-            }
-
             SettingsSection("Device and build") {
                 SettingsRow("Android version", "Android ${device.androidRelease} (API ${device.apiLevel})", onClick = null)
                 SettingsRow("Device", "${device.manufacturer} ${device.model}", onClick = null)
