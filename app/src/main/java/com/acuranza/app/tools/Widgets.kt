@@ -236,6 +236,18 @@ class MonthWidgetProvider : AppWidgetProvider() {
             }
         }
     }
+
+    /** The launcher resized the widget — re-render at the new proportions instead of leaving stale geometry. */
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, newOptions: android.os.Bundle?) {
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                runCatching { WidgetUpdater.updateMonth(context, manager, intArrayOf(id), (context.applicationContext as AcuranzaApp).container) }
+            } finally {
+                pending.finish()
+            }
+        }
+    }
 }
 
 /** "Savings goal": ring progress and figures; tapping opens the Savings Goal screen. */
@@ -245,6 +257,17 @@ class SavingsGoalWidgetProvider : AppWidgetProvider() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 runCatching { WidgetUpdater.updateSavingsGoal(context, manager, ids, (context.applicationContext as AcuranzaApp).container) }
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, newOptions: android.os.Bundle?) {
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                runCatching { WidgetUpdater.updateSavingsGoal(context, manager, intArrayOf(id), (context.applicationContext as AcuranzaApp).container) }
             } finally {
                 pending.finish()
             }
@@ -264,6 +287,17 @@ class CategoryDonutWidgetProvider : AppWidgetProvider() {
             }
         }
     }
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, newOptions: android.os.Bundle?) {
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                runCatching { WidgetUpdater.updateCategoryDonut(context, manager, intArrayOf(id), (context.applicationContext as AcuranzaApp).container) }
+            } finally {
+                pending.finish()
+            }
+        }
+    }
 }
 
 /**
@@ -275,6 +309,25 @@ class QuickAddWidgetProvider : AppWidgetProvider() {
         val views = WidgetViews.quickAdd(context)
         ids.forEach { manager.updateAppWidget(it, views) }
     }
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, newOptions: android.os.Bundle?) {
+        manager.updateAppWidget(id, WidgetViews.quickAdd(context))
+    }
+}
+
+/**
+ * Re-renders every data widget when the system configuration changes (a light/dark flip):
+ * chart bitmaps are pre-drawn in the app process with the colors of the mode the app last
+ * saw, so without this the ring and donut keep day colors on a night launcher until the
+ * next data refresh. Layout colors re-resolve in the launcher; the bitmaps need this nudge.
+ */
+class WidgetConfigReceiver : android.content.BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: android.content.Intent) {
+        if (intent.action != android.content.Intent.ACTION_CONFIGURATION_CHANGED) return
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { WidgetUpdater.updateAll(context) }
+        }
+    }
 }
 
 /** "Shortcuts": compact navigation to the most-used screens. Static — no data, no refresh needed. */
@@ -282,5 +335,9 @@ class ShortcutsWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val views = WidgetViews.shortcuts(context)
         ids.forEach { manager.updateAppWidget(it, views) }
+    }
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, newOptions: android.os.Bundle?) {
+        manager.updateAppWidget(id, WidgetViews.shortcuts(context))
     }
 }

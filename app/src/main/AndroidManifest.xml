@@ -56,6 +56,14 @@
         </activity>
 
         <receiver
+            android:name=".tools.WidgetConfigReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".tools.MonthWidgetProvider"
             android:exported="true"
             android:label="@string/widget_month_title">
