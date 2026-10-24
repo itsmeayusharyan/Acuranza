@@ -335,7 +335,6 @@ class ScreensScreenshotTest {
         AcuranzaTheme(darkTheme = true) {
             EditHomeContent(
                 layout = HomeLayout.decode("quick,!heat,stats"),
-                saved = true,
             )
         }
     }

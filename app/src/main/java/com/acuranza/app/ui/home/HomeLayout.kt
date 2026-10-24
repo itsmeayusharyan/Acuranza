@@ -92,6 +92,24 @@ object HomeLayout {
         return layout.toMutableList().apply { add(to, removeAt(index)) }
     }
 
+    /**
+     * Drag-and-drop reorder within the VISIBLE sections: moves the visible entry at
+     * [fromVisible] to [toVisible], walking over hidden entries so their relative positions in
+     * the saved order stay stable. Both indexes count visible sections only. Out-of-range or
+     * no-op moves return the layout unchanged.
+     */
+    fun moveVisibleTo(
+        layout: List<Pair<HomeSection, Boolean>>,
+        fromVisible: Int,
+        toVisible: Int,
+    ): List<Pair<HomeSection, Boolean>> {
+        val visibleIdx = layout.indices.filter { layout[it].second }
+        if (fromVisible !in visibleIdx.indices || toVisible !in visibleIdx.indices || fromVisible == toVisible) return layout
+        val from = visibleIdx[fromVisible]
+        val to = visibleIdx[toVisible]
+        return layout.toMutableList().apply { add(to, removeAt(from)) }
+    }
+
     /** Toggles one section's visibility, leaving order untouched. */
     fun setVisibility(
         layout: List<Pair<HomeSection, Boolean>>,

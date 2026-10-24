@@ -123,4 +123,32 @@ class HomeLayoutTest {
         assertTrue(HomeLayout.decode(custom) != HomeLayout.decode(null))
         assertEquals(HomeLayout.decode(null), HomeLayout.decode(null as String?))
     }
+
+    @org.junit.Test
+    fun `moveVisibleTo reorders only the visible sections and keeps hidden slots stable`() {
+        var l = com.acuranza.app.ui.home.HomeLayout.decode("quick,safe,!stats,pace")
+        // Move the first visible (quick) two visible slots down; sections unknown to the string
+        // join after, so the visible order starts quick, safe, pace, …
+        l = com.acuranza.app.ui.home.HomeLayout.moveVisibleTo(l, 0, 2)
+        val visibleAfter = com.acuranza.app.ui.home.HomeLayout.visible(l)
+        org.junit.Assert.assertEquals(
+            listOf(
+                com.acuranza.app.ui.home.HomeSection.SAFE,
+                com.acuranza.app.ui.home.HomeSection.PACE,
+                com.acuranza.app.ui.home.HomeSection.QUICK,
+            ),
+            visibleAfter.take(3),
+        )
+        // stats stays hidden and the encoding round-trips.
+        org.junit.Assert.assertTrue(l.any { it.first == com.acuranza.app.ui.home.HomeSection.STATS && !it.second })
+        org.junit.Assert.assertEquals(l, com.acuranza.app.ui.home.HomeLayout.decode(com.acuranza.app.ui.home.HomeLayout.encode(l)))
+    }
+
+    @org.junit.Test
+    fun `moveVisibleTo ignores out-of-range and no-op moves`() {
+        val l = com.acuranza.app.ui.home.HomeLayout.decode(null)
+        org.junit.Assert.assertEquals(l, com.acuranza.app.ui.home.HomeLayout.moveVisibleTo(l, -1, 2))
+        org.junit.Assert.assertEquals(l, com.acuranza.app.ui.home.HomeLayout.moveVisibleTo(l, 0, 99))
+        org.junit.Assert.assertEquals(l, com.acuranza.app.ui.home.HomeLayout.moveVisibleTo(l, 1, 1))
+    }
 }
