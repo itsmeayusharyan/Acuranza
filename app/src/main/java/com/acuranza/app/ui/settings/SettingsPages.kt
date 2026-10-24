@@ -60,6 +60,7 @@ import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material.icons.outlined.Vibration
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -107,7 +108,7 @@ import java.time.LocalDate
 
 /** One scrolling page: padding + the standard 20dp gutters, so sections align everywhere. */
 @Composable
-private fun SettingsPage(
+internal fun SettingsPage(
     title: String,
     subtitle: String,
     nav: NavController,
@@ -290,8 +291,9 @@ fun AppearancePage(nav: NavController) {
             ) { choice -> scope.launch { c.settings.setAccentColor(choice) } }
             SettingsToggle("Hide amounts", "Show ₹ •••• until you tap the eye", s.hideAmounts, { v -> scope.launch { c.settings.setHideAmounts(v) } },
                 Icons.Outlined.VisibilityOff)
-            SettingsToggle("Haptic feedback", "Vibrate gently when interacting with the app", s.hapticsEnabled, { v -> scope.launch { c.settings.setHapticsEnabled(v) } },
-                Icons.Outlined.Bolt)
+            SettingsRow("Haptic feedback", "Master switch, strength and what vibrates", Icons.Outlined.Vibration) {
+                nav.navigate(Routes.SETTINGS_HAPTICS)
+            }
             SettingsPickerRow(
                 "Default landing tab",
                 com.acuranza.app.ui.nav.Tabs,

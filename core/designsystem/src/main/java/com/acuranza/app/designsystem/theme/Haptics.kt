@@ -8,3 +8,9 @@ import androidx.compose.runtime.compositionLocalOf
  * true so previews and tests compose unchanged (they never perform a haptic anyway).
  */
 val LocalHapticsEnabled = compositionLocalOf { true }
+
+/**
+ * The calculator keypad's own haptic preference, provided by the app shell (master AND keypad
+ * switches). Defaults to true so previews and tests compose unchanged and never vibrate anyway.
+ */
+val LocalKeypadHapticsEnabled = compositionLocalOf { true }

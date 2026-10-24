@@ -87,6 +87,12 @@ data class Settings(
     val smsAutoCapture: Boolean = false,
     /** App-generated haptic feedback; the system's own touch-feedback setting rules underneath. */
     val hapticsEnabled: Boolean = true,
+    /** Haptic categories, all gated by the master switch; individual choices survive it being off. */
+    val hapticKeypad: Boolean = true,
+    val hapticActions: Boolean = true,
+    val hapticTabsAndButtons: Boolean = true,
+    /** Feedback strength: LIGHT / STANDARD / STRONG; unknown stored values coerce to STANDARD. */
+    val hapticIntensity: String = "STANDARD",
     /** The user's display name for the profile card and the home greeting; null = not configured. */
     val profileName: String? = null,
     /** Absolute path of the profile photo inside app-private storage; null = no photo (initials fallback). */
@@ -163,6 +169,10 @@ class SettingsStore(
         val smsFirstImportDone = booleanPreferencesKey("sms_first_import_done")
         val smsAutoCapture = booleanPreferencesKey("sms_auto_capture")
         val hapticsEnabled = booleanPreferencesKey("haptics_enabled")
+        val hapticKeypad = booleanPreferencesKey("haptic_keypad")
+        val hapticActions = booleanPreferencesKey("haptic_actions")
+        val hapticTabsAndButtons = booleanPreferencesKey("haptic_tabs_buttons")
+        val hapticIntensity = stringPreferencesKey("haptic_intensity")
         val profileName = stringPreferencesKey("profile_name")
         val profileAvatar = stringPreferencesKey("profile_avatar")
     }
@@ -211,6 +221,10 @@ class SettingsStore(
             smsFirstImportDone = p[Keys.smsFirstImportDone] ?: false,
             smsAutoCapture = p[Keys.smsAutoCapture] ?: false,
             hapticsEnabled = p[Keys.hapticsEnabled] ?: true,
+            hapticKeypad = p[Keys.hapticKeypad] ?: true,
+            hapticActions = p[Keys.hapticActions] ?: true,
+            hapticTabsAndButtons = p[Keys.hapticTabsAndButtons] ?: true,
+            hapticIntensity = (p[Keys.hapticIntensity] ?: "STANDARD").uppercase().takeIf { it in setOf("LIGHT", "STANDARD", "STRONG") } ?: "STANDARD",
             profileName = p[Keys.profileName],
             profileAvatar = p[Keys.profileAvatar],
         )
@@ -269,6 +283,10 @@ class SettingsStore(
 
     /** Haptic feedback preference (Appearance); system settings still gate the actual vibration. */
     suspend fun setHapticsEnabled(on: Boolean) = edit { it[Keys.hapticsEnabled] = on }
+    suspend fun setHapticKeypad(on: Boolean) = edit { it[Keys.hapticKeypad] = on }
+    suspend fun setHapticActions(on: Boolean) = edit { it[Keys.hapticActions] = on }
+    suspend fun setHapticTabsAndButtons(on: Boolean) = edit { it[Keys.hapticTabsAndButtons] = on }
+    suspend fun setHapticIntensity(raw: String) = edit { it[Keys.hapticIntensity] = raw.uppercase() }
 
     /** Profile: display name (null clears it); validated by the caller. */
     suspend fun setProfileName(name: String?) = edit {

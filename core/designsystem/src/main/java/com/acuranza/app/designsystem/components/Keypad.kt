@@ -159,6 +159,7 @@ fun NumberKeypad(
 @Composable
 private fun KeypadKey(key: String, onKey: (String) -> Unit, modifier: Modifier) {
     val haptics = LocalHapticFeedback.current
+    val keypadHaptics = com.acuranza.app.designsystem.theme.LocalKeypadHapticsEnabled.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -188,7 +189,9 @@ private fun KeypadKey(key: String, onKey: (String) -> Unit, modifier: Modifier) 
             .background(bg)
             .border(1.dp, AcuranzaTheme.colors.hairline, RoundedCornerShape(16.dp))
             .clickable(interactionSource = interaction, indication = androidx.compose.material3.ripple(), role = Role.Button) {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                // Gated by the keypad's own preference (master AND keypad switches), provided by
+                // the app shell; previously this fired unconditionally even with haptics off.
+                if (keypadHaptics) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onKey(key)
             }
             .semantics { contentDescription = label },

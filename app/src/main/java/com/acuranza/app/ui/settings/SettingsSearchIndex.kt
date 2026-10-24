@@ -65,6 +65,7 @@ val SettingsSearchIndex: List<SettingsSearchHit> = listOf(
     SettingsSearchHit(G_APPEARANCE, "Appearance", "Accent colour", "Blue, teal, violet or rose highlights", "accent tint color", Routes.SETTINGS_APPEARANCE),
     SettingsSearchHit(G_APPEARANCE, "Appearance", "Default landing tab", "Choose which tab opens when you launch Acuranza", "landing tab startup launch open home insights activity settings default", Routes.SETTINGS_APPEARANCE),
     SettingsSearchHit(G_APPEARANCE, "Appearance", "Customize settings", "Order, hide and rename sections on this hub", "customize edit layout reorder rename hide sections hub", Routes.SETTINGS_EDIT),
+    SettingsSearchHit(G_APPEARANCE, "Appearance", "Haptic feedback", "Master switch, strength and what vibrates", "haptic vibration strength keypad taps feedback feel", Routes.SETTINGS_HAPTICS),
     SettingsSearchHit(G_APPEARANCE, "Appearance", "Hide amounts", "Show ₹ •••• until you tap the eye", "privacy blur amounts", Routes.SETTINGS_APPEARANCE),
     SettingsSearchHit(G_APPEARANCE, "Appearance", "Edit home", "Choose what appears on your dashboard and in what order", "dashboard widgets layout", Routes.EDIT_HOME),
 
