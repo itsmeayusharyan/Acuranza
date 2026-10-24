@@ -366,6 +366,7 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route
+    val landingTabPref = com.acuranza.app.ui.common.LocalSettings.current.landingTab
     // The pill tucks away while the keyboard is up so text fields keep the space.
     val imeVisible = WindowInsets.isImeVisible
     val showBar = current in TabRoutes && !imeVisible
@@ -391,6 +392,14 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
         if (target != null) {
             if (target in TabRoutes) nav.navigateToTab(target) else nav.navigate(target) { launchSingleTop = true }
             onRouteConsumed()
+        } else {
+            // Plain launch: honour the saved landing tab, but only from the start destination —
+            // never after process/activity recreation (nav state is already restored) and never
+            // over an explicit route (widgets, notifications, deep links — handled above).
+            val saved = com.acuranza.app.ui.nav.TabRoutes.firstOrNull { it == landingTabPref }
+            if (saved != null && saved != Routes.HOME && nav.currentDestination?.route == Routes.HOME) {
+                nav.navigateToTab(saved)
+            }
         }
     }
 

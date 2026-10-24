@@ -44,6 +44,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.DashboardCustomize
+import androidx.compose.material.icons.outlined.Launch
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.Inbox
@@ -227,6 +228,13 @@ fun AppearancePage(nav: NavController) {
                 Icons.Outlined.VisibilityOff)
             SettingsToggle("Haptic feedback", "Vibrate gently when interacting with the app", s.hapticsEnabled, { v -> scope.launch { c.settings.setHapticsEnabled(v) } },
                 Icons.Outlined.Bolt)
+            SettingsPickerRow(
+                "Default landing tab",
+                com.acuranza.app.ui.nav.Tabs,
+                com.acuranza.app.ui.nav.Tabs.firstOrNull { it.route == s.landingTab } ?: com.acuranza.app.ui.nav.Tabs.first(),
+                { it.label },
+                Icons.Outlined.Launch,
+            ) { tab -> scope.launch { c.settings.setLandingTab(tab.route) } }
             SettingsRow("Edit home", "Choose what appears on your dashboard and in what order", Icons.Outlined.DashboardCustomize, divider = false) {
                 nav.navigate(Routes.EDIT_HOME)
             }

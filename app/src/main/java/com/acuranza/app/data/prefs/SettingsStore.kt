@@ -32,6 +32,8 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 data class Settings(
     val onboardingDone: Boolean = false,
+    /** The main tab a plain launch should open; null = the default (Home). Validated against the tab list on read. */
+    val landingTab: String? = null,
     val biometricLockEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
     val colorTheme: com.acuranza.app.designsystem.theme.ColorTheme =
@@ -110,6 +112,7 @@ class SettingsStore(
 
     private object Keys {
         val onboardingDone = booleanPreferencesKey("onboarding_done")
+        val landingTab = stringPreferencesKey("landing_tab")
         val biometricLock = booleanPreferencesKey("biometric_lock")
         val themeMode = stringPreferencesKey("theme_mode")
         val colorTheme = stringPreferencesKey("color_theme")
@@ -154,6 +157,7 @@ class SettingsStore(
     }.map { p ->
         Settings(
             onboardingDone = p[Keys.onboardingDone] ?: false,
+            landingTab = p[Keys.landingTab]?.takeIf { it in com.acuranza.app.ui.nav.TabRoutes },
             biometricLockEnabled = p[Keys.biometricLock] ?: false,
             themeMode = p[Keys.themeMode]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.DARK,
             colorTheme = p[Keys.colorTheme]?.let {
@@ -194,6 +198,7 @@ class SettingsStore(
     suspend fun current(): Settings = settings.first()
 
     suspend fun setOnboardingDone(done: Boolean = true) = edit { it[Keys.onboardingDone] = done }
+    suspend fun setLandingTab(route: String?) = edit { if (route == null) it.remove(Keys.landingTab) else it[Keys.landingTab] = route }
     suspend fun setBiometricLock(enabled: Boolean) = edit { it[Keys.biometricLock] = enabled }
     suspend fun setThemeMode(mode: ThemeMode) = edit { it[Keys.themeMode] = mode.name }
 
