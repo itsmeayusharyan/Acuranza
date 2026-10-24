@@ -1,103 +1,135 @@
 <h1 align="center">Acuranza</h1>
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-2563EB" alt="GPL-3.0"></a>
 
-  <img src="https://img.shields.io/badge/Android-8.0%2B-111111" alt="Android 8.0+">
+<p align="center">
+  <img src="docs/screenshots/logo.png" alt="Acuranza logo" width="96" height="96"/>
 </p>
 
-**Free and open source.** No ads, no account, no servers, no analytics — and no INTERNET permission at
-all, so Android itself guarantees that your money data never leaves the phone.
+<p align="center">
+  <b>Free and open-source personal finance for Android.</b><br>
+  Local-only, encrypted, no network permission — your money data never leaves the phone.
+</p>
 
-Acuranza tracks income, expenses, credit cards, bills, budgets and goals. You add transactions by
-hand, import bank-statement CSVs, or let Acuranza read the bank messages you share with it — and
-every insight is computed on the phone.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-2563EB.svg?style=flat-square" alt="License GPL-3.0"/></a>
+  <a href="https://github.com/itsmeayusharyan/Acuranza/releases/latest"><img src="https://img.shields.io/github/v/release/itsmeayusharyan/Acuranza?include_prereleases&label=latest&sort=semver&style=flat-square&color=4caf50" alt="Latest release"/></a>
+  <a href="#install"><img src="https://img.shields.io/badge/Android-8.0%2B-111111.svg?style=flat-square" alt="Android 8.0+"/></a>
+</p>
 
-## What it does
+---
 
-- **Bank-message tracking**: share a bank SMS from your Messages app (or paste it) and Acuranza
-  extracts amount, date, merchant and account into a transaction you confirm. The **Full build**
-  adds a historical inbox scan (with the SMS permission) and an opt-in notification listener, with
-  de-duplication across every source. See *Privacy and security* for the trade-offs.
-- **Bank statement import (CSV)**: statements from net banking (HDFC, ICICI, SBI, Axis, Kotak and
-  others), de-duplicated and sorted into categories — no message reading of any kind.
-- **Review inbox**: confirm or fix imported transactions — individually, or all at once with
-  "Confirm all" (flagged large amounts included); recategorising a merchant remembers that
-  category for future imports.
-- **Themes**: Dark, Light and System modes with six color themes — Default, Dynamic (Material You
-  wallpaper colours on Android 12+), Catppuccin, Cloud/Amber, Ocean, Forest and Rose — plus AMOLED
-  black, accent colours and reduced-motion support; every palette meets WCAG contrast thresholds.
-- **Searchable settings**: every destination is one query away, grouped the way you think about it.
-- **Personalization**: edit the home page (reorder, add and remove sections), customize the
-  Settings hub (two-column grid, reorder/hide shortcuts, rename sections), pick the default
-  landing tab, and restyle the bottom navigation bar (names, icons, order, hidden tabs,
-  floating or docked) — plus a haptic-feedback panel with a master switch, per-interaction
-  toggles and three strengths that genuinely differ (amplitude where the device supports it),
-  and notification reminders for your day (daily, or only when nothing was recorded) and
-  upcoming payments.
-- **Accounts and cards**: balances that reconcile with what you know, card outstanding and
-  utilisation, and "mark paid" recording the transfer from your bank account.
-- **Card bills**: due dates, amounts and payment status, with due-date reminders.
-- **Budgets**: monthly budgets that follow your salary cycle, pace projection, optional rollover of
-  unspent money, and an envelope (zero-based) mode.
-- **Goals**: with the monthly saving they need, an optional purchase loan (EMI and total interest),
-  and a success probability from a Monte Carlo simulation.
-- **Safe to spend**: what you can spend each day until payday, after card bills and repeating
-  payments due before it.
-- **Recurring & subscriptions**: repeating payments found in your spending (subscriptions, EMIs,
-  UPI AutoPay / NACH mandates), what's due in the next 30 days, price-change alerts, and scheduled
-  entries (rent, SIPs) that add themselves on their dates.
-- **Loans & EMIs**: amortisation schedule, what's still owed (counted in net worth), and a
-  prepayment calculator (fewer EMIs or a lower EMI).
-- **Tags, splits and IOUs**: tag transactions (`#goa-trip`), split one payment across categories,
-  and track money lent to or borrowed from people.
-- **Receipts**: attach a bill photo or PDF to a transaction, encrypted on the phone.
-- **Reports**: monthly and yearly PDF reports, a year-in-review, and a calendar of daily spending
-  and upcoming payments.
-- **Insights**: offline rules including budget pace, spending spikes, savings rate, subscriptions,
-  card utilisation, emergency-fund cover and unusual spends.
-- **Export**: CSV (opens in Excel), Beancount and Ledger, so your data is never locked in.
-- **Everyday tools**: home-screen widgets (this month, savings goal, spending by category, quick add, shortcuts) with an in-app preview screen for adding them to your launcher, a quick-add tile in Quick
-  Settings, and an optional daily digest notification.
-- **Languages**: English and Hindi (हिन्दी).
+<details>
+<summary><b>📋 Table of Contents</b></summary>
+- <a href="#about-acuranza">About Acuranza</a>
+- <a href="#feature-highlights">Feature Highlights</a>
+- <a href="#privacy--security">Privacy & Security</a>
+- <a href="#screenshots">Screenshots</a>
+- <a href="#install">Install</a>
+- <a href="#build-from-source">Build from Source</a>
+- <a href="#license--attribution">License & Attribution</a>
+</details>
 
-## Privacy and security
+---
 
-- **No network, by construction.** The APK does not request the INTERNET permission (or any other
-  network permission), so no code in it — ours or a dependency's — can open a socket.
-- **Opt-in SMS tracking, on-device.** In Settings → Financial tools you can enable bank-message
-  tracking, with a consent screen that explains every access before anything is turned on. The
-  **standard build** is permissionless: you share bank messages to Acuranza from your Messages app
-  (or paste them), and Acuranza extracts amount, date, merchant and account into transactions you
-  confirm. The **Full build** additionally scans your inbox history and can read incoming bank
-  notifications: it requests the SMS permission and uses Android's notification-listener access,
-  both explicitly granted, both revocable, and it asks again before scanning. OTP/PIN/password
-  messages, promotions and ambiguous text are never processed; message bodies are parsed and
-  discarded, never stored; the same message can never create two transactions. Withdrawing consent
-  stops all processing immediately, deletes every pending candidate and SMS-imported transaction
-  (your own entries and every other record are untouched), and points you to system settings to
-  revoke the SMS permission — Android does not let an app revoke it itself.
-- **Encrypted database:** SQLCipher (AES-256), with the key kept in the Android Keystore.
-- **Biometric lock, app PIN with a decoy PIN** (opens an empty profile), privacy mode and
-  screenshot blocking.
-- **Encrypted backups:** AES-256-GCM with a password-derived key (PBKDF2, 600k iterations), to a
-  folder you pick, on a schedule you choose.
-- **Theme colours stay honest:** all palettes — including the Material You Dynamic theme and the
-  pure-black AMOLED mode — are checked against WCAG contrast thresholds, and financial direction is
-  never conveyed by colour alone (rows carry arrows and signs).
-- **Local-only data:** everything stays on the device and is excluded from cloud backups
-  (`allowBackup="false"`).
+## About Acuranza
 
-Acuranza asks for exactly one permission before the app opens on first launch:
-**notifications**. They are how reminders reach you — card-bill due dates, unusual spending and
-payments you scheduled — and the app is gated until they are allowed
-(with a clear path through system settings; it never crashes or loops when denied).
-The standard build's bank-message tracking needs no permission at all — messages arrive only when
-you share or paste them. The Full build's inbox scan and notification listener need the SMS
-permission and notification access, granted explicitly and used only for bank messages. Neither
-build asks for anything else: no contacts, no location, no network.
+Acuranza is a personal-finance app built for privacy and offline use. Track income, expenses, credit cards, bills, budgets and goals entirely on your device. Add transactions by hand, import bank-statement CSVs, or share bank SMS messages — every insight is computed locally, never uploaded.
 
-## License
+Designed to be **minimal, tactile and glanceable**: bold typography, clean hierarchy, restrained colours, and components sized for one-handed use.
 
-Acuranza is free software under the [GNU General Public License v3.0 or later](LICENSE), as is the
-upstream project it derives from (see the attribution note above). Each file keeps the upstream
-copyright notice it carried; the git history records every change made here.
+---
+
+<h2 align="center">Feature Highlights</h2>
+
+<p align="center">
+  <img src="docs/screenshots/home-light.png" alt="Home screen — light theme" width="200"/>
+  <img src="docs/screenshots/settings.png" alt="Settings hub" width="200"/>
+  <img src="docs/screenshots/settings-dark.png" alt="Settings — dark theme" width="200"/>
+</p>
+
+<p align="center">
+  <em>Left to right: home dashboard, settings hub, settings in dark theme.</em>
+</p>
+
+| Category | What you get |
+|----------|-------------|
+| **Home dashboard** | Net worth card, this-month income/spent/saved, upcoming bills, quick-add actions, and a “safe to spend” pill that respects your salary cycle. |
+| **Accounts & cards** | Balances that reconcile with your bank, card outstanding and utilisation, “mark paid” recording. |
+| **Budgets & goals** | Monthly budgets that follow your salary cycle with pace projection and rollover; savings goals with progress rings, EMI/loan calculator and Monte Carlo success probability. |
+| **Transactions** | Add by hand or import bank-statement CSV (HDFC, ICICI, SBI, Axis, Kotak and others); review inbox with confirm-all; tags, splits, IOUs, receipts (photo/PDF, encrypted). |
+| **Recurring & bills** | Subscriptions, EMIs, UPI AutoPay / NACH mandates found in your spending; due-date reminders with price-change alerts. |
+| **Reports & insights** | Monthly & yearly PDF reports, Beancount & Ledger export, year-in-review, daily spending calendar, offline rules for budget pace, spending spikes, savings rate and unusual spends. |
+| **Everyday tools** | Home-screen widgets (this month, savings goal, spending by category, quick add), a Quick Settings tile, haptic feedback with Light/Standard/Strong strengths, and a default-landing-tab choice. |
+
+---
+
+<h2 align="center">Privacy & Security — By Design</h2>
+
+<p align="center">
+  <img src="docs/screenshots/privacy-mode.png" alt="Privacy mode" width="200"/>
+  <img src="docs/screenshots/notification-gate-light.png" alt="Notification gate" width="200"/>
+</p>
+
+| Principle | Implementation |
+|-----------|---------------|
+| **No network, ever** | The APK requests no INTERNET permission — not even in dependencies. Nothing can leave the phone. |
+| **Encrypted at rest** | SQLCipher database (AES-256); key held in the Android Keystore. Backups use AES-256-GCM with PBKDF2 (600k iterations) under a password only you know. |
+| **SMS is opt-in** | Standard build is permissionless: you share or paste bank messages. Full build reads SMS/notifications only after explicit consent, both revocable, message bodies parsed in memory and never stored. |
+| **App lock** | Biometric lock or PIN with a decoy-PIN mode that opens an empty profile; privacy mode masks amounts everywhere, including screen-reader labels. |
+| **Local-only** | `allowBackup="false"`; database, preferences and datastore excluded from cloud backup and device transfer. |
+
+> Acuranza asks for **one** permission before first launch: notifications (reminders for bills, scheduled payments and unusual spending). Everything else is opt-in and clearly explained.
+
+---
+
+<h2 align="center">Screenshots</h2>
+
+<p align="center">
+  <img src="docs/screenshots/home-light.png" alt="Home — light theme" width="200"/>
+  <img src="docs/screenshots/home-dark.png" alt="Home — dark theme" width="200"/>
+  <img src="docs/screenshots/settings.png" alt="Settings hub" width="200"/>
+  <img src="docs/screenshots/settings-dark.png" alt="Settings — dark theme" width="200"/>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/budgets.png" alt="Budgets" width="200"/>
+  <img src="docs/screenshots/goals.png" alt="Goals" width="200"/>
+  <img src="docs/screenshots/categories.png" alt="Categories" width="200"/>
+  <img src="docs/screenshots/card-bills.png" alt="Card bills" width="200"/>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/charts.png" alt="Charts" width="200"/>
+  <img src="docs/screenshots/edit-home.png" alt="Edit home" width="200"/>
+  <img src="docs/screenshots/insights.png" alt="Insights" width="200"/>
+  <img src="docs/screenshots/activity.png" alt="Activity" width="200"/>
+</p>
+
+---
+
+<h2 align="center">Install</h2>
+
+<p align="center">
+  <a href="https://github.com/itsmeayusharyan/Acuranza/releases/latest"><img src="https://img.shields.io/badge/download-1.0.34%20(standard)-4caf50.svg?style=for-the-square" alt="Download standard APK"/></a>
+  <a href="https://github.com/itsmeayusharyan/Acuranza/releases/latest"><img src="https://img.shields.io/badge/download-1.0.34%20(full)-4caf50.svg?style=for-the-square" alt="Download full APK"/></a>
+</p>
+
+**Two builds, same app:**
+
+| Build | SMS permission | Best for |
+|-------|---------------|----------|
+| **Standard** | Not requested | Share or paste bank messages; sideloads cleanly, Play Protect friendly. |
+| **Full** | Requested (opt-in) | Automatic inbox scan and notification capture; may trigger Play Protect warnings on sideload. |
+
+Both variants share identical code, features and signing key — upgrades install cleanly over previous versions.
+
+See [BUILDING.md](docs/BUILDING.md) for source-build instructions and [PRIVACY.md](docs/PRIVACY.md) for the full privacy policy.
+
+---
+
+<h2 align="center">License & Attribution</h2>
+
+Acuranza is free software under the [GNU General Public License v3.0 or later](LICENSE). It derives from the upstream **Kosh** project; each file keeps its original copyright notice, and the git history records every change.
+
+<p align="center">
+  <sub>Built with Kotlin + Jetpack Compose · SQLCipher · Material 3 · Offline first</sub>
+</p>
