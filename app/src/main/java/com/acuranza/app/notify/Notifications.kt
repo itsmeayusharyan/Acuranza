@@ -29,7 +29,8 @@ class Notifications(private val context: Context) {
                     .apply { description = "Credit card bills and due-date reminders" },
                 NotificationChannel(CH_INSIGHTS, "Insights", NotificationManager.IMPORTANCE_LOW)
                     .apply { description = "Budget and goal alerts" },
-                NotificationChannel(CH_DETECTED, "Detected transactions", NotificationManager.IMPORTANCE_DEFAULT)
+                NotificationChannel(CH_DETECTED, "Detected transactions", NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(CH_REMINDERS, "Transaction reminders", NotificationManager.IMPORTANCE_DEFAULT)
                     .apply { description = "Bank transactions Acuranza detected from notifications, waiting for your review" },
             ),
         )
@@ -44,6 +45,9 @@ class Notifications(private val context: Context) {
     fun insight(key: Int, title: String, text: String) = post(CH_INSIGHTS, NOTIF_INSIGHT_BASE + key, title, text, ROUTE_INSIGHTS)
 
     fun reminder(key: Int, title: String, text: String) = post(CH_INSIGHTS, NOTIF_REMINDER_BASE + key, title, text, ROUTE_RECURRING)
+
+    /** The daily transaction-reminder nudge; tapping opens the expense form. */
+    fun txnReminder(title: String, text: String) = post(CH_REMINDERS, NOTIF_TXN_REMINDER, title, text, ROUTE_ADD_EXPENSE)
 
     /**
      * A bank transaction Acuranza detected from an incoming notification, parked for review.
@@ -91,6 +95,9 @@ class Notifications(private val context: Context) {
     companion object {
         const val CH_BILLS = "bills"
         const val CH_DETECTED = "detected_transactions"
+        const val CH_REMINDERS = "transaction_reminders"
+        const val NOTIF_TXN_REMINDER = 7_900
+        const val ROUTE_ADD_EXPENSE = "add-expense"
         const val CH_INSIGHTS = "insights"
 
         /** Intent extra naming the screen to open: one of the ROUTE_ constants. */

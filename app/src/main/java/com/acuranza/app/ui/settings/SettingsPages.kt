@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.acuranza.app.ui.settings
 
 import android.Manifest
@@ -44,6 +46,9 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.DashboardCustomize
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Rule
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Launch
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Handshake
@@ -171,11 +176,37 @@ fun NotificationsPage(nav: NavController) {
         }
     }
     SettingsPage("Notifications", "Reminders, and where your budget month starts", nav) {
-        SettingsSection(null) {
+        SettingsSection("Transaction reminder") {
+            SettingsToggle("Transaction reminder", "A daily nudge to record your spending", s.txnReminderEnabled, { v ->
+                if (v) ensurePermission()
+                com.acuranza.app.work.WorkScheduler.setTxnReminder(context, v, s.txnReminderMinuteOfDay)
+                scope.launch { c.settings.setTxnReminderEnabled(v) }
+            }, Icons.Outlined.EditNote)
+            if (s.txnReminderEnabled) {
+                SettingsPickerRow(
+                    "Remind me",
+                    listOf(true, false),
+                    s.txnReminderOnlyIfNone,
+                    { onlyIfNone -> if (onlyIfNone) "Only if nothing recorded today" else "Every day" },
+                    Icons.Outlined.Rule,
+                ) { onlyIfNone -> scope.launch { c.settings.setTxnReminderOnlyIfNone(onlyIfNone) } }
+                ReminderTimeRow(s.txnReminderMinuteOfDay) { minute ->
+                    com.acuranza.app.work.WorkScheduler.setTxnReminder(context, true, minute)
+                    scope.launch { c.settings.setTxnReminderMinuteOfDay(minute) }
+                }
+            }
+        }
+        SettingsSection("Upcoming payments") {
             SettingsToggle("Bill reminders", "3 days and 1 day before the due date", s.notifyBills, { v ->
                 if (v) ensurePermission()
                 scope.launch { c.settings.setNotifyBills(v) }
             }, Icons.Outlined.Alarm)
+            SettingsToggle("Scheduled payments", "Recurring payments on the day they're due", s.notifyRecurring, { v ->
+                if (v) ensurePermission()
+                scope.launch { c.settings.setNotifyRecurring(v) }
+            }, Icons.Outlined.Autorenew)
+        }
+        SettingsSection("Insights") {
             SettingsToggle("Important insights", "Overspending and unusual spends", s.notifyInsights, { v ->
                 if (v) ensurePermission()
                 scope.launch { c.settings.setNotifyInsights(v) }
@@ -190,6 +221,39 @@ fun NotificationsPage(nav: NavController) {
             PaydaySettings(s)
         }
         com.acuranza.app.ui.tools.DigestSection(onMessage = {})
+    }
+}
+
+/** The reminder time row: opens a Material time picker that follows the device's 12/24-hour clock. */
+@Composable
+private fun ReminderTimeRow(minuteOfDay: Int, onPick: (Int) -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    SettingsRow(
+        "Remind at",
+        icon = Icons.Outlined.Schedule,
+        value = java.time.LocalTime.of(minuteOfDay / 60, minuteOfDay % 60)
+            .let { java.time.format.DateTimeFormatter.ofPattern("h:mm a").format(it) },
+        onClick = { open = true },
+    )
+    if (open) {
+        val state = androidx.compose.material3.rememberTimePickerState(
+            initialHour = minuteOfDay / 60,
+            initialMinute = minuteOfDay % 60,
+            is24Hour = android.text.format.DateFormat.is24HourFormat(context),
+        )
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { open = false },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    open = false
+                    onPick(state.hour * 60 + state.minute)
+                }) { Text("Save") }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { open = false }) { Text("Cancel") } },
+            title = { Text("Reminder time") },
+            text = { androidx.compose.material3.TimePicker(state = state) },
+        )
     }
 }
 

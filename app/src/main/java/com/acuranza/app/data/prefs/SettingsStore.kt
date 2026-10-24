@@ -32,6 +32,14 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 data class Settings(
     val onboardingDone: Boolean = false,
+    /** Transaction reminder: a daily nudge to record spending. Off by default. */
+    val txnReminderEnabled: Boolean = false,
+    /** Reminder type: only when nothing was recorded today (true) or unconditionally (false). */
+    val txnReminderOnlyIfNone: Boolean = true,
+    /** Minutes from midnight the reminder fires; coerced into 0..1439 on read. */
+    val txnReminderMinuteOfDay: Int = 21 * 60,
+    /** Reminders for scheduled payments (recurring rules due today). Inherits the insights choice for existing users. */
+    val notifyRecurring: Boolean = true,
     /** The main tab a plain launch should open; null = the default (Home). Validated against the tab list on read. */
     val landingTab: String? = null,
     val biometricLockEnabled: Boolean = false,
@@ -112,6 +120,10 @@ class SettingsStore(
 
     private object Keys {
         val onboardingDone = booleanPreferencesKey("onboarding_done")
+        val txnReminderEnabled = booleanPreferencesKey("txn_reminder_enabled")
+        val txnReminderOnlyIfNone = booleanPreferencesKey("txn_reminder_only_if_none")
+        val txnReminderMinuteOfDay = intPreferencesKey("txn_reminder_minute_of_day")
+        val notifyRecurring = booleanPreferencesKey("notify_recurring")
         val landingTab = stringPreferencesKey("landing_tab")
         val biometricLock = booleanPreferencesKey("biometric_lock")
         val themeMode = stringPreferencesKey("theme_mode")
@@ -138,6 +150,7 @@ class SettingsStore(
         val accentChoice = stringPreferencesKey("accent_choice")
         val notifiedInsights = stringSetPreferencesKey("notified_insights")
         val notifiedBills = stringSetPreferencesKey("notified_bills")
+        val notifiedTxnReminders = stringSetPreferencesKey("notified_txn_reminders")
         val repairVersion = intPreferencesKey("repair_version")
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
         val smsConsent = booleanPreferencesKey("sms_consent")
@@ -157,6 +170,12 @@ class SettingsStore(
     }.map { p ->
         Settings(
             onboardingDone = p[Keys.onboardingDone] ?: false,
+            txnReminderEnabled = p[Keys.txnReminderEnabled] ?: false,
+            txnReminderOnlyIfNone = p[Keys.txnReminderOnlyIfNone] ?: true,
+            txnReminderMinuteOfDay = (p[Keys.txnReminderMinuteOfDay] ?: 21 * 60).coerceIn(0, 24 * 60 - 1),
+            // First read after update: keep the user's current behaviour (recurring reminders
+            // used to ride on the insights switch) instead of surprising anyone with new posts.
+            notifyRecurring = p[Keys.notifyRecurring] ?: (p[Keys.notifyInsights] ?: true),
             landingTab = p[Keys.landingTab]?.takeIf { it in com.acuranza.app.ui.nav.TabRoutes },
             biometricLockEnabled = p[Keys.biometricLock] ?: false,
             themeMode = p[Keys.themeMode]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.DARK,
@@ -199,6 +218,10 @@ class SettingsStore(
 
     suspend fun setOnboardingDone(done: Boolean = true) = edit { it[Keys.onboardingDone] = done }
     suspend fun setLandingTab(route: String?) = edit { if (route == null) it.remove(Keys.landingTab) else it[Keys.landingTab] = route }
+    suspend fun setTxnReminderEnabled(on: Boolean) = edit { it[Keys.txnReminderEnabled] = on }
+    suspend fun setTxnReminderOnlyIfNone(onlyIfNone: Boolean) = edit { it[Keys.txnReminderOnlyIfNone] = onlyIfNone }
+    suspend fun setTxnReminderMinuteOfDay(minute: Int) = edit { it[Keys.txnReminderMinuteOfDay] = minute.coerceIn(0, 24 * 60 - 1) }
+    suspend fun setNotifyRecurring(on: Boolean) = edit { it[Keys.notifyRecurring] = on }
     suspend fun setBiometricLock(enabled: Boolean) = edit { it[Keys.biometricLock] = enabled }
     suspend fun setThemeMode(mode: ThemeMode) = edit { it[Keys.themeMode] = mode.name }
 
@@ -292,6 +315,9 @@ class SettingsStore(
     suspend fun claimNewInsightNotifications(ids: Collection<String>): Set<String> = claim(Keys.notifiedInsights, ids)
 
     suspend fun claimNewBillNotifications(ids: Collection<String>): Set<String> = claim(Keys.notifiedBills, ids)
+
+    /** Once-per-day guard for the transaction reminder: the same calendar day can only post once. */
+    suspend fun claimTxnReminderDay(day: Long): Boolean = claim(Keys.notifiedTxnReminders, listOf("txnremind-$day")).isNotEmpty()
 
     private suspend fun claim(key: Preferences.Key<Set<String>>, ids: Collection<String>): Set<String> {
         var fresh: Set<String> = emptySet()

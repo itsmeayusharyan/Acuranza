@@ -63,6 +63,9 @@ class DailyRefreshWorker(appContext: Context, params: WorkerParameters) : Corout
                     c.notifications.reminder(s.key.hashCode() and 0xFFFF, "${s.merchant} costs ${Math.round(s.priceChangePct ?: 0.0)}% more", text)
                 }
             }
+        }
+        // Scheduled-payment reminders have their own switch; they no longer ride the insights gate.
+        if (settings.notifyRecurring) {
             runCatching {
                 // Reminder-only schedules due today.
                 for (rule in c.recurring.remindersDue(today)) {
@@ -130,7 +133,37 @@ class BillReminderWorker(appContext: Context, params: WorkerParameters) : Corout
     }
 }
 
+/**
+ * The daily transaction reminder: posts once per calendar day (claimed), at the user's chosen
+ * time. "Only if nothing recorded today" checks the real ledger first — a day with any
+ * counting transaction stays silent.
+ */
+class TransactionReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
+
+    override suspend fun doWork(): Result {
+        val c = (applicationContext as AcuranzaApp).container
+        val settings = c.settings.current()
+        if (!settings.txnReminderEnabled) return Result.success()
+        val today = Time.today()
+        if (!c.settings.claimTxnReminderDay(today.toEpochDay())) return Result.success()
+        val zone = java.time.ZoneId.systemDefault()
+        val dayStart = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val quiet = settings.txnReminderOnlyIfNone &&
+            c.db.transactions().between(dayStart, today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1)
+                .any { com.acuranza.app.domain.SmsMapping.countsInStats(it) }
+        if (!quiet) {
+            c.notifications.txnReminder(
+                if (settings.txnReminderOnlyIfNone) "Nothing recorded today" else "A nudge from Acuranza",
+                if (settings.txnReminderOnlyIfNone) "Add today's transactions and keep your budgets accurate."
+                else "Take a moment to record today's spending.",
+            )
+        }
+        return Result.success()
+    }
+}
+
 object WorkScheduler {
+    private const val TXN_REMIND = "acuranza-txn-reminder"
     private const val DAILY = "acuranza-daily-refresh"
     private const val BILLS = "acuranza-bill-reminders"
     private const val SYNC_NOW = "acuranza-sync-now"
@@ -150,6 +183,32 @@ object WorkScheduler {
             ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<BillReminderWorker>(Duration.ofDays(1))
                 .setInitialDelay(delayUntil(LocalTime.of(9, 0)))
+                .build(),
+        )
+        // The reminder schedule is created when the user enables it (setTxnReminder); this
+        // KEEP-enqueue only resurrects it after an app update or OS wipe of WorkManager's
+        // store. The worker itself returns immediately while the setting is off.
+        wm.enqueueUniquePeriodicWork(
+            TXN_REMIND,
+            ExistingPeriodicWorkPolicy.KEEP,
+            PeriodicWorkRequestBuilder<TransactionReminderWorker>(Duration.ofDays(1))
+                .setInitialDelay(delayUntil(LocalTime.of(21, 0)))
+                .build(),
+        )
+    }
+
+    /** Schedules, reschedules or cancels the transaction reminder at the chosen minute of day. */
+    fun setTxnReminder(context: Context, enabled: Boolean, minuteOfDay: Int) {
+        val wm = WorkManager.getInstance(context)
+        if (!enabled) {
+            wm.cancelUniqueWork(TXN_REMIND)
+            return
+        }
+        wm.enqueueUniquePeriodicWork(
+            TXN_REMIND,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<TransactionReminderWorker>(Duration.ofDays(1))
+                .setInitialDelay(delayUntil(LocalTime.of(minuteOfDay / 60, minuteOfDay % 60)))
                 .build(),
         )
     }
