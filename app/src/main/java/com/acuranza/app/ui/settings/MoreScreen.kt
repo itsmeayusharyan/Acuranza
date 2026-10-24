@@ -11,6 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,9 +73,9 @@ private data class SettingsEntry(
 
 /** Every destination, in the spec's group structure — nothing removed, nothing hidden. */
 private val SettingsEntries = listOf(
-    SettingsEntry(SettingsEntryKey.ACCOUNTS, "Account", "Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
-    SettingsEntry(SettingsEntryKey.FINANCIAL, "General", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
-    SettingsEntry(SettingsEntryKey.WIDGETS, "General", "Widgets", "Preview and add home-screen widgets", Icons.Outlined.Widgets, Routes.WIDGETS_PREVIEW),
+    SettingsEntry(SettingsEntryKey.ACCOUNTS, "Data management", "Accounts & cards", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
+    SettingsEntry(SettingsEntryKey.FINANCIAL, "Financial tools", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
+    SettingsEntry(SettingsEntryKey.WIDGETS, "Appearance & personalization", "Widgets", "Preview and add home-screen widgets", Icons.Outlined.Widgets, Routes.WIDGETS_PREVIEW),
     SettingsEntry(SettingsEntryKey.APPEARANCE, "Appearance", "Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
     SettingsEntry(SettingsEntryKey.PRIVACY, "Privacy & Security", "Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
     SettingsEntry(SettingsEntryKey.DATA, "Data Management", "Data management", "Backups, imports, exports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
@@ -178,21 +183,7 @@ fun MoreScreen(nav: NavController) {
             layout.sections.forEachIndexed { groupIndex, section ->
                 item(key = "group-${section.key}") {
                     StaggeredEntrance(groupIndex) {
-                        Column(Modifier.padding(top = 10.dp)) {
-                            Text(section.title.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
-                            Spacer(Modifier.height(8.dp))
-                            AcuranzaCard(contentPadding = PaddingValues(0.dp)) {
-                                section.entries.forEachIndexed { index, key ->
-                                    val entry = entryOf(key)
-                                    SettingsRow(
-                                        entry.title,
-                                        entry.description,
-                                        entry.icon,
-                                        divider = index < section.entries.lastIndex,
-                                    ) { nav.navigate(entry.route) }
-                                }
-                            }
-                        }
+                        HubSection(section, onNavigate = { nav.navigate(it) })
                     }
                 }
             }
@@ -203,6 +194,44 @@ fun MoreScreen(nav: NavController) {
                 Text("Acuranza ${context.versionName()}", style = MaterialTheme.typography.labelLarge, color = AcuranzaTheme.colors.subtleText)
                 Text("Everything stays on this device · no internet access", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
                 Text("Free & open source · GPL-3.0", style = MaterialTheme.typography.labelSmall, color = AcuranzaTheme.colors.subtleText)
+            }
+        }
+    }
+}
+
+/**
+ * One hub section: caps heading + its shortcuts as a responsive two-column tile grid —
+ * icon and label, no description clutter; the featured profile card stays full-width.
+ * Odd counts leave the last tile half-width. Stateless: the golden renders exactly this.
+ */
+@Composable
+fun HubSection(section: com.acuranza.app.ui.settings.SettingsSection, onNavigate: (String) -> Unit) {
+    Column(Modifier.padding(top = 10.dp)) {
+        Text(section.title.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
+        Spacer(Modifier.height(8.dp))
+        // A lone shortcut fills the row; pairs split it — no half-width tile with a dead column.
+        section.entries.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                pair.forEach { key ->
+                    val entry = entryOf(key)
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .then(if (pair.size == 1) Modifier.fillMaxWidth() else Modifier)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(AcuranzaTheme.colors.cardSurface)
+                            .border(1.dp, AcuranzaTheme.colors.hairline, RoundedCornerShape(16.dp))
+                            .clickable { onNavigate(entry.route) }
+                            .padding(horizontal = 14.dp, vertical = 14.dp),
+                    ) {
+                        Icon(entry.icon, contentDescription = null, tint = AcuranzaTheme.colors.ink, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.height(10.dp))
+                        Text(entry.title, style = MaterialTheme.typography.titleSmall, color = AcuranzaTheme.colors.ink, maxLines = 1)
+                        Spacer(Modifier.height(2.dp))
+                        Text(entry.description, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText, maxLines = 2)
+                    }
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }

@@ -226,9 +226,25 @@ class ScreensScreenshotTest {
     @Test
     fun settings() = paparazzi.snapshot { Frame(tab = Routes.SETTINGS) { settingsBody() } }
 
-    /** Dark is the default theme; the settings screen must read well in it. */
+    /** Dark is the default theme; the settings screen must read well in it.
+     *  Device-height bounded: covers header → Notifications (the tail has its own golden). */
     @Test
-    fun settings_dark() = paparazzi.snapshot { Frame(dark = true, tab = Routes.SETTINGS) { settingsBody() } }
+    fun settings_dark() = paparazzi.snapshot {
+        AcuranzaTheme(darkTheme = true) { settingsBody() }
+    }
+
+    /** The hub's tail sections — Notifications and About — rendered at natural height so the
+     *  last tiles' text and the About section are verifiable, not cut at the device fold. */
+    @Test
+    fun settings_sections_tail() = paparazzi.snapshot {
+        AcuranzaTheme(darkTheme = true) {
+            Column(Modifier.padding(horizontal = 20.dp)) {
+                com.acuranza.app.ui.settings.SettingsHubLayout.decodeWithHidden(null).sections
+                    .filter { it.key == com.acuranza.app.ui.settings.SettingsSectionKey.NOTIFICATIONS || it.key == com.acuranza.app.ui.settings.SettingsSectionKey.ABOUT }
+                    .forEach { com.acuranza.app.ui.settings.HubSection(it, onNavigate = {}) }
+            }
+        }
+    }
 
     /** The profile editor with a configured name — dark is the shipped default. */
     @Test
@@ -274,9 +290,11 @@ class ScreensScreenshotTest {
         }
     }
 
+    /** The real hub: actual header, profile card and section tiles — not a hand-built replica.
+     *  Tall frame so every section (About included) is captured, not cut at the viewport fold. */
     @Composable
     private fun settingsBody() {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+        Column(Modifier.padding(horizontal = 20.dp)) {
             Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AcuranzaLogo(size = 44.dp)
                 Spacer(Modifier.width(14.dp))
@@ -286,15 +304,8 @@ class ScreensScreenshotTest {
                 }
             }
             com.acuranza.app.ui.settings.ProfileCard(name = null, avatarPath = null, onClick = {})
-            AcuranzaCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                SettingsRow("Appearance", "Theme, accent colour, hide amounts, edit home", Icons.Outlined.Palette) {}
-                SettingsRow("Data management", "Backups, imports, sample data, erase", Icons.Outlined.Backup) {}
-                SettingsRow("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.Outlined.Category) {}
-                SettingsRow("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance) {}
-                SettingsRow("Notifications", "Reminders, and where your budget month starts", Icons.Outlined.Alarm) {}
-                SettingsRow("Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield) {}
-                SettingsRow("Tools", "Export data, daily digest and widgets", Icons.Outlined.Tune) {}
-                SettingsRow("About", "Version, privacy policy and licence", Icons.Outlined.Info, divider = false) {}
+            com.acuranza.app.ui.settings.SettingsHubLayout.decodeWithHidden(null).sections.forEach { section ->
+                com.acuranza.app.ui.settings.HubSection(section, onNavigate = {})
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -475,7 +486,7 @@ class ScreensScreenshotTest {
         Frame(dark = true) {
             com.acuranza.app.ui.settings.SettingsEditContent(
                 layout = com.acuranza.app.ui.settings.SettingsHubLayout.decodeWithHidden(
-                    "general>financial,widgets;appearance>appearance;!widgets",
+                    "appearance>Appearance & personalization|appearance;!widgets;financial>Financial tools|financial",
                 ),
             )
         }

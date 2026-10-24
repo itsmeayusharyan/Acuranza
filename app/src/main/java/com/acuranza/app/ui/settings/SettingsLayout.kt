@@ -21,20 +21,19 @@ import com.acuranza.app.ui.nav.Routes
 
 /** One hub section; [id] is what persists. */
 enum class SettingsSectionKey(val id: String, val defaultTitle: String) {
-    MANAGEMENT("management", "Account"),
-    GENERAL("general", "General"),
-    APPEARANCE("appearance", "Appearance"),
-    PRIVACY("privacy", "Privacy & Security"),
-    DATA("data", "Data Management"),
+    APPEARANCE("appearance", "Appearance & personalization"),
+    FINANCIAL("financial", "Financial tools"),
+    PRIVACY("privacy", "Privacy & security"),
+    DATA("data", "Data management"),
     NOTIFICATIONS("notifications", "Notifications"),
     ABOUT("about", "About"),
 }
 
 /** One hub shortcut; [id] is what persists and [section] is where it lives by default. */
 enum class SettingsEntryKey(val id: String, val section: SettingsSectionKey) {
-    ACCOUNTS("accounts", SettingsSectionKey.MANAGEMENT),
-    FINANCIAL("financial", SettingsSectionKey.GENERAL),
-    WIDGETS("widgets", SettingsSectionKey.GENERAL),
+    ACCOUNTS("accounts", SettingsSectionKey.DATA),
+    FINANCIAL("financial", SettingsSectionKey.FINANCIAL),
+    WIDGETS("widgets", SettingsSectionKey.APPEARANCE),
     APPEARANCE("appearance", SettingsSectionKey.APPEARANCE),
     PRIVACY("privacy", SettingsSectionKey.PRIVACY),
     DATA("data", SettingsSectionKey.DATA),
