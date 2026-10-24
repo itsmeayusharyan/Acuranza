@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -471,11 +472,56 @@ fun HomeContent(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(Fmt.todayLong(), style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
+                    // Two lines keeps "Good evening, <long name>" readable at any width or font
+                    // scale instead of hard-clipping; icons can never overlap it (weight(1f)).
                     Text(
                         Fmt.greeting() + (state.profileName?.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""),
                         style = AcuranzaText.screenTitle,
-                        maxLines = 1,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
+                    // The one compact financial indicator: real Safe-to-spend data, shown only
+                    // while the user hasn't given it a home section of its own (no duplication),
+                    // and only when a plan actually exists. Opens the existing plan sheet.
+                    if (state.safeToSpend != null && state.sections.none { it == HomeSection.SAFE }) {
+                        val safe = state.safeToSpend
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(AcuranzaTheme.colors.accent.copy(alpha = 0.12f))
+                                .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onSafeToSpend)
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Outlined.Bolt,
+                                contentDescription = null,
+                                tint = if (safe.available < 0) AcuranzaTheme.colors.expense else AcuranzaTheme.colors.accent,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                if (safe.available < 0) "Overspent" else "Safe to spend",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (safe.available < 0) AcuranzaTheme.colors.expense else AcuranzaTheme.colors.accent,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            AmountText(
+                                paise = safe.available,
+                                style = MaterialTheme.typography.labelMedium,
+                                compact = true,
+                                hidden = hidden,
+                                color = if (safe.available < 0) AcuranzaTheme.colors.expense else AcuranzaTheme.colors.accent,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "· ${safe.days}d",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = AcuranzaTheme.colors.subtleText,
+                            )
+                        }
+                    }
                 }
                 IconButton(onClick = onToggleHidden) {
                     Icon(

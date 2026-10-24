@@ -140,6 +140,35 @@ class ScreensScreenshotTest {
         Frame(tab = Routes.HOME) { HomeContent(homeState().copy(safeToSpend = safe), hidden = false) }
     }
 
+    /** The header's compact Safe-to-spend chip: renders only when the user hasn't given the
+     *  Left-to-spend section a slot (no duplication) — sections here have SAFE removed. */
+    @Test
+    fun home_header_chip() = paparazzi.snapshot {
+        val safe = com.acuranza.app.repo.SafeToSpend.plan(
+            today = java.time.LocalDate.of(2026, 10, 15), cycle = com.acuranza.app.finance.PayCycle(25), liquid = 40_000_000L, cardDues = 0,
+            upcoming = listOf(com.acuranza.app.finance.BudgetMath.Due(java.time.LocalDate.of(2026, 10, 18), 200_000L, "SIP")),
+            overallBudget = null, incomeThisPeriod = 10_000_000L, usualMonthlySpend = null, spentThisPeriod = 3_000_000L,
+            salary = 10_000_000L, savingsTarget = 2_000_000L,
+        )
+        val s = homeState().copy(safeToSpend = safe, profileName = "Ayush")
+            .let { it.copy(sections = it.sections.filterNot { sec -> sec == com.acuranza.app.ui.home.HomeSection.SAFE }) }
+        Frame(tab = Routes.HOME) { HomeContent(s, hidden = false) }
+    }
+
+    /** The same chip in privacy mode — the amount must read as the masked placeholder. */
+    @Test
+    fun home_header_chip_privacy() = paparazzi.snapshot {
+        val safe = com.acuranza.app.repo.SafeToSpend.plan(
+            today = java.time.LocalDate.of(2026, 10, 15), cycle = com.acuranza.app.finance.PayCycle(25), liquid = 40_000_000L, cardDues = 0,
+            upcoming = listOf(com.acuranza.app.finance.BudgetMath.Due(java.time.LocalDate.of(2026, 10, 18), 200_000L, "SIP")),
+            overallBudget = null, incomeThisPeriod = 10_000_000L, usualMonthlySpend = null, spentThisPeriod = 3_000_000L,
+            salary = 10_000_000L, savingsTarget = 2_000_000L,
+        )
+        val s = homeState().copy(safeToSpend = safe, profileName = "Ayush")
+            .let { it.copy(sections = it.sections.filterNot { sec -> sec == com.acuranza.app.ui.home.HomeSection.SAFE }) }
+        Frame(tab = Routes.HOME) { HomeContent(s, hidden = true) }
+    }
+
     @Test
     fun home_dark() = paparazzi.snapshot { Frame(dark = true, tab = Routes.HOME) { HomeContent(homeState(), hidden = false) } }
 
