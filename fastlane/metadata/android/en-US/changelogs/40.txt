@@ -1,0 +1,1 @@
+Floating navigation pill: the bottom bar is now a rounded, softly elevated, translucent pill that hovers above the gesture area. Same destinations and icons, with a large rounded highlight that springs in behind the active tab, a haptic tick on switch, instant response under reduced motion, and it tucks away while the keyboard is open. No blur, no gradients — theme colors only.

@@ -1,0 +1,1 @@
+About page rebuilt: app icon, version and release information, device and build facts, a working GitHub repository link, and dedicated Privacy Policy, Terms of Service, Open-Source Licenses and Licence pages. License notices list every real dependency with its licence and project link. No new permissions, no network access — the app remains offline by construction.

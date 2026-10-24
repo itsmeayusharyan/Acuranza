@@ -1,0 +1,1 @@
+About page: the Source code row and its external link were removed; the About screen now covers Privacy policy, Terms of service and Licence only. All in-app references to the upstream Kosh project were removed; the app is branded Acuranza throughout. Store listing and README no longer mention the removed warranties feature.

@@ -1,0 +1,1 @@
+About: the GitHub repository row (and its Project section) is gone from the About screen. The legal pages still link the full licence text, and the acknowledgements keep their library links.

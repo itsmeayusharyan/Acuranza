@@ -1,0 +1,1 @@
+About page: removed the two footer labels (the offline note and the derivation note) for a cleaner finish. Licence, attribution and privacy obligations remain unchanged in the repository and the app's Licence page.

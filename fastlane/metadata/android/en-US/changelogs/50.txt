@@ -1,0 +1,1 @@
+UI audit release: six new golden UI renders added to the regression suite (SMS consent, insights empty and populated, dark variants of the transaction form, activity list and About page) — 35 component renders now guard the UI. No functional changes.

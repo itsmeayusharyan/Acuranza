@@ -1,0 +1,1 @@
+New app icon: a crossbar-less A with a rising arrow on a dark navy tile, applied everywhere — the launcher (adaptive + themed icon), the in-app logo on onboarding, gate, About and Settings, and the store listing. No functional changes.

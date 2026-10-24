@@ -1,0 +1,1 @@
+Edit home: a new option in Settings → Appearance lets you choose which dashboard sections appear and in what order, with a reset-to-default. Action banners now sit directly under the balance card, sections reorder with a smooth animation, and the main buttons and quick actions get subtle press feedback.
