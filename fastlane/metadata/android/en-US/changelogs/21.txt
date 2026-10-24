@@ -1,0 +1,1 @@
+Settings is alphabetised with About always last; Budget month moved into Notifications; section pages no longer repeat their category as an in-card title — just the page title and its rows.

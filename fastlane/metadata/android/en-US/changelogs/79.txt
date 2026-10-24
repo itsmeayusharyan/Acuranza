@@ -1,0 +1,1 @@
+New in Settings > Appearance: Default landing tab — pick which of Home, Insights, Activity or Settings opens when you launch Acuranza. It applies on ordinary launches only: widgets, notifications and links keep going exactly where they always did, and nothing changes until you choose one.

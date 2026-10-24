@@ -1,0 +1,1 @@
+Detected-transaction alerts: when notification tracking (Full build) catches a new bank transaction, Acuranza now posts its own notification with the amount, direction and payee, and tapping it opens SMS tracking for review. Duplicates, OTPs, promos, balance-only alerts and rejected messages stay silent; manual entries, CSV imports and inbox scans never trigger it.

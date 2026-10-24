@@ -1,0 +1,1 @@
+About page trimmed: version-code row, the version badge, and the open-source-licenses entry are gone — the icon, tagline, GitHub link, device info, app version and the legal pages stay as they were.

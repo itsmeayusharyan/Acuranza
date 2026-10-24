@@ -1,0 +1,1 @@
+Settings redesigned: a search field that filters every destination by name and description (with a clear button and a graceful empty state), and destinations grouped into Account, General, Appearance, Privacy & Security, Data Management, Notifications, Advanced and About — same destinations as before, nothing removed.

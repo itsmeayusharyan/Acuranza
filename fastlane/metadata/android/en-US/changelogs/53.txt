@@ -1,0 +1,1 @@
+Maintenance release from a full code audit: a dead branch in the glass surface modifier removed (no visual change), all regression suites re-verified. No functional changes.

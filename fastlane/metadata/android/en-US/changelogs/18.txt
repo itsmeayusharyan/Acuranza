@@ -1,0 +1,1 @@
+Design-system consistency pass: section titles on the dashboard, insights and the Edit-home editor now share one typographic treatment (tracked small caps, one grey) instead of three hand-rolled variants.

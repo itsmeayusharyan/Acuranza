@@ -1,0 +1,1 @@
+Appearance upgraded: pick from six color themes — Default, Dynamic (wallpaper colors on Android 12+), Catppuccin, Cloud/Amber, Ocean, Forest and Rose — in a live-preview gallery, plus an AMOLED black mode for dark themes. Financial colors keep their meaning in every theme; Dynamic explains itself on older Android. Theme mode and accent selection unchanged.

@@ -1,0 +1,1 @@
+Material 3 Expressive refinement: bolder, tighter display and screen-title typography; every button is now a pill; cards unified at a single 20dp radius; presses and page pushes respond with fast physical springs. All motion respects the system's reduced-motion setting.
