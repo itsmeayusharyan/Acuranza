@@ -1,0 +1,8 @@
+Replace all app icons with new official logo
+
+- Replace launcher icons (adaptive icon foreground/background/monochrome) with new logo
+- Replace notification icon with monochrome version of new logo
+- Update README.md with new logo image
+- Preserve widget icon tiles (transaction categories, not app branding)
+- No changes to app functionality, database, or user data
+- Full security audit passed on all variants
