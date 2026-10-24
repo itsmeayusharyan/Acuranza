@@ -50,7 +50,7 @@ internal data class SettingsEntryUi(
 )
 
 internal val SettingsEntryDisplay: Map<SettingsEntryKey, SettingsEntryUi> = linkedMapOf(
-    SettingsEntryKey.ACCOUNTS to SettingsEntryUi("Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
+    SettingsEntryKey.ACCOUNTS to SettingsEntryUi("Accounts & cards", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
     SettingsEntryKey.FINANCIAL to SettingsEntryUi("Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
     SettingsEntryKey.WIDGETS to SettingsEntryUi("Widgets", "Preview and add home-screen widgets", Icons.Outlined.Widgets, Routes.WIDGETS_PREVIEW),
     SettingsEntryKey.APPEARANCE to SettingsEntryUi("Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
@@ -120,6 +120,17 @@ data class SettingsHubLayout(val sections: List<SettingsSection>, val hidden: Li
                 if (s.entries.isEmpty()) head else "$head>${s.entries.joinToString(",") { it.id }}"
             } +
                 if (layout.hidden.isEmpty()) "" else ";" + layout.hidden.joinToString(";") { "!${it.id}" }
+
+        /**
+         * The landing page's flat visible-shortcut order: alphabetical by displayed title
+         * (case-insensitive) for everyone who never customized — but a layout string the user
+         * explicitly customized keeps THEIR order; we never silently override that preference.
+         */
+        fun visibleFlat(raw: String?): List<SettingsEntryKey> {
+            val flat = decodeWithHidden(raw).sections.flatMap { it.entries }
+            val customized = !raw.isNullOrBlank() && raw.trim() != encode(DEFAULT)
+            return if (customized) flat else flat.sortedBy { SettingsEntryDisplay.getValue(it).title.lowercase() }
+        }
 
         /** Decodes and applies the hidden markers (`!id` tokens) on top of the section encoding. */
         fun decodeWithHidden(raw: String?): SettingsHubLayout {

@@ -233,19 +233,6 @@ class ScreensScreenshotTest {
         AcuranzaTheme(darkTheme = true) { settingsBody() }
     }
 
-    /** The hub's tail sections — Notifications and About — rendered at natural height so the
-     *  last tiles' text and the About section are verifiable, not cut at the device fold. */
-    @Test
-    fun settings_sections_tail() = paparazzi.snapshot {
-        AcuranzaTheme(darkTheme = true) {
-            Column(Modifier.padding(horizontal = 20.dp)) {
-                com.acuranza.app.ui.settings.SettingsHubLayout.decodeWithHidden(null).sections
-                    .filter { it.key == com.acuranza.app.ui.settings.SettingsSectionKey.NOTIFICATIONS || it.key == com.acuranza.app.ui.settings.SettingsSectionKey.ABOUT }
-                    .forEach { com.acuranza.app.ui.settings.HubSection(it, onNavigate = {}) }
-            }
-        }
-    }
-
     /** The profile editor with a configured name — dark is the shipped default. */
     @Test
     fun profile_dark() = paparazzi.snapshot {
@@ -304,8 +291,8 @@ class ScreensScreenshotTest {
                 }
             }
             com.acuranza.app.ui.settings.ProfileCard(name = null, avatarPath = null, onClick = {})
-            com.acuranza.app.ui.settings.SettingsHubLayout.decodeWithHidden(null).sections.forEach { section ->
-                com.acuranza.app.ui.settings.HubSection(section, onNavigate = {})
+            com.acuranza.app.ui.settings.SettingsHubLayout.visibleFlat(null).chunked(2).forEach { pair ->
+                com.acuranza.app.ui.settings.SettingsGridRow(pair, onNavigate = {})
             }
             Spacer(Modifier.height(24.dp))
         }

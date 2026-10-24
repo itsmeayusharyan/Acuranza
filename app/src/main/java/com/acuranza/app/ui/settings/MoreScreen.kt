@@ -16,6 +16,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -72,16 +75,13 @@ private data class SettingsEntry(
 )
 
 /** Every destination, in the spec's group structure — nothing removed, nothing hidden. */
-private val SettingsEntries = listOf(
-    SettingsEntry(SettingsEntryKey.ACCOUNTS, "Data management", "Accounts & cards", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
-    SettingsEntry(SettingsEntryKey.FINANCIAL, "Financial tools", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
-    SettingsEntry(SettingsEntryKey.WIDGETS, "Appearance & personalization", "Widgets", "Preview and add home-screen widgets", Icons.Outlined.Widgets, Routes.WIDGETS_PREVIEW),
-    SettingsEntry(SettingsEntryKey.APPEARANCE, "Appearance", "Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
-    SettingsEntry(SettingsEntryKey.PRIVACY, "Privacy & Security", "Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
-    SettingsEntry(SettingsEntryKey.DATA, "Data Management", "Data management", "Backups, imports, exports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
-    SettingsEntry(SettingsEntryKey.NOTIFICATIONS, "Notifications", "Notifications", "Reminders, digest, widgets and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
-    SettingsEntry(SettingsEntryKey.ABOUT, "About", "About", "Version, privacy policy and licence", Icons.Outlined.Info, Routes.ABOUT),
-)
+// ONE registry, no drift: every shortcut's title/description/icon/route comes from
+// SettingsEntryDisplay in SettingsLayout.kt — the same map the Customize editor renders from.
+private val SettingsEntries = SettingsEntryKey.entries.map { key ->
+    val ui = SettingsEntryDisplay.getValue(key)
+    SettingsEntry(key, key.section.defaultTitle, ui.title, ui.description, ui.icon, ui.route)
+}
+
 
 private fun entryOf(key: SettingsEntryKey): SettingsEntry = SettingsEntries.first { it.key == key }
 
@@ -179,11 +179,13 @@ fun MoreScreen(nav: NavController) {
             // The saved hub layout: order, per-section shortcuts and (display-only) title
             // overrides. Hidden shortcuts are simply absent here — search still finds them,
             // so nothing becomes unreachable, and Customize settings re-shows them any time.
-            val layout = SettingsHubLayout.decodeWithHidden(hubLayoutPref)
-            layout.sections.forEachIndexed { groupIndex, section ->
-                item(key = "group-${section.key}") {
-                    StaggeredEntrance(groupIndex) {
-                        HubSection(section, onNavigate = { nav.navigate(it) })
+            // No visible headings: one continuous two-column grid, alphabetical by title
+            // for default layouts; a user-customized order always wins over the default sort.
+            val flat = SettingsHubLayout.visibleFlat(hubLayoutPref)
+            flat.chunked(2).forEachIndexed { rowIndex, pair ->
+                item(key = "row-$rowIndex") {
+                    StaggeredEntrance(rowIndex) {
+                        SettingsGridRow(pair, onNavigate = { nav.navigate(it) })
                     }
                 }
             }
@@ -200,40 +202,35 @@ fun MoreScreen(nav: NavController) {
 }
 
 /**
- * One hub section: caps heading + its shortcuts as a responsive two-column tile grid —
- * icon and label, no description clutter; the featured profile card stays full-width.
- * Odd counts leave the last tile half-width. Stateless: the golden renders exactly this.
+ * One grid row: equal-width tiles that stretch to equal heights (IntrinsicSize.Min), so large
+ * text never misaligns a row. Tiles are icon + title only — descriptions and headings are gone
+ * from the landing page; an odd shortcut keeps half width rather than stretching.
+ * Stateless: the golden renders exactly this.
  */
 @Composable
-fun HubSection(section: com.acuranza.app.ui.settings.SettingsSection, onNavigate: (String) -> Unit) {
-    Column(Modifier.padding(top = 10.dp)) {
-        Text(section.title.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
-        Spacer(Modifier.height(8.dp))
-        // A lone shortcut fills the row; pairs split it — no half-width tile with a dead column.
-        section.entries.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                pair.forEach { key ->
-                    val entry = entryOf(key)
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .then(if (pair.size == 1) Modifier.fillMaxWidth() else Modifier)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(AcuranzaTheme.colors.cardSurface)
-                            .border(1.dp, AcuranzaTheme.colors.hairline, RoundedCornerShape(16.dp))
-                            .clickable { onNavigate(entry.route) }
-                            .padding(horizontal = 14.dp, vertical = 14.dp),
-                    ) {
-                        Icon(entry.icon, contentDescription = null, tint = AcuranzaTheme.colors.ink, modifier = Modifier.size(24.dp))
-                        Spacer(Modifier.height(10.dp))
-                        Text(entry.title, style = MaterialTheme.typography.titleSmall, color = AcuranzaTheme.colors.ink, maxLines = 1)
-                        Spacer(Modifier.height(2.dp))
-                        Text(entry.description, style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText, maxLines = 2)
-                    }
-                }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
+fun SettingsGridRow(pair: List<SettingsEntryKey>, onNavigate: (String) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        pair.forEach { key ->
+            val entry = entryOf(key)
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AcuranzaTheme.colors.cardSurface)
+                    .border(1.dp, AcuranzaTheme.colors.hairline, RoundedCornerShape(16.dp))
+                    .clickable { onNavigate(entry.route) }
+                    .padding(horizontal = 14.dp, vertical = 14.dp),
+            ) {
+                Icon(entry.icon, contentDescription = null, tint = AcuranzaTheme.colors.ink, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.height(8.dp))
+                Text(entry.title, style = MaterialTheme.typography.titleSmall, color = AcuranzaTheme.colors.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
+        if (pair.size == 1) Spacer(Modifier.weight(1f))
     }
 }
 

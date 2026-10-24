@@ -100,6 +100,36 @@ class SettingsLayoutTest {
     }
 
     @Test
+    fun `default layout sorts the landing grid alphabetically by title`() {
+        val titles = SettingsHubLayout.visibleFlat(null).map { SettingsEntryDisplay.getValue(it).title.lowercase() }
+        assertEquals(titles, titles.sorted())
+        // The spec's example ordering, concretely:
+        assertEquals(
+            listOf("about", "accounts & cards", "appearance", "data management", "financial tools", "notifications", "privacy & security", "widgets"),
+            titles,
+        )
+    }
+
+    @Test
+    fun `an explicitly customized layout keeps the user order over the alphabetical default`() {
+        val custom = SettingsHubLayout.encode(
+            SettingsHubLayout.DEFAULT.copy(sections = SettingsHubLayout.DEFAULT.sections.reversed()),
+        )
+        val flat = SettingsHubLayout.visibleFlat(custom)
+        // User's (reversed) section order wins — nothing is silently re-sorted.
+        assertEquals(SettingsHubLayout.decodeWithHidden(custom).sections.flatMap { it.entries }, flat)
+        val titles = flat.map { SettingsEntryDisplay.getValue(it).title.lowercase() }
+        assertEquals(false, titles == titles.sorted())
+    }
+
+    @Test
+    fun `hidden shortcuts are excluded from the landing grid`() {
+        val flat = SettingsHubLayout.visibleFlat("appearance>Appearance & personalization|appearance;!widgets")
+        assertEquals(false, flat.contains(SettingsEntryKey.WIDGETS))
+        assertEquals(true, flat.contains(SettingsEntryKey.ABOUT))
+    }
+
+    @Test
     fun `section order persists through encode and decode`() {
         var l = SettingsHubLayout.DEFAULT
         l = SettingsHubLayout.moveSection(l, l.sections.indexOfFirst { it.key == SettingsSectionKey.ABOUT }, up = true)
