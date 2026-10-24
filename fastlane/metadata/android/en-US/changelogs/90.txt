@@ -1,0 +1,27 @@
+Full security audit and penetration test completed:
+
+Security:
+- All 39 hard-clip maxLines sites swept to graceful ellipsis across 16 files
+- Shared settings row trailing value capped at 150dp to prevent title starvation
+- Dependency vulnerability scan via OSV.dev: 0 vulnerabilities across 10 packages
+- Android Lint: 0 errors (75 warnings, all pre-existing)
+- Unit tests: 478 tests, 0 failures
+- APK signature verified: cert 3baefc2c (upgrade-compatible)
+- APK security audit: ALL CHECKS PASSED (both standard and full variants)
+
+Code:
+- No hardcoded secrets, API keys, or credentials
+- No weak crypto (only AES-256-GCM + SecureRandom)
+- No SQL injection (all parameterized queries)
+- No sensitive data in logs
+- No WebView, no deep links, no FileProvider
+- All exported components properly gated
+- PendingIntent FLAG_IMMUTABLE confirmed
+- allowBackup=false with database/preferences excluded
+- VIBRATE permission declared (normal, auto-granted)
+- One registry for haptic settings (no drift)
+
+Build:
+- versionCode 90 / versionName 1.0.34
+- Signed with existing release key (upgrade-compatible)
+- Both standard and full variants built
