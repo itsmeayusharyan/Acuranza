@@ -1,42 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <!-- Left leg of the A: white fading to pale blue -->
-    <path android:pathData="M54,26 L29,79" android:strokeWidth="10" android:strokeLineCap="round">
-        <aapt:attr name="android:strokeColor">
-            <gradient android:startX="54" android:startY="26" android:endX="29" android:endY="79" android:type="linear">
-                <item android:color="#FFFFFFFF" android:offset="0"/>
-                <item android:color="#FFC7D8F0" android:offset="1"/>
-            </gradient>
-        </aapt:attr>
-    </path>
-    <!-- Right leg: azure deepening to royal blue -->
-    <path android:pathData="M54,26 L79,79" android:strokeWidth="10" android:strokeLineCap="round">
-        <aapt:attr name="android:strokeColor">
-            <gradient android:startX="54" android:startY="26" android:endX="79" android:endY="79" android:type="linear">
-                <item android:color="#FF3FA9FF" android:offset="0"/>
-                <item android:color="#FF0C56D8" android:offset="1"/>
-            </gradient>
-        </aapt:attr>
-    </path>
-    <!-- Rising arrow: shaft sweeping through the A -->
-    <path android:pathData="M34,77 C42,72 48,66 54,60 C60,54 64,50 68.5,45" android:strokeWidth="7" android:strokeLineCap="round">
-        <aapt:attr name="android:strokeColor">
-            <gradient android:startX="34" android:startY="77" android:endX="78" android:endY="34" android:type="linear">
-                <item android:color="#FF38C6FF" android:offset="0"/>
-                <item android:color="#FF1E8FFF" android:offset="1"/>
-            </gradient>
-        </aapt:attr>
-    </path>
-    <!-- Arrowhead pointing up-right -->
-    <path android:pathData="M78,34 L73.4,49.2 L62.8,38.6 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient android:startX="78" android:startY="34" android:endX="66" android:endY="46" android:type="linear">
-                <item android:color="#FF45CFFF" android:offset="0"/>
-                <item android:color="#FF1E8FFF" android:offset="1"/>
-            </gradient>
-        </aapt:attr>
-    </path>
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/ic_launcher_foreground"
+    android:gravity="center"/>
