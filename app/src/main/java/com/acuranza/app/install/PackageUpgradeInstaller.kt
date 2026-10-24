@@ -143,6 +143,22 @@ sealed interface InstallEvent {
     data class Failed(val status: Int, val reason: String) : InstallEvent
 }
 
+/**
+ * Relaunches the app after a verified in-place update, from the single success callback only —
+ * never on startup, so there is no restart loop. The system is about to replace this process;
+ * starting the launcher activity fresh and exiting is the standard, supported self-restart.
+ * If the system has already killed the process, nothing here runs and the user simply reopens
+ * the app, which then comes up as the Full build on its own.
+ */
+private fun restartUpdatedApp(context: Context) {
+    runCatching {
+        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            ?.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        if (intent != null) context.startActivity(intent)
+        android.os.Process.killProcess(android.os.Process.myPid())
+    }
+}
+
 /** Receives the session results, launches the user-action intent when the system asks. */
 class InstallResultReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -173,8 +189,22 @@ class InstallResultReceiver : BroadcastReceiver() {
                     PackageUpgradeInstaller._events.value = InstallEvent.WaitingForConfirmation
                 }
             }
-            PackageInstaller.STATUS_SUCCESS ->
-                PackageUpgradeInstaller._events.value = InstallEvent.Success
+            PackageInstaller.STATUS_SUCCESS -> {
+                // Report success only when the installed package really did change: Android says
+                // SUCCESS when the session commits, so confirm the running app is now the old
+                // version before telling the user (and before any restart).
+                val upgraded = runCatching {
+                    val installed = context.packageManager.getPackageInfo(context.packageName, 0)
+                    val installedCode = if (Build.VERSION.SDK_INT >= 28) installed.longVersionCode else installed.versionCode.toLong()
+                    installedCode > com.acuranza.app.BuildConfig.VERSION_CODE.toLong()
+                }.getOrDefault(false)
+                if (upgraded) {
+                    PackageUpgradeInstaller._events.value = InstallEvent.Success
+                    restartUpdatedApp(context)
+                } else {
+                    fail("The install reported success, but the installed version didn't change")
+                }
+            }
             PackageInstaller.STATUS_FAILURE_ABORTED ->
                 fail("Install cancelled — nothing was changed")
             PackageInstaller.STATUS_FAILURE_BLOCKED ->

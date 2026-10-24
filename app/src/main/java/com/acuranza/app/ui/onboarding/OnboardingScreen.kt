@@ -241,7 +241,9 @@ private fun NotificationsStep(onNext: () -> Unit) {
 private fun ImportStep(onNext: () -> Unit) {
     StepPage(
         title = "Your history",
-        subtitle = "Acuranza never reads your messages. Bring your past along by importing a bank statement CSV, or start fresh and add transactions as they happen.",
+        subtitle = "Track transactions your way. Enable SMS transaction tracking to help detect bank " +
+            "transactions automatically, or import a bank statement CSV or add transactions manually. " +
+            "SMS access is optional and controlled by you.",
         primary = "Continue",
         onPrimary = onNext,
         icon = Icons.Outlined.AutoAwesome,
