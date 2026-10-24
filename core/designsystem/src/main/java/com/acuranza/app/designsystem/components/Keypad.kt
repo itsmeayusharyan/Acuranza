@@ -28,8 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -158,8 +156,8 @@ fun NumberKeypad(
 
 @Composable
 private fun KeypadKey(key: String, onKey: (String) -> Unit, modifier: Modifier) {
-    val haptics = LocalHapticFeedback.current
     val keypadHaptics = com.acuranza.app.designsystem.theme.LocalKeypadHapticsEnabled.current
+    val keypadTick = com.acuranza.app.designsystem.theme.LocalKeypadHapticTick.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -191,7 +189,7 @@ private fun KeypadKey(key: String, onKey: (String) -> Unit, modifier: Modifier) 
             .clickable(interactionSource = interaction, indication = androidx.compose.material3.ripple(), role = Role.Button) {
                 // Gated by the keypad's own preference (master AND keypad switches), provided by
                 // the app shell; previously this fired unconditionally even with haptics off.
-                if (keypadHaptics) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                if (keypadHaptics) keypadTick()
                 onKey(key)
             }
             .semantics { contentDescription = label },

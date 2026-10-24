@@ -35,7 +35,11 @@ fun HapticSettingsScreen(nav: NavController) {
     val c = LocalContainer.current
     val s = LocalSettings.current
     val scope = rememberCoroutineScope()
-    val view = LocalView.current
+    val haptic = com.acuranza.app.ui.common.rememberHaptic()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val noVibratorToast = {
+        android.widget.Toast.makeText(context, "This device has no vibration motor", android.widget.Toast.LENGTH_SHORT).show()
+    }
 
     SettingsPage("Haptic feedback", "Strength and what vibrates", nav) {
         SettingsSection("Master") {
@@ -49,6 +53,14 @@ fun HapticSettingsScreen(nav: NavController) {
             )
         }
         SettingsSection("Strength") {
+            // Honest about the mechanism: amplitude where the vibrator supports it, duration
+            // otherwise — both change perceptibly between Light, Standard and Strong.
+            Text(
+                "Amplitude where your device supports it, otherwise pulse length. Devices without a vibration motor stay still.",
+                style = MaterialTheme.typography.bodySmall,
+                color = AcuranzaTheme.colors.subtleText,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+            )
             SettingsPickerRow(
                 "Feedback strength",
                 listOf("LIGHT", "STANDARD", "STRONG"),
@@ -64,15 +76,8 @@ fun HapticSettingsScreen(nav: NavController) {
                 enabled = s.hapticsEnabled,
                 divider = false,
             ) {
-                if (s.hapticsEnabled) {
-                    // The same call the app's actions use — the real feel, nothing financial.
-                    view.performHapticFeedback(
-                        when (com.acuranza.app.ui.common.HapticIntensity.of(s.hapticIntensity)) {
-                            com.acuranza.app.ui.common.HapticIntensity.LIGHT -> android.view.HapticFeedbackConstants.VIRTUAL_KEY
-                            else -> android.view.HapticFeedbackConstants.LONG_PRESS
-                        },
-                    )
-                }
+                // The SAME Vibrator path every app action uses — the real feel, nothing financial.
+                if (haptic.canVibrate()) haptic.confirm() else noVibratorToast()
             }
         }
         SettingsSection("What vibrates") {

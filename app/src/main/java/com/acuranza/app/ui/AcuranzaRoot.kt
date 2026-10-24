@@ -162,6 +162,22 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
         onDispose {}
     }
 
+    // The keypad's haptic, built from the live settings state: it vibrates through the same
+    // strength implementation as every other interaction, and updates when preferences change.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val keypadHaptic = remember(context, settings) {
+        settings?.let {
+            com.acuranza.app.ui.common.AppHaptics.of(
+                context,
+                it.hapticsEnabled,
+                it.hapticKeypad,
+                it.hapticActions,
+                it.hapticTabsAndButtons,
+                com.acuranza.app.ui.common.HapticIntensity.of(it.hapticIntensity),
+            )
+        }
+    }
+
     AcuranzaTheme(
         darkTheme = dark,
         accent = settings?.accentChoice ?: com.acuranza.app.model.AccentColor.BLUE,
@@ -177,6 +193,8 @@ fun AcuranzaRoot(container: AppContainer, initialRoute: String?, onRouteConsumed
             com.acuranza.app.designsystem.theme.LocalReducedMotion provides rememberReducedMotion(),
             com.acuranza.app.designsystem.theme.LocalHapticsEnabled provides (settings?.hapticsEnabled ?: true),
             com.acuranza.app.designsystem.theme.LocalKeypadHapticsEnabled provides ((settings?.hapticsEnabled ?: true) && (settings?.hapticKeypad ?: true)),
+            com.acuranza.app.designsystem.theme.LocalKeypadHapticTick provides ({ keypadHaptic?.keypadTick() }),
+            com.acuranza.app.designsystem.theme.LocalHapticTick provides ({ keypadHaptic?.tick() }),
         ) {
             var splashDone by remember { mutableStateOf(AppLock.splashShown) }
             LaunchedEffect(Unit) {

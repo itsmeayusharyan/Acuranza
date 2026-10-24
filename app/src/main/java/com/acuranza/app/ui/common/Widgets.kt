@@ -54,8 +54,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -106,70 +104,7 @@ fun AcuranzaScreen(
  * a vibrator, so no permission and no failure path can ever interrupt the action it accompanies.
  * Fires only from click handlers (never composition), so recomposition cannot repeat it.
  */
-/**
- * The three real haptic categories, each with its own preference behind the master switch.
- * KEYPAD fires from the design-system calculator keypad; ACTIONS are the firmer confirmations
- * (saves, deletes, approvals); TABS_AND_BUTTONS are the subtle ticks (tab switches, FABs, chips).
- */
-enum class HapticCategory { KEYPAD, ACTIONS, TABS_AND_BUTTONS }
-
-/** Feedback strength as the app can honestly express it with the two Compose haptic types. */
-enum class HapticIntensity(val id: String) {
-    LIGHT("LIGHT"), STANDARD("STANDARD"), STRONG("STRONG");
-
-    companion object {
-        fun of(id: String?): HapticIntensity = entries.firstOrNull { it.id == id } ?: STANDARD
-    }
-}
-
-class AppHaptics internal constructor(
-    private val hf: HapticFeedback,
-    private val enabled: Boolean,
-    private val keypad: Boolean = true,
-    private val actions: Boolean = true,
-    private val tabsAndButtons: Boolean = true,
-    private val intensity: HapticIntensity = HapticIntensity.STANDARD,
-) {
-    /** Subtle tick for ordinary taps: bottom navigation, chips, rows, icon buttons, FABs. */
-    fun tick() {
-        if (enabled && tabsAndButtons) hf.performHapticFeedback(tickType())
-    }
-
-    /** Firmer tick for meaningful moments: saves, dialog confirmations, destructive prompts. */
-    fun confirm() {
-        if (enabled && actions) hf.performHapticFeedback(confirmType())
-    }
-
-    /** The keypad's own press feedback, gated by its dedicated preference. */
-    fun keypadTick() {
-        if (enabled && keypad) hf.performHapticFeedback(tickType())
-    }
-
-    /** Existing call sites read `haptic()` = confirm. */
-    operator fun invoke() = confirm()
-
-    private fun tickType() = when (intensity) {
-        // LIGHT keeps even confirmations subtle; STRONG firms the taps up. STANDARD is today's feel.
-        HapticIntensity.LIGHT -> HapticFeedbackType.TextHandleMove
-        HapticIntensity.STANDARD -> HapticFeedbackType.TextHandleMove
-        HapticIntensity.STRONG -> HapticFeedbackType.LongPress
-    }
-
-    private fun confirmType() = when (intensity) {
-        HapticIntensity.LIGHT -> HapticFeedbackType.TextHandleMove
-        else -> HapticFeedbackType.LongPress
-    }
-}
-
-/** The app-wide haptic entry point; re-created when the Appearance toggle flips, so changes apply immediately. */
-@Composable
-fun rememberHaptic(): AppHaptics {
-    val haptic = LocalHapticFeedback.current
-    val s = LocalSettings.current
-    return remember(haptic, s.hapticsEnabled, s.hapticKeypad, s.hapticActions, s.hapticTabsAndButtons, s.hapticIntensity) {
-        AppHaptics(haptic, s.hapticsEnabled, s.hapticKeypad, s.hapticActions, s.hapticTabsAndButtons, HapticIntensity.of(s.hapticIntensity))
-    }
-}
+// AppHaptics and rememberHaptic live in Haptics.kt — the Vibrator-backed strength implementation.
 
 /** A bottom sheet with the calculator keypad for fast amount entry. */
 @OptIn(ExperimentalMaterial3Api::class)

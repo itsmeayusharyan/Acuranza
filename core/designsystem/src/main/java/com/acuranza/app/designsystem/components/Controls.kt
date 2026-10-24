@@ -84,13 +84,10 @@ import com.acuranza.app.model.TxnType
 /**
  * A pill-shaped segmented control with a sliding indicator, e.g. Month / Quarter / Year.
  */
-/** Subtle tap tick for design-system controls; gated by the shell's LocalHapticsEnabled. */
+/** Subtle tap tick for design-system controls: the shell-provided shared haptic path, so the
+ *  selected strength and the tabs-and-buttons preference apply here too. No-op in previews. */
 @Composable
-internal fun rememberTick(): () -> Unit {
-    val enabled = LocalHapticsEnabled.current
-    val hf = LocalHapticFeedback.current
-    return remember(enabled, hf) { { if (enabled) hf.performHapticFeedback(HapticFeedbackType.TextHandleMove) } }
-}
+internal fun rememberTick(): () -> Unit = com.acuranza.app.designsystem.theme.LocalHapticTick.current
 
 @Composable
 fun SegmentedTabs(
