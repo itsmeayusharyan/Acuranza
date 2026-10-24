@@ -456,6 +456,18 @@ class ScreensScreenshotTest {
         }
     }
 
+    /** The Customize-settings edit mode: sections with move/hide/rename, hidden list, reset. */
+    @Test
+    fun settings_edit() = paparazzi.snapshot {
+        Frame(dark = true) {
+            com.acuranza.app.ui.settings.SettingsEditContent(
+                layout = com.acuranza.app.ui.settings.SettingsHubLayout.decodeWithHidden(
+                    "general>financial,widgets;appearance>appearance;!widgets",
+                ),
+            )
+        }
+    }
+
     @Test
     fun about_dark() = paparazzi.snapshot {
         Frame(dark = true) {

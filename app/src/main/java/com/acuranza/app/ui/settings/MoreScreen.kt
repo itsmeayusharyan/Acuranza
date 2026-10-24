@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Backup
@@ -57,6 +58,7 @@ private fun Context.versionName(): String = runCatching {
 
 /** One destination on the Settings hub, with the group it belongs to. */
 private data class SettingsEntry(
+    val key: SettingsEntryKey,
     val group: String,
     val title: String,
     val description: String,
@@ -66,15 +68,17 @@ private data class SettingsEntry(
 
 /** Every destination, in the spec's group structure — nothing removed, nothing hidden. */
 private val SettingsEntries = listOf(
-    SettingsEntry("Account", "Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
-    SettingsEntry("General", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
-    SettingsEntry("General", "Widgets", "Preview and add home-screen widgets", Icons.Outlined.Widgets, Routes.WIDGETS_PREVIEW),
-    SettingsEntry("Appearance", "Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
-    SettingsEntry("Privacy & Security", "Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
-    SettingsEntry("Data Management", "Data management", "Backups, imports, exports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
-    SettingsEntry("Notifications", "Notifications", "Reminders, digest, widgets and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
-    SettingsEntry("About", "About", "Version, privacy policy and licence", Icons.Outlined.Info, Routes.ABOUT),
+    SettingsEntry(SettingsEntryKey.ACCOUNTS, "Account", "Management", "Accounts, imports and categories", Icons.Outlined.AccountBalance, Routes.SETTINGS_MANAGEMENT),
+    SettingsEntry(SettingsEntryKey.FINANCIAL, "General", "Financial tools", "Recurring, loans, lending, reports, budgets & goals", Icons.AutoMirrored.Outlined.TrendingUp, Routes.SETTINGS_FINANCIAL),
+    SettingsEntry(SettingsEntryKey.WIDGETS, "General", "Widgets", "Preview and add home-screen widgets", Icons.Outlined.Widgets, Routes.WIDGETS_PREVIEW),
+    SettingsEntry(SettingsEntryKey.APPEARANCE, "Appearance", "Appearance", "Theme, colour theme, accent, AMOLED, hide amounts, edit home", Icons.Outlined.Palette, Routes.SETTINGS_APPEARANCE),
+    SettingsEntry(SettingsEntryKey.PRIVACY, "Privacy & Security", "Privacy & security", "App lock, PINs, encryption and recovery", Icons.Outlined.Shield, Routes.SETTINGS_PRIVACY),
+    SettingsEntry(SettingsEntryKey.DATA, "Data Management", "Data management", "Backups, imports, exports, sample data, erase", Icons.Outlined.Backup, Routes.SETTINGS_DATA),
+    SettingsEntry(SettingsEntryKey.NOTIFICATIONS, "Notifications", "Notifications", "Reminders, digest, widgets and where your budget month starts", Icons.Outlined.Alarm, Routes.SETTINGS_NOTIFICATIONS),
+    SettingsEntry(SettingsEntryKey.ABOUT, "About", "About", "Version, privacy policy and licence", Icons.Outlined.Info, Routes.ABOUT),
 )
+
+private fun entryOf(key: SettingsEntryKey): SettingsEntry = SettingsEntries.first { it.key == key }
 
 /**
  * The Settings hub (v1.13.14): a prominent header, a search field that filters every destination
@@ -84,6 +88,7 @@ private val SettingsEntries = listOf(
  */
 @Composable
 fun MoreScreen(nav: NavController) {
+    val hubLayoutPref = LocalSettings.current.settingsLayout
     var query by remember { mutableStateOf("") }
     val q = query.trim()
     // Deep search: the flat registry covers hub destinations AND rows buried inside nested pages.
@@ -97,9 +102,12 @@ fun MoreScreen(nav: NavController) {
             Row(Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AcuranzaLogo(size = 44.dp)
                 Spacer(Modifier.width(14.dp))
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text("Settings", style = AcuranzaText.screenTitle)
                     Text("Your money, on your phone", style = MaterialTheme.typography.bodySmall, color = AcuranzaTheme.colors.subtleText)
+                }
+                androidx.compose.material3.IconButton(onClick = { nav.navigate(Routes.SETTINGS_EDIT) }) {
+                    androidx.compose.material3.Icon(Icons.Outlined.Tune, contentDescription = "Customize settings")
                 }
             }
         }
@@ -163,20 +171,24 @@ fun MoreScreen(nav: NavController) {
                 }
             }
         } else {
-            val groups = SettingsEntries.groupBy { it.group }.entries.toList()
-            groups.forEachIndexed { groupIndex, (group, entries) ->
-                item(key = "group-$group") {
+            // The saved hub layout: order, per-section shortcuts and (display-only) title
+            // overrides. Hidden shortcuts are simply absent here — search still finds them,
+            // so nothing becomes unreachable, and Customize settings re-shows them any time.
+            val layout = SettingsHubLayout.decodeWithHidden(hubLayoutPref)
+            layout.sections.forEachIndexed { groupIndex, section ->
+                item(key = "group-${section.key}") {
                     StaggeredEntrance(groupIndex) {
                         Column(Modifier.padding(top = 10.dp)) {
-                            Text(group.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
+                            Text(section.title.uppercase(), style = AcuranzaText.sectionLabel, color = AcuranzaTheme.colors.subtleText)
                             Spacer(Modifier.height(8.dp))
                             AcuranzaCard(contentPadding = PaddingValues(0.dp)) {
-                                entries.forEachIndexed { index, entry ->
+                                section.entries.forEachIndexed { index, key ->
+                                    val entry = entryOf(key)
                                     SettingsRow(
                                         entry.title,
                                         entry.description,
                                         entry.icon,
-                                        divider = index < entries.lastIndex,
+                                        divider = index < section.entries.lastIndex,
                                     ) { nav.navigate(entry.route) }
                                 }
                             }
