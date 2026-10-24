@@ -431,7 +431,13 @@ private fun MainShell(initialRoute: String?, onRouteConsumed: () -> Unit) {
 
 @Composable
 private fun BottomBar(nav: NavHostController, current: String?) {
-    AcuranzaBottomBar(current, onTab = { route -> nav.navigateToTab(route) })
+    val s = com.acuranza.app.ui.common.LocalSettings.current
+    val tabs = com.acuranza.app.ui.nav.NavTabs.resolve(
+        com.acuranza.app.ui.nav.NavTabs.decodeLayout(s.navTabLayout),
+        com.acuranza.app.ui.nav.NavTabs.decodeLabels(s.navTabLabels),
+        com.acuranza.app.ui.nav.NavTabs.decodeIcons(s.navTabIcons),
+    )
+    AcuranzaBottomBar(current, onTab = { route -> nav.navigateToTab(route) }, tabs = tabs, showLabels = s.navShowLabels, floating = s.navFloatingBar)
 }
 
 /**
@@ -444,7 +450,14 @@ private fun BottomBar(nav: NavHostController, current: String?) {
  * Light, System and AMOLED palettes all flow through.
  */
 @Composable
-fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
+fun AcuranzaBottomBar(
+    current: String?,
+    onTab: (String) -> Unit,
+    tabs: List<com.acuranza.app.ui.nav.NavTabs.ResolvedTab> =
+        com.acuranza.app.ui.nav.NavTabs.resolve(com.acuranza.app.ui.nav.NavTabs.decodeLayout(null), emptyMap(), emptyMap()),
+    showLabels: Boolean = true,
+    floating: Boolean = true,
+) {
     val colors = AcuranzaTheme.colors
     val haptic = com.acuranza.app.ui.common.rememberHaptic()
     val pillShape = RoundedCornerShape(percent = 50)
@@ -452,22 +465,30 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
     // over scrolling content, opaque enough to stay readable on every palette.
     val pillSurface = colors.glass.copy(alpha = if (colors.isDark) 0.88f else 0.92f)
 
+    val barShape = if (floating) pillShape else RoundedCornerShape(0.dp)
     Box(
         Modifier
             .fillMaxWidth()
-            // Float above the gesture area: side margins + nav-bar inset + a breathing gap.
-            .padding(horizontal = 16.dp)
-            .navigationBarsPadding()
-            .padding(top = 2.dp, bottom = 10.dp)
-            .windowInsetsPadding(WindowInsets.displayCutout)
-            .shadow(
-                elevation = 14.dp,
-                shape = pillShape,
-                ambientColor = colors.ink.copy(alpha = 0.14f),
-                spotColor = colors.ink.copy(alpha = 0.18f),
+            .then(
+                if (floating) Modifier
+                    // Float above the gesture area: side margins + nav-bar inset + a breathing gap.
+                    .padding(horizontal = 16.dp)
+                    .navigationBarsPadding()
+                    .padding(top = 2.dp, bottom = 10.dp)
+                    .windowInsetsPadding(WindowInsets.displayCutout)
+                    .shadow(
+                        elevation = 14.dp,
+                        shape = pillShape,
+                        ambientColor = colors.ink.copy(alpha = 0.14f),
+                        spotColor = colors.ink.copy(alpha = 0.18f),
+                    )
+                else Modifier
+                    // Docked: full width against the gesture area — content scrolls to its edge.
+                    .navigationBarsPadding()
+                    .background(colors.glass.copy(alpha = if (colors.isDark) 0.97f else 1f)),
             )
-            .glassSurface(pillShape)
-            .background(pillSurface, pillShape)
+            .then(if (floating) Modifier.glassSurface(pillShape) else Modifier)
+            .background(if (floating) pillSurface else androidx.compose.ui.graphics.Color.Transparent, barShape)
             .height(68.dp),
     ) {
         Row(
@@ -477,7 +498,8 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                 .fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Tabs.forEach { tab ->
+            tabs.filter { it.visible }.forEach { tab ->
+                val resolvedIcon = com.acuranza.app.ui.nav.NavTabs.iconOf(tab.route, tab.iconId)
                 val selected = current == tab.route
                 val reduced = com.acuranza.app.designsystem.theme.LocalReducedMotion.current
                 val pill by animateFloatAsState(
@@ -534,20 +556,22 @@ fun AcuranzaBottomBar(current: String?, onTab: (String) -> Unit) {
                     )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            tab.icon,
+                            resolvedIcon.icon,
                             contentDescription = null,
                             tint = iconTint,
                             modifier = Modifier.size(22.dp),
                         )
-                        Text(
-                            tab.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 10.sp,
-                            color = labelColor,
-                            maxLines = 1,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
+                        if (showLabels) {
+                            Text(
+                                tab.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 10.sp,
+                                color = labelColor,
+                                maxLines = 1,
+                                modifier = Modifier.padding(top = 3.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -652,6 +676,7 @@ private fun AcuranzaNavHost(nav: NavHostController) {
         composable(Routes.SETTINGS_APPEARANCE) { com.acuranza.app.ui.settings.AppearancePage(nav) }
         composable(Routes.SETTINGS_EDIT) { com.acuranza.app.ui.settings.SettingsEditScreen(nav) }
         composable(Routes.SETTINGS_HAPTICS) { com.acuranza.app.ui.settings.HapticSettingsScreen(nav) }
+        composable(Routes.SETTINGS_NAV_TABS) { com.acuranza.app.ui.settings.NavTabsEditorScreen(nav) }
         composable(Routes.SETTINGS_DATA) { com.acuranza.app.ui.settings.DataManagementPage(nav) }
         composable(Routes.SETTINGS_SMS_IMPORTS) { com.acuranza.app.ui.settings.SmsImportsScreen(nav) }
         composable(Routes.SAVINGS_GOAL) { com.acuranza.app.ui.home.SavingsGoalScreen(nav) }

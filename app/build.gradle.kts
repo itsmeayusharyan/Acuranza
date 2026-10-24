@@ -23,8 +23,8 @@ android {
         }
         minSdk = 26
         targetSdk = 35
-        versionCode = 83
-        versionName = "1.0.27"
+        versionCode = 84
+        versionName = "1.0.28"
         vectorDrawables { useSupportLibrary = true }
     }
 

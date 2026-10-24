@@ -32,6 +32,7 @@ object Routes {
     const val EDIT_HOME = "home/edit"
     const val SETTINGS_EDIT = "settings/edit"
     const val SETTINGS_HAPTICS = "settings/haptics"
+    const val SETTINGS_NAV_TABS = "settings/nav-tabs"
     const val SETTINGS_MANAGEMENT = "settings/management"
     const val SETTINGS_FINANCIAL = "settings/financial-tools"
     const val SMS_TRACKING = "sms-tracking"

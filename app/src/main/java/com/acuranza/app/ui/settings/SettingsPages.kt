@@ -59,6 +59,7 @@ import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.TrackChanges
+import androidx.compose.material.icons.outlined.SpaceDashboard
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Vibration
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -293,6 +294,9 @@ fun AppearancePage(nav: NavController) {
                 Icons.Outlined.VisibilityOff)
             SettingsRow("Haptic feedback", "Master switch, strength and what vibrates", Icons.Outlined.Vibration) {
                 nav.navigate(Routes.SETTINGS_HAPTICS)
+            }
+            SettingsRow("Edit navigation tabs", "Icons, names, order and the floating bar", Icons.Outlined.SpaceDashboard, divider = false) {
+                nav.navigate(Routes.SETTINGS_NAV_TABS)
             }
             SettingsPickerRow(
                 "Default landing tab",

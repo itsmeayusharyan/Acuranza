@@ -34,6 +34,12 @@ data class Settings(
     val onboardingDone: Boolean = false,
     /** Customized Settings hub layout; null = the default. Encoded by SettingsLayout. */
     val settingsLayout: String? = null,
+    /** Bottom-bar customization: order+hidden, label overrides, icon overrides, labels on/off, floating on/off. Defaults = today's look. */
+    val navTabLayout: String? = null,
+    val navTabLabels: String? = null,
+    val navTabIcons: String? = null,
+    val navShowLabels: Boolean = true,
+    val navFloatingBar: Boolean = true,
     /** Transaction reminder: a daily nudge to record spending. Off by default. */
     val txnReminderEnabled: Boolean = false,
     /** Reminder type: only when nothing was recorded today (true) or unconditionally (false). */
@@ -129,6 +135,11 @@ class SettingsStore(
     private object Keys {
         val onboardingDone = booleanPreferencesKey("onboarding_done")
         val settingsLayout = stringPreferencesKey("settings_layout")
+        val navTabLayout = stringPreferencesKey("nav_tab_layout")
+        val navTabLabels = stringPreferencesKey("nav_tab_labels")
+        val navTabIcons = stringPreferencesKey("nav_tab_icons")
+        val navShowLabels = booleanPreferencesKey("nav_show_labels")
+        val navFloatingBar = booleanPreferencesKey("nav_floating_bar")
         val txnReminderEnabled = booleanPreferencesKey("txn_reminder_enabled")
         val txnReminderOnlyIfNone = booleanPreferencesKey("txn_reminder_only_if_none")
         val txnReminderMinuteOfDay = intPreferencesKey("txn_reminder_minute_of_day")
@@ -184,6 +195,11 @@ class SettingsStore(
         Settings(
             onboardingDone = p[Keys.onboardingDone] ?: false,
             settingsLayout = p[Keys.settingsLayout],
+            navTabLayout = p[Keys.navTabLayout],
+            navTabLabels = p[Keys.navTabLabels],
+            navTabIcons = p[Keys.navTabIcons],
+            navShowLabels = p[Keys.navShowLabels] ?: true,
+            navFloatingBar = p[Keys.navFloatingBar] ?: true,
             txnReminderEnabled = p[Keys.txnReminderEnabled] ?: false,
             txnReminderOnlyIfNone = p[Keys.txnReminderOnlyIfNone] ?: true,
             txnReminderMinuteOfDay = (p[Keys.txnReminderMinuteOfDay] ?: 21 * 60).coerceIn(0, 24 * 60 - 1),
@@ -237,6 +253,11 @@ class SettingsStore(
     suspend fun setOnboardingDone(done: Boolean = true) = edit { it[Keys.onboardingDone] = done }
     suspend fun setLandingTab(route: String?) = edit { if (route == null) it.remove(Keys.landingTab) else it[Keys.landingTab] = route }
     suspend fun setSettingsLayout(encoded: String?) = edit { if (encoded == null) it.remove(Keys.settingsLayout) else it[Keys.settingsLayout] = encoded }
+    suspend fun setNavTabLayout(encoded: String?) = edit { if (encoded == null) it.remove(Keys.navTabLayout) else it[Keys.navTabLayout] = encoded }
+    suspend fun setNavTabLabels(encoded: String?) = edit { if (encoded == null) it.remove(Keys.navTabLabels) else it[Keys.navTabLabels] = encoded }
+    suspend fun setNavTabIcons(encoded: String?) = edit { if (encoded == null) it.remove(Keys.navTabIcons) else it[Keys.navTabIcons] = encoded }
+    suspend fun setNavShowLabels(on: Boolean) = edit { it[Keys.navShowLabels] = on }
+    suspend fun setNavFloatingBar(on: Boolean) = edit { it[Keys.navFloatingBar] = on }
     suspend fun setTxnReminderEnabled(on: Boolean) = edit { it[Keys.txnReminderEnabled] = on }
     suspend fun setTxnReminderOnlyIfNone(onlyIfNone: Boolean) = edit { it[Keys.txnReminderOnlyIfNone] = onlyIfNone }
     suspend fun setTxnReminderMinuteOfDay(minute: Int) = edit { it[Keys.txnReminderMinuteOfDay] = minute.coerceIn(0, 24 * 60 - 1) }

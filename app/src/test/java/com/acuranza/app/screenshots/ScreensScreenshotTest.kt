@@ -455,6 +455,20 @@ class ScreensScreenshotTest {
         }
     }
 
+    /** The navigation-tabs editor: live preview of the real bar + customization list. */
+    @Test
+    fun nav_tabs_editor() = paparazzi.snapshot {
+        Frame(dark = true) {
+            com.acuranza.app.ui.settings.NavTabsEditorContent(
+                layout = com.acuranza.app.ui.nav.NavTabs.decodeLayout("home,insights,!transactions,settings"),
+                labels = emptyMap(),
+                icons = emptyMap(),
+                showLabels = true,
+                floating = true,
+            )
+        }
+    }
+
     /** The Customize-settings edit mode: sections with move/hide/rename, hidden list, reset. */
     @Test
     fun settings_edit() = paparazzi.snapshot {
