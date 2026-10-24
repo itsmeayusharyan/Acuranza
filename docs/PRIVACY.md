@@ -29,7 +29,11 @@ In both builds:
 
 ## Permissions
 
-- Standard build: notifications (optional), biometrics (optional lock). Nothing else.
+- Standard build: notifications (optional), biometrics (optional lock), vibration (haptic
+  feedback; a normal permission with no prompt), and the system-level permissions Android
+  needs for reminders to survive a restart (receive boot completed, wake lock, foreground
+  service) and for installing an app update you deliberately chose to download from this
+  repository's releases (request install packages). Nothing else.
 - Full build: additionally `READ_SMS` for the SMS-based money-management feature described above, used only while the feature is enabled, on-device only.
 
 ## Contact

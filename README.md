@@ -27,6 +27,13 @@ every insight is computed on the phone.
   wallpaper colours on Android 12+), Catppuccin, Cloud/Amber, Ocean, Forest and Rose — plus AMOLED
   black, accent colours and reduced-motion support; every palette meets WCAG contrast thresholds.
 - **Searchable settings**: every destination is one query away, grouped the way you think about it.
+- **Personalization**: edit the home page (reorder, add and remove sections), customize the
+  Settings hub (two-column grid, reorder/hide shortcuts, rename sections), pick the default
+  landing tab, and restyle the bottom navigation bar (names, icons, order, hidden tabs,
+  floating or docked) — plus a haptic-feedback panel with a master switch, per-interaction
+  toggles and three strengths that genuinely differ (amplitude where the device supports it),
+  and notification reminders for your day (daily, or only when nothing was recorded) and
+  upcoming payments.
 - **Accounts and cards**: balances that reconcile with what you know, card outstanding and
   utilisation, and "mark paid" recording the transfer from your bank account.
 - **Card bills**: due dates, amounts and payment status, with due-date reminders.
